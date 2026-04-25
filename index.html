@@ -731,6 +731,96 @@ body.light .load-overlay p{color:var(--ink)}
   align-items:center;
 }
 
+/* ============ NUMBER OVERFLOW FIX ============ */
+/* Big numbers like Revenue/Net/Stock can overflow card boundaries.
+   Force wrapping + ellipsis + responsive font scaling. */
+.stat-value, .order-total, .price, .preview-sale {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.stat-card { overflow: hidden; }
+.stat-card .stat-value { font-size: clamp(16px, 4vw, 28px); line-height:1.15; }
+.list-item .li-right { min-width:0; max-width: 40%; word-break:break-word; }
+.list-item .li-right .price { font-size: clamp(13px, 3.4vw, 16px); }
+.order-total { font-size: clamp(15px, 4vw, 19px); }
+.preview-sale { font-size: clamp(15px, 4vw, 19px); }
+table { table-layout: fixed; }
+table td, table th { word-break: break-word; overflow-wrap: anywhere; }
+
+/* Archive page styling */
+.archive-banner{
+  padding:12px 16px;background:rgba(180,120,30,0.1);
+  border:1px solid rgba(180,120,30,0.25);border-radius:12px;
+  font-size:12.5px;color:var(--warn);margin-bottom:14px;
+}
+
+/* Most profitable products card */
+.profit-row{
+  display:flex;align-items:center;gap:10px;padding:8px 10px;
+  border-radius:10px;background:var(--surface-2);
+  border:1px solid var(--line);margin-bottom:6px;
+}
+.profit-rank{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--ink);color:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:12px;flex-shrink:0;
+}
+.profit-rank.top1{background:linear-gradient(135deg,#F4C430,#E8A547)}
+.profit-rank.top2{background:linear-gradient(135deg,#C0C0C0,#9E9E9E)}
+.profit-rank.top3{background:linear-gradient(135deg,#CD7F32,#B87333)}
+
+/* Multi-image preview gallery */
+.preview-img-gallery{
+  display:flex;gap:4px;margin-top:8px;
+}
+.preview-img-thumb{
+  width:38px;height:48px;border-radius:6px;
+  background:var(--bg-2) center/cover no-repeat;
+  border:1px solid var(--line);flex-shrink:0;
+}
+
+/* WhatsApp button */
+.btn-whatsapp{
+  background:#25D366;color:#fff;border-color:#25D366;
+}
+.btn-whatsapp:hover{background:#1DA851;border-color:#1DA851}
+
+/* Out of stock banner inside sale modal */
+.stock-warn-banner{
+  padding:10px 12px;background:rgba(245,158,11,0.15);
+  border:1px solid rgba(245,158,11,0.4);border-radius:10px;
+  color:var(--warn);font-size:12.5px;font-weight:600;margin:10px 0;
+}
+.stock-out-banner{
+  padding:10px 12px;background:rgba(239,68,68,0.15);
+  border:1px solid rgba(239,68,68,0.4);border-radius:10px;
+  color:var(--danger);font-size:12.5px;font-weight:700;margin:10px 0;
+  display:flex;align-items:center;gap:8px;
+}
+
+/* Mobile More Menu */
+.mobile-more-menu{
+  position:fixed;bottom:64px;right:14px;left:14px;
+  z-index:200;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:14px;
+  box-shadow:var(--shadow-lg);
+  padding:6px;display:none;
+  animation:slideUp .2s ease;
+  max-width:340px;margin-left:auto;
+}
+.mobile-more-menu.show{display:block}
+.mmm-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 14px;border-radius:10px;cursor:pointer;
+  font-weight:500;font-size:13.5px;color:var(--ink-2);
+}
+.mmm-item:hover, .mmm-item.active{background:var(--chip-bg);color:var(--ink)}
+.mmm-item i{font-size:16px;width:20px;text-align:center;opacity:0.8}
+
 /* ============ RESPONSIVE ============ */
 @media (max-width:900px){
   .sidebar{display:none}
@@ -744,7 +834,7 @@ body.light .load-overlay p{color:var(--ink)}
 }
 @media (max-width:480px){
   body{font-size:13.5px}
-  .stat-value{font-size:24px}
+  .stat-value{font-size:22px}
   .stat-card{padding:14px}
   .modal{padding:20px 16px;border-radius:16px;max-height:94vh}
   .modal-header h3{font-size:16px}
@@ -754,19 +844,20 @@ body.light .load-overlay p{color:var(--ink)}
   .btn{padding:9px 14px;font-size:12.5px}
   .btn-sm{padding:7px 11px;font-size:11.5px}
   .list-item{padding:10px;gap:10px}
-  .thumb{width:46px;height:46px}
+  .thumb{width:46px;height:46px;flex-shrink:0}
   .li-title{font-size:13px}
-  .li-sub{font-size:11px;white-space:normal}
+  .li-sub{font-size:11px;white-space:normal;word-break:break-word}
   .order-card{padding:12px 14px}
   .order-name{font-size:13.5px}
-  .order-total{font-size:16px}
+  .order-total{font-size:15px}
   .subtab{padding:8px 10px;font-size:11.5px}
   .pipe-step{font-size:9.5px;padding:5px 6px;min-width:70px}
   .preview-img{aspect-ratio:4/5}
   .section-title h2{font-size:16px}
-  /* Mobile: condensed info on list items (wrap) */
-  .order-meta{font-size:11px}
+  .order-meta{font-size:11px;word-break:break-word}
   .icon-btn{width:34px;height:34px;font-size:12px}
+  .grid-4{grid-template-columns:repeat(2,1fr)}
+  .grid-2{grid-template-columns:repeat(2,1fr)}
 }
 @media (min-width:1400px){
   .main{padding:28px 40px 40px;max-width:1500px;margin:0 auto;width:100%}
@@ -2022,7 +2113,7 @@ body.dark select.select option{
     <div class="blob b3"></div>
   </div>
   <div class="login-card">
-    <div class="login-logo"><img src="yarz-logo.webp" alt="YARZ" onerror="this.parentElement.innerHTML='<div style=&quot;font-weight:900;font-size:28px;color:#1B2530&quot;>Y</div>'"></div>
+    <div class="login-logo"><img src="images/yarz-logo.webp" alt="YARZ" onerror="this.parentElement.innerHTML='<div style=&quot;font-weight:900;font-size:28px;color:#1B2530&quot;>Y</div>'"></div>
     <h1>YARZ PRO</h1>
     <p>Private Business Dashboard</p>
     <form id="login-form" onsubmit="return false">
@@ -2064,6 +2155,7 @@ body.dark select.select option{
     </div>
     <div class="nav-item active" data-page="home"><i class="ri-dashboard-line"></i><span>ড্যাশবোর্ড</span></div>
     <div class="nav-item" data-page="inventory"><i class="ri-shopping-bag-3-line"></i><span>ইনভেন্টরি</span></div>
+    <div class="nav-item" data-page="archive"><i class="ri-archive-line"></i><span>আর্কাইভ</span><span class="nav-badge hidden" id="nav-archive-badge">0</span></div>
     <div class="nav-item" data-page="orders"><i class="ri-shopping-cart-2-line"></i><span>অর্ডার</span><span class="nav-badge hidden" id="nav-orders-badge">0</span></div>
     <div class="nav-item" data-page="finance"><i class="ri-wallet-3-line"></i><span>হিসাব</span></div>
     <div class="nav-item" data-page="reports"><i class="ri-line-chart-line"></i><span>রিপোর্ট</span></div>
@@ -2177,6 +2269,20 @@ body.dark select.select option{
         </div>
       </div>
 
+      <!-- ARCHIVE -->
+      <div class="page" data-page="archive">
+        <div class="archive-banner">
+          <i class="ri-information-line"></i> এখানে Archived (লুকানো) প্রোডাক্ট দেখা যাচ্ছে। চাইলে আবার Active করতে পারেন বা স্থায়ীভাবে ডিলিট করতে পারেন।
+        </div>
+        <div class="card" style="padding:14px">
+          <div class="search-wrap">
+            <i class="ri-search-line sicon"></i>
+            <input id="arch-search" class="input" placeholder="আর্কাইভড পণ্য খুঁজুন..." oninput="YARZ.archive.render()">
+          </div>
+          <div id="arch-list" class="list"></div>
+        </div>
+      </div>
+
       <!-- ORDERS -->
       <div class="page" data-page="orders">
         <!-- Main tabs: Website / Manual / Customers -->
@@ -2251,18 +2357,35 @@ body.dark select.select option{
 
       <!-- REPORTS -->
       <div class="page" data-page="reports">
+        <!-- Order Source Ranking -->
+        <div class="card" style="padding:20px;margin-bottom:14px">
+          <div class="section-title"><h2><i class="ri-share-line" style="color:var(--info)"></i> Order Source Ranking</h2>
+            <span class="hint">কোন প্ল্যাটফর্ম থেকে বেশি অর্ডার আসে</span>
+          </div>
+          <div style="position:relative;height:240px"><canvas id="source-chart"></canvas></div>
+          <div id="source-list" style="margin-top:12px"></div>
+        </div>
+
+        <!-- Most Profitable Products -->
+        <div class="card" style="padding:20px;margin-bottom:14px">
+          <div class="section-title"><h2><i class="ri-trophy-line" style="color:var(--warn)"></i> Most Profitable Products</h2>
+            <span class="hint">Top 10</span>
+          </div>
+          <div id="profit-rank-list"></div>
+        </div>
+
         <div class="card" style="padding:20px;margin-bottom:14px">
           <div class="section-title"><h2><i class="ri-calendar-line" style="color:var(--info)"></i> Monthly Report</h2>
             <button class="btn btn-primary btn-sm" onclick="YARZ.rep.generate('monthly')"><i class="ri-save-line"></i> Sheet-এ সেভ</button>
           </div>
-          <div id="monthly-chart"></div>
+          <div style="position:relative;height:300px"><canvas id="monthly-chart-canvas"></canvas></div>
           <div id="monthly-table" style="margin-top:14px"></div>
         </div>
         <div class="card" style="padding:20px">
           <div class="section-title"><h2><i class="ri-line-chart-line" style="color:var(--accent-2)"></i> Yearly Report</h2>
             <button class="btn btn-primary btn-sm" onclick="YARZ.rep.generate('yearly')"><i class="ri-save-line"></i> Sheet-এ সেভ</button>
           </div>
-          <div id="yearly-chart"></div>
+          <div style="position:relative;height:300px"><canvas id="yearly-chart-canvas"></canvas></div>
           <div id="yearly-table" style="margin-top:14px"></div>
         </div>
       </div>
@@ -2276,7 +2399,7 @@ body.dark select.select option{
           </div>
           <div class="search-wrap">
             <i class="ri-search-line sicon"></i>
-            <input id="prev-search" class="input" placeholder="প্রোডাক্ট খুঁজুন..." oninput="YARZ.preview.render()">
+            <input id="prev-search" class="input" placeholder="প্রোডাক্ট খুঁজুন..." oninput="YARZ.preview.onSearchInput(event)" autocomplete="off">
           </div>
         </div>
         <div id="preview-grid" class="grid grid-4"></div>
@@ -2326,10 +2449,25 @@ body.dark select.select option{
       <div class="bn-item active" data-page="home"><i class="ri-dashboard-line"></i><span>হোম</span></div>
       <div class="bn-item" data-page="inventory"><i class="ri-shopping-bag-3-line"></i><span>পণ্য</span></div>
       <div class="bn-item" data-page="orders"><i class="ri-shopping-cart-2-line"></i><span>অর্ডার</span></div>
-      <div class="bn-item" data-page="reports"><i class="ri-line-chart-line"></i><span>রিপোর্ট</span></div>
-      <div class="bn-item" data-page="settings"><i class="ri-settings-3-line"></i><span>সেটিংস</span></div>
+      <div class="bn-item" data-page="preview"><i class="ri-global-line"></i><span>ওয়েব</span></div>
+      <div class="bn-item" id="bn-more" onclick="YARZ.toggleMobileMore()"><i class="ri-more-fill"></i><span>আরও</span></div>
     </div>
   </nav>
+
+  <!-- Mobile More Menu -->
+  <div id="mobile-more-menu" class="mobile-more-menu">
+    <div class="mmm-item" data-page="home" onclick="YARZ.goPage('home');YARZ.toggleMobileMore()"><i class="ri-dashboard-line"></i><span>ড্যাশবোর্ড</span></div>
+    <div class="mmm-item" data-page="inventory" onclick="YARZ.goPage('inventory');YARZ.toggleMobileMore()"><i class="ri-shopping-bag-3-line"></i><span>ইনভেন্টরি</span></div>
+    <div class="mmm-item" data-page="archive" onclick="YARZ.goPage('archive');YARZ.toggleMobileMore()"><i class="ri-archive-line"></i><span>আর্কাইভ</span></div>
+    <div class="mmm-item" data-page="orders" onclick="YARZ.goPage('orders');YARZ.toggleMobileMore()"><i class="ri-shopping-cart-2-line"></i><span>অর্ডার</span></div>
+    <div class="mmm-item" data-page="finance" onclick="YARZ.goPage('finance');YARZ.toggleMobileMore()"><i class="ri-wallet-3-line"></i><span>হিসাব</span></div>
+    <div class="mmm-item" data-page="reports" onclick="YARZ.goPage('reports');YARZ.toggleMobileMore()"><i class="ri-line-chart-line"></i><span>রিপোর্ট</span></div>
+    <div class="mmm-item" data-page="preview" onclick="YARZ.goPage('preview');YARZ.toggleMobileMore()"><i class="ri-global-line"></i><span>ওয়েবসাইট প্রিভিউ</span></div>
+    <div class="mmm-item" data-page="settings" onclick="YARZ.goPage('settings');YARZ.toggleMobileMore()"><i class="ri-settings-3-line"></i><span>সেটিংস</span></div>
+    <div style="height:1px;background:var(--line);margin:6px 8px"></div>
+    <div class="mmm-item" onclick="YARZ.toggleTheme();YARZ.toggleMobileMore()"><i class="ri-moon-line"></i><span>থিম পরিবর্তন</span></div>
+    <div class="mmm-item" onclick="YARZ.logout()" style="color:var(--danger)"><i class="ri-logout-box-r-line"></i><span>লগআউট</span></div>
+  </div>
 </div>
 
 <!-- Modal Container -->
@@ -2753,8 +2891,13 @@ async function appsPost(action, payload){
 
 // ============ DATA LOADERS ============
 async function loadInventory(){
-  // INVENTORY is large (39 cols). Read A2:AM1000
-  const rows = await sheetRead('INVENTORY!A2:AM1000');
+  let rows;
+  try {
+    rows = await sheetRead('INVENTORY!A2:AM1000');
+  } catch(e){
+    console.warn('loadInventory failed (keeping cache):', e.message);
+    return; // keep existing cache
+  }
   const items = [];
   for(const r of rows){
     if(!r[0]) continue;
@@ -2781,7 +2924,8 @@ async function loadInventory(){
 
 async function loadOrders(){
   try {
-    const rows = await sheetReadFormatted('ORDERS!A2:P2000');
+    const rows = await sheetReadFormatted('ORDERS!A2:Q2000');
+    // Schema: A=Date,B=OID,C=Cust,D=Phone,E=Addr,F=Loc,G=Prod,H=Size,I=Qty,J=Price,K=Del,L=Tot,M=Pay,N=Status,O=Courier,P=Notes,Q=Source
     state.data.orders = rows.filter(r=>r[1]).map(r=>({
       date: parseSheetDate(r[0]),
       orderId: safeStr(r[1]), customer: safeStr(r[2]), phone: safeStr(r[3]),
@@ -2789,14 +2933,16 @@ async function loadOrders(){
       product: safeStr(r[6]), size: safeStr(r[7]), qty: int(r[8]),
       price: num(r[9]), delivery: num(r[10]), total: num(r[11]),
       payment: safeStr(r[12]), status: safeStr(r[13])||'Pending',
-      courier: safeStr(r[14]), notes: safeStr(r[15])
+      courier: safeStr(r[14]), notes: safeStr(r[15]),
+      source: safeStr(r[16])||'Manual', // NEW: Order source (TikTok/Facebook/Instagram/Website/Manual)
+      _kind: 'manual'
     }));
-  } catch(e){ state.data.orders = []; }
+  } catch(e){ console.warn('loadOrders failed (keeping cache):', e.message); /* don't clear cache */ }
 }
 
 async function loadWebsiteOrders(){
   try {
-    const rows = await sheetReadFormatted('Website_Orders!A2:S2000');
+    const rows = await sheetReadFormatted('Website_Orders!A2:T2000');
     state.data.websiteOrders = rows.filter(r=>r[0]).map(r=>({
       orderId: safeStr(r[0]), date: parseSheetDate(r[1]),
       customer: safeStr(r[2]), phone: safeStr(r[3]), email: safeStr(r[4]),
@@ -2804,9 +2950,12 @@ async function loadWebsiteOrders(){
       product: safeStr(r[8]), size: safeStr(r[9]), qty: int(r[10]),
       price: num(r[11]), delivery: num(r[12]), total: num(r[13]),
       payment: safeStr(r[14]), status: safeStr(r[15])||'Pending',
-      courier: safeStr(r[16]), notes: safeStr(r[17]), source: safeStr(r[18])
+      courier: safeStr(r[16]), notes: safeStr(r[17]),
+      source: safeStr(r[18])||'Website',
+      courierTrackId: safeStr(r[19]), // NEW: separate courier tracking ID (col T)
+      _kind: 'website'
     }));
-  } catch(e){ state.data.websiteOrders = []; }
+  } catch(e){ console.warn('loadWebsiteOrders failed (keeping cache):', e.message); }
 }
 
 async function loadTransactions(){
@@ -2817,7 +2966,7 @@ async function loadTransactions(){
       type: safeStr(r[2]), size: safeStr(r[3]), qty: int(r[4]),
       revenue: num(r[5]), cost: num(r[6]), profit: num(r[7])
     }));
-  } catch(e){ state.data.transactions = []; }
+  } catch(e){ console.warn('loadTransactions failed (keeping cache):', e.message); }
 }
 
 async function loadAdTracker(){
@@ -2827,7 +2976,7 @@ async function loadAdTracker(){
       date: parseSheetDate(r[0]), product: safeStr(r[1]),
       amount: num(r[2]), campaign: safeStr(r[3]), notes: safeStr(r[4])
     }));
-  } catch(e){ state.data.adTracker = []; }
+  } catch(e){ console.warn('loadAdTracker failed (keeping cache):', e.message); }
 }
 
 async function loadExpenses(){
@@ -2837,7 +2986,7 @@ async function loadExpenses(){
       date: parseSheetDate(r[0]), category: safeStr(r[1]),
       amount: num(r[2]), description: safeStr(r[3]), paidTo: safeStr(r[4])
     }));
-  } catch(e){ state.data.expenses = []; }
+  } catch(e){ console.warn('loadExpenses failed (keeping cache):', e.message); }
 }
 
 async function loadSettings(){
@@ -2846,7 +2995,7 @@ async function loadSettings(){
     const map = {};
     rows.forEach(r=>{ if(r[0]) map[String(r[0]).trim()] = r[1]; });
     state.data.settings = map;
-  } catch(e){ state.data.settings = {}; }
+  } catch(e){ console.warn('loadSettings failed (keeping cache):', e.message); }
 }
 
 // ============ MAIN YARZ OBJECT ============
@@ -2881,16 +3030,25 @@ const YARZ = window.YARZ = {
 
   // Silent background refresh (polling every 60s for new orders)
   async silentRefresh(){
+    // ★ Skip refresh if a modal is open (prevents user form being interrupted/closed)
+    const modalOpen = $('modal-overlay') && $('modal-overlay').classList.contains('show');
+    if(modalOpen) return;
     try {
       await loadWebsiteOrders();
-      this.render();
+      // Don't call full render() — only update orders display + badges
+      if(this.ord && this.ord.render) this.ord.render();
+      this.updateBadges();
       this.detectNewOrders();
-    } catch(e){ /* silent */ }
+      // Refresh session timer (rolling window) — prevents "data disappear" on long idle
+      const now = Date.now().toString();
+      try { sessionStorage.setItem('yarz_auth_time', now); localStorage.setItem('yarz_auth_time', now); } catch(e){}
+    } catch(e){ /* silent — keep cached state */ }
   },
 
   render(){
     this.home.render();
     this.inv.render();
+    this.archive.render();
     this.ord.render();
     this.finance.render();
     this.rep.render();
@@ -2927,6 +3085,14 @@ const YARZ = window.YARZ = {
       if(sizes.some(s=>s<=threshold)) low++;
     });
     $('lowstock-count').textContent = low>0 ? toBn(low)+' Items' : 'সব ঠিক';
+
+    // Archive badge
+    const archCount = state.data.inventory.filter(p=>p.status==='Archived').length;
+    const ab = $('nav-archive-badge');
+    if(ab){
+      if(archCount>0){ ab.textContent = toBn(archCount); ab.classList.remove('hidden'); }
+      else ab.classList.add('hidden');
+    }
 
     // If notification panel is open, re-render it
     if($('notif-panel') && $('notif-panel').classList.contains('show')){
@@ -2968,9 +3134,12 @@ const YARZ = window.YARZ = {
     qsa(`.nav-item[data-page="${page}"]`).forEach(n=>n.classList.add('active'));
     qsa('.bn-item').forEach(n=>n.classList.remove('active'));
     qsa(`.bn-item[data-page="${page}"]`).forEach(n=>n.classList.add('active'));
+    qsa('.mmm-item').forEach(n=>n.classList.remove('active'));
+    qsa(`.mmm-item[data-page="${page}"]`).forEach(n=>n.classList.add('active'));
     const titles = {
       home: ['ড্যাশবোর্ড','আজকের ওভারভিউ'],
       inventory:['ইনভেন্টরি','পণ্য ব্যবস্থাপনা'],
+      archive:['আর্কাইভ','লুকানো প্রোডাক্ট সমূহ'],
       orders:['অর্ডার','অর্ডার ট্র্যাকিং'],
       finance:['হিসাব','আর্থিক এন্ট্রি'],
       reports:['রিপোর্ট','মাসিক ও বার্ষিক'],
@@ -2980,7 +3149,16 @@ const YARZ = window.YARZ = {
     const t = titles[page]||[page,''];
     $('topbar-title').textContent = t[0];
     $('topbar-sub').textContent = t[1];
+    // Re-render specific page content (so archive count shows latest)
+    if(page==='archive') this.archive.render();
+    if(page==='reports') this.rep.render();
     window.scrollTo({top:0,behavior:'smooth'});
+  },
+
+  // Mobile More menu toggle
+  toggleMobileMore(){
+    const m = $('mobile-more-menu');
+    if(m) m.classList.toggle('show');
   },
 
   // ----- Theme (Default: Light CoachPro mint) -----
@@ -3032,7 +3210,11 @@ const YARZ = window.YARZ = {
 
   // ----- Logout -----
   logout(){
+    if(!confirm('আপনি কি লগআউট করতে চান?')) return;
     sessionStorage.removeItem('yarz_auth');
+    sessionStorage.removeItem('yarz_auth_time');
+    localStorage.removeItem('yarz_auth');
+    localStorage.removeItem('yarz_auth_time');
     location.reload();
   },
 
@@ -3046,8 +3228,13 @@ const YARZ = window.YARZ = {
     // Setup size on large modals
     if(type==='add-product' || type==='edit-product') content.style.maxWidth='640px';
     else content.style.maxWidth='560px';
-    // Autofocus
-    setTimeout(()=>{ const f = content.querySelector('input,select,textarea'); if(f) f.focus(); }, 100);
+    // Autofocus + post-open hooks
+    setTimeout(()=>{
+      const f = content.querySelector('input,select,textarea'); if(f) f.focus();
+      // Trigger initial computations for sale modal & edit modal
+      if(type==='sale-entry' && typeof YARZ._checkSaleStock==='function') YARZ._checkSaleStock();
+      if((type==='add-product' || type==='edit-product') && typeof YARZ._autoCalcDisc==='function') YARZ._autoCalcDisc();
+    }, 100);
   },
   closeModal(){
     $('modal-overlay').classList.remove('show');
@@ -3061,9 +3248,11 @@ function setupLogin(){
     document.body.classList.add('dark');
     document.querySelector('meta[name="theme-color"]').setAttribute('content','#0E0E0E');
   }
-  const saved = sessionStorage.getItem('yarz_auth');
-  const savedTime = parseInt(sessionStorage.getItem('yarz_auth_time')||'0', 10);
-  const SESSION_MAX = 8 * 60 * 60 * 1000; // 8 hours
+  // ★ Session: use localStorage for persistence (survives tab close & idle).
+  // 30-day rolling window; refreshed on every activity.
+  const saved = localStorage.getItem('yarz_auth') || sessionStorage.getItem('yarz_auth');
+  const savedTime = parseInt(localStorage.getItem('yarz_auth_time') || sessionStorage.getItem('yarz_auth_time') || '0', 10);
+  const SESSION_MAX = 30 * 24 * 60 * 60 * 1000; // 30 days
   if(saved === '1' && savedTime && (Date.now() - savedTime) < SESSION_MAX){
     showApp();
     return;
@@ -3071,6 +3260,8 @@ function setupLogin(){
     // Expired — clean up
     sessionStorage.removeItem('yarz_auth');
     sessionStorage.removeItem('yarz_auth_time');
+    localStorage.removeItem('yarz_auth');
+    localStorage.removeItem('yarz_auth_time');
   }
 
   const doLogin = async ()=>{
@@ -3114,6 +3305,8 @@ function setupLogin(){
       LOGIN_LOCK.attempts = 0;
       sessionStorage.setItem('yarz_auth','1');
       sessionStorage.setItem('yarz_auth_time', Date.now().toString());
+      localStorage.setItem('yarz_auth','1');
+      localStorage.setItem('yarz_auth_time', Date.now().toString());
       showApp();
     } else {
       LOGIN_LOCK.attempts++;
@@ -3334,7 +3527,10 @@ YARZ.inv = {
     const f = $('inv-filter-fab').value;
 
     let items = state.data.inventory.slice();
+    // ★ v4.2: By default hide Archived items here (they appear in Archive page).
+    // If user explicitly selects status=Archived in filter, we DO show them.
     if(st) items = items.filter(p=>p.status===st);
+    else items = items.filter(p=>p.status!=='Archived');
     if(c) items = items.filter(p=>p.category===c);
     if(f) items = items.filter(p=>p.fabric===f);
     if(q) items = items.filter(p=>(p.name+' '+p.category+' '+p.fabric).toLowerCase().includes(q));
@@ -3358,10 +3554,11 @@ YARZ.inv = {
         <div class="li-right">
           <div class="price">${fmtBDT(p.sale)}</div>
           <div style="font-size:10px;opacity:0.5;text-decoration:line-through">${p.regular>p.sale?fmtBDT(p.regular):''}</div>
-          <div class="li-actions">
-            <button class="btn btn-primary btn-xs" onclick="YARZ.inv.showDetails('${esc(p.name)}')"><i class="ri-eye-line"></i></button>
-            <button class="btn btn-blue btn-xs" onclick="YARZ.inv.editProduct('${esc(p.name)}')"><i class="ri-pencil-line"></i></button>
-            <button class="btn btn-red btn-xs" onclick="YARZ.inv.deleteProduct('${esc(p.name)}')"><i class="ri-delete-bin-6-line"></i></button>
+          <div class="li-actions" style="flex-wrap:wrap;gap:4px">
+            <button class="btn btn-primary btn-xs" onclick="YARZ.inv.showDetails('${esc(p.name)}')" title="ডিটেইলস"><i class="ri-eye-line"></i></button>
+            <button class="btn btn-amber btn-xs" onclick="YARZ.inv.showCostingDetails('${esc(p.name)}')" title="Costing"><i class="ri-money-dollar-circle-line"></i></button>
+            <button class="btn btn-blue btn-xs" onclick="YARZ.inv.editProduct('${esc(p.name)}')" title="Edit"><i class="ri-pencil-line"></i></button>
+            <button class="btn btn-red btn-xs" onclick="YARZ.inv.deleteProduct('${esc(p.name)}')" title="ডিলিট"><i class="ri-delete-bin-6-line"></i></button>
           </div>
         </div>
       </div>`;
@@ -3393,19 +3590,23 @@ YARZ.inv = {
           </div>
         </div>
       </div>
-      <div class="grid grid-4" style="margin-bottom:14px">
-        <div class="stat-card glass" style="padding:10px"><div class="stat-label">Revenue</div><div class="stat-value text-blue" style="font-size:16px">${fmtBDT(p.revenue)}</div></div>
-        <div class="stat-card glass" style="padding:10px"><div class="stat-label">Net</div><div class="stat-value ${p.net>=0?'text-green':'text-red'}" style="font-size:16px">${fmtBDT(p.net)}</div></div>
-        <div class="stat-card glass" style="padding:10px"><div class="stat-label">Sold</div><div class="stat-value text-green" style="font-size:16px">${toBn(p.totalSold)}</div></div>
-        <div class="stat-card glass" style="padding:10px"><div class="stat-label">Stock</div><div class="stat-value text-amber" style="font-size:16px">${toBn(Math.max(0,p.remaining))}</div></div>
+      <div class="grid grid-4" style="margin-bottom:14px;gap:6px">
+        <div class="stat-card glass" style="padding:10px"><div class="stat-label">Initial Stock</div><div class="stat-value text-blue" style="font-size:15px">${toBn(p.stkM+p.stkL+p.stkXL+p.stkXXL)}</div></div>
+        <div class="stat-card glass" style="padding:10px"><div class="stat-label">Sold</div><div class="stat-value text-green" style="font-size:15px">${toBn(p.totalSold)}</div></div>
+        <div class="stat-card glass" style="padding:10px"><div class="stat-label">Current Stock</div><div class="stat-value ${totalLeft<=0?'text-red':'text-amber'}" style="font-size:15px">${toBn(totalLeft)}</div></div>
+        <div class="stat-card glass" style="padding:10px"><div class="stat-label">Net Profit</div><div class="stat-value ${p.net>=0?'text-green':'text-red'}" style="font-size:15px">${fmtBDT(p.net)}</div></div>
       </div>
-      <div class="glass" style="padding:10px;margin-bottom:12px">
-        <table style="width:100%;font-size:12.5px">
-          <thead><tr style="opacity:0.7"><th style="text-align:left;padding:4px">Size</th><th style="padding:4px">Stock</th><th style="padding:4px">Sold</th><th style="padding:4px">Left</th></tr></thead>
+      <div class="grid grid-2" style="margin-bottom:14px;gap:6px">
+        <div class="stat-card glass" style="padding:10px"><div class="stat-label">Total Revenue</div><div class="stat-value text-blue" style="font-size:14px">${fmtBDT(p.revenue)}</div></div>
+        <div class="stat-card glass" style="padding:10px"><div class="stat-label">Total Cost</div><div class="stat-value text-amber" style="font-size:14px">${fmtBDT((p.stkM+p.stkL+p.stkXL+p.stkXXL)*p.cost)}</div></div>
+      </div>
+      <div class="glass" style="padding:10px;margin-bottom:12px;overflow-x:auto">
+        <table style="width:100%;font-size:12.5px;min-width:340px">
+          <thead><tr style="opacity:0.7;border-bottom:1px solid var(--line)"><th style="text-align:left;padding:5px">Size</th><th style="padding:5px">Initial</th><th style="padding:5px">Sold</th><th style="padding:5px">Left</th></tr></thead>
           <tbody>
             ${['M','L','XL','XXL'].map(sz=>{
               const s=p['stk'+sz], so=p['sold'+sz], l=s-so;
-              return `<tr><td style="padding:5px"><b>${sz}</b></td><td style="text-align:center">${toBn(s)}</td><td style="text-align:center">${toBn(so)}</td><td style="text-align:center;color:${l<=0?'#F87171':'#34D399'};font-weight:700">${toBn(l)}</td></tr>`;
+              return `<tr style="border-bottom:1px solid var(--line-2)"><td style="padding:5px"><b>${sz}</b></td><td style="text-align:center">${toBn(s)}</td><td style="text-align:center;color:var(--success)">${toBn(so)}</td><td style="text-align:center;color:${l<=0?'var(--danger)':'var(--success)'};font-weight:700">${toBn(l)}</td></tr>`;
             }).join('')}
           </tbody>
         </table>
@@ -3436,10 +3637,82 @@ YARZ.inv = {
     YARZ.openModal('edit-product', p);
   },
 
-  async deleteProduct(name){
-    if(!confirm(`"${name}" আর্কাইভ করতে চান? (History থাকবে, শুধু Archive হবে)`)) return;
-    await YARZ.inv.changeStatus(name, 'Archived', false);
-    toast('Archive করা হয়েছে', 'success');
+  // ★ NEW v4.2: Delete with confirmation modal + scope choice (product-only OR product + history)
+  deleteProduct(name){
+    const p = state.data.inventory.find(x=>x.name===name);
+    if(!p){ toast('Product পাওয়া যায়নি','error'); return; }
+    const html = `
+      <div class="modal-header">
+        <h3 style="color:var(--danger)"><i class="ri-delete-bin-6-line"></i> ডিলিট কনফার্মেশন</h3>
+        <button class="modal-close" onclick="YARZ.closeModal()"><i class="ri-close-line"></i></button>
+      </div>
+      <div style="padding:14px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:12px;margin-bottom:14px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:6px">"${esc(p.name)}" সত্যিই ডিলিট করতে চান?</div>
+        <div style="font-size:12px;opacity:0.75">এই কাজটি undo করা যাবে না। অনুগ্রহ করে নিচ থেকে ডিলিট স্কোপ বেছে নিন:</div>
+      </div>
+
+      <div style="display:grid;gap:10px">
+        <label class="del-opt" style="display:flex;gap:10px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:12px;cursor:pointer">
+          <input type="radio" name="del-scope" value="archive" checked style="margin-top:3px">
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:13px;color:var(--warn)"><i class="ri-archive-line"></i> Archive (নিরাপদ)</div>
+            <div style="font-size:11.5px;opacity:0.75;margin-top:3px">শুধু Hide হবে — Sheet থেকে মুছবে না, transaction history সম্পূর্ণ থাকবে। মাসিক/বার্ষিক হিসাব থাকবে।</div>
+          </div>
+        </label>
+        <label class="del-opt" style="display:flex;gap:10px;align-items:flex-start;padding:14px;border:1px solid var(--line);border-radius:12px;cursor:pointer">
+          <input type="radio" name="del-scope" value="product-only" style="margin-top:3px">
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:13px"><i class="ri-eraser-line"></i> শুধু প্রোডাক্ট রিমুভ</div>
+            <div style="font-size:11.5px;opacity:0.75;margin-top:3px">INVENTORY থেকে স্থায়ীভাবে মুছবে, কিন্তু TRANSACTIONS history থাকবে (মাসিক হিসাবে যোগ থাকবে)।</div>
+          </div>
+        </label>
+        <label class="del-opt" style="display:flex;gap:10px;align-items:flex-start;padding:14px;border:1px solid rgba(239,68,68,0.3);border-radius:12px;cursor:pointer;background:rgba(239,68,68,0.04)">
+          <input type="radio" name="del-scope" value="full" style="margin-top:3px">
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:13px;color:var(--danger)"><i class="ri-fire-line"></i> Product + History সম্পূর্ণ ডিলিট</div>
+            <div style="font-size:11.5px;opacity:0.75;margin-top:3px">⚠️ INVENTORY + এই product-এর সব TRANSACTIONS এন্ট্রি মুছে যাবে। মাসিক/বার্ষিক হিসাব থেকে এটি বাদ যাবে। পুরোপুরি unrecoverable।</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
+        <button class="btn btn-red" onclick="YARZ.inv._executeDelete('${esc(name)}')"><i class="ri-delete-bin-6-line"></i> কনফার্ম করুন</button>
+      </div>
+    `;
+    $('modal-content').innerHTML = html;
+    $('modal-overlay').classList.add('show');
+  },
+
+  async _executeDelete(name){
+    const scope = (document.querySelector('input[name="del-scope"]:checked')||{}).value || 'archive';
+    YARZ.closeModal();
+    if(scope==='archive'){
+      await YARZ.inv.changeStatus(name, 'Archived', false);
+      toast('Archive করা হয়েছে', 'success');
+      return;
+    }
+    showLoader('ডিলিট হচ্ছে...');
+    try {
+      const res = await appsPost('deleteProduct', { name, withHistory: scope==='full' });
+      if(res && res.ok===false && res.success!==true) throw new Error(res.msg||res.error||'Failed');
+      // remove from local state
+      const idx = state.data.inventory.findIndex(x=>x.name===name);
+      if(idx!==-1) state.data.inventory.splice(idx,1);
+      if(scope==='full'){
+        // remove transactions for this product locally
+        state.data.transactions = state.data.transactions.filter(t=>t.product!==name);
+      }
+      YARZ.render();
+      toast(scope==='full' ? 'Product + History ডিলিট হয়েছে' : 'Product ডিলিট হয়েছে', 'success');
+    } catch(e){ toast('সমস্যা: '+e.message,'error'); }
+    finally { hideLoader(); }
+  },
+
+  // Restore from archive
+  async restoreProduct(name){
+    if(!confirm(`"${name}" আবার Active করতে চান?`)) return;
+    await YARZ.inv.changeStatus(name, 'Active', true);
   },
 
   async changeStatus(name, newStatus, showToast){
@@ -3645,6 +3918,70 @@ YARZ.inv = {
     finally { hideLoader(); }
   },
 
+  // ★ NEW: Show comprehensive product analytics with initial stock, sold, current stock, total cost/revenue/profit
+  showCostingDetails(name){
+    const p = state.data.inventory.find(x=>x.name===name);
+    if(!p) return;
+    const initialStock = p.stkM + p.stkL + p.stkXL + p.stkXXL;
+    const totalSold = (p.soldM||0) + (p.soldL||0) + (p.soldXL||0) + (p.soldXXL||0);
+    const currentStock = initialStock - totalSold;
+    const totalPurchaseCost = initialStock * p.cost;
+    const totalRevenue = totalSold * p.sale;
+    const totalProfit = totalRevenue - (totalSold * p.cost) - (p.fbAd||0);
+
+    const html = `
+      <div class="modal-header">
+        <h3><i class="ri-money-dollar-circle-line"></i> ${esc(p.name)} — Costing Details</h3>
+        <button class="modal-close" onclick="YARZ.closeModal()"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="grid grid-2 mb-3" style="gap:8px">
+        <div class="stat-card glass" style="padding:12px"><div class="stat-label">Initial Stock</div><div class="stat-value text-blue" style="font-size:18px">${toBn(initialStock)}</div></div>
+        <div class="stat-card glass" style="padding:12px"><div class="stat-label">Sold</div><div class="stat-value text-green" style="font-size:18px">${toBn(totalSold)}</div></div>
+        <div class="stat-card glass" style="padding:12px"><div class="stat-label">Current Stock</div><div class="stat-value ${currentStock<=0?'text-red':'text-amber'}" style="font-size:18px">${toBn(currentStock)}</div></div>
+        <div class="stat-card glass" style="padding:12px"><div class="stat-label">Remaining (after returns)</div><div class="stat-value text-amber" style="font-size:18px">${toBn(Math.max(0,p.remaining))}</div></div>
+      </div>
+      <div class="modal-section-title">💰 মুনাফার হিসাব</div>
+      <div class="grid grid-2" style="gap:8px;margin-bottom:14px">
+        <div class="stat-card glass" style="padding:12px"><div class="stat-label">Total Purchase Cost</div><div class="stat-value text-amber" style="font-size:16px">${fmtBDT(totalPurchaseCost)}</div><div class="stat-sub">${toBn(initialStock)} × ${fmtBDT(p.cost)}</div></div>
+        <div class="stat-card glass" style="padding:12px"><div class="stat-label">Total Revenue</div><div class="stat-value text-blue" style="font-size:16px">${fmtBDT(totalRevenue)}</div><div class="stat-sub">${toBn(totalSold)} × ${fmtBDT(p.sale)}</div></div>
+        <div class="stat-card glass" style="padding:12px"><div class="stat-label">Ad Spend</div><div class="stat-value text-purple" style="font-size:16px">${fmtBDT(p.fbAd||0)}</div></div>
+        <div class="stat-card glass" style="padding:12px"><div class="stat-label">Net Profit</div><div class="stat-value ${totalProfit>=0?'text-green':'text-red'}" style="font-size:16px">${fmtBDT(totalProfit)}</div></div>
+      </div>
+      <div class="modal-section-title">📦 সাইজ ভিত্তিক হিসাব</div>
+      <div class="glass" style="padding:10px;overflow-x:auto">
+        <table style="width:100%;font-size:12px;min-width:380px">
+          <thead><tr style="opacity:0.7;border-bottom:1px solid var(--line)">
+            <th style="padding:6px;text-align:left">Size</th>
+            <th style="padding:6px">Initial</th>
+            <th style="padding:6px">Sold</th>
+            <th style="padding:6px">Left</th>
+            <th style="padding:6px">Revenue</th>
+          </tr></thead>
+          <tbody>
+            ${['M','L','XL','XXL'].map(sz=>{
+              const ini = p['stk'+sz]||0;
+              const sold = p['sold'+sz]||0;
+              const left = ini - sold;
+              return `<tr style="border-bottom:1px solid var(--line-2)">
+                <td style="padding:6px"><b>${sz}</b></td>
+                <td style="text-align:center;padding:6px">${toBn(ini)}</td>
+                <td style="text-align:center;padding:6px;color:var(--success)">${toBn(sold)}</td>
+                <td style="text-align:center;padding:6px;color:${left<=0?'var(--danger)':'var(--warn)'};font-weight:700">${toBn(left)}</td>
+                <td style="text-align:right;padding:6px">${fmtBDT(sold*p.sale)}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="YARZ.closeModal()">বন্ধ</button>
+        <button class="btn btn-blue" onclick="YARZ.closeModal();YARZ.inv.editProduct('${esc(p.name)}')"><i class="ri-pencil-line"></i> Edit</button>
+      </div>
+    `;
+    $('modal-content').innerHTML = html;
+    $('modal-overlay').classList.add('show');
+  },
+
   showAnalytics(){
     const items = state.data.inventory.slice().sort((a,b)=>b.net-a.net);
     const totalRev = items.reduce((s,p)=>s+p.revenue,0);
@@ -3681,6 +4018,40 @@ YARZ.inv = {
     `;
     $('modal-content').innerHTML = html;
     $('modal-overlay').classList.add('show');
+  }
+};
+
+/* ============================================================
+   ============ ARCHIVE MODULE (NEW v4.2) ============
+============================================================ */
+YARZ.archive = {
+  render(){
+    const list = $('arch-list');
+    if(!list) return;
+    const q = ($('arch-search')?.value||'').toLowerCase().trim();
+    let items = state.data.inventory.filter(p=>p.status==='Archived');
+    if(q) items = items.filter(p=>(p.name+' '+p.category+' '+p.fabric).toLowerCase().includes(q));
+    list.innerHTML = items.length ? items.map(p=>`
+      <div class="list-item">
+        <div class="thumb" style="${p.img1?`background-image:url('${esc(p.img1)}')`:''}">${p.img1?'':'<i class=\"ri-archive-line\"></i>'}</div>
+        <div class="li-body">
+          <div class="li-title">${esc(p.name)}</div>
+          <div class="li-sub">
+            <span class="chip chip-gray">Archived</span>
+            ${p.category?`<span style="opacity:0.7">${esc(p.category)}</span>`:''}
+          </div>
+          <div class="li-sub">Sold: ${toBn(p.totalSold||0)} · Revenue: ${fmtBDT(p.revenue||0)} · Net: ${fmtBDT(p.net||0)}</div>
+        </div>
+        <div class="li-right">
+          <div class="price">${fmtBDT(p.sale)}</div>
+          <div class="li-actions" style="flex-direction:column;gap:4px">
+            <button class="btn btn-success btn-xs" onclick="YARZ.inv.restoreProduct('${esc(p.name)}')" title="Active করুন"><i class="ri-restart-line"></i> Restore</button>
+            <button class="btn btn-ghost btn-xs" onclick="YARZ.inv.showDetails('${esc(p.name)}')"><i class="ri-eye-line"></i></button>
+            <button class="btn btn-red btn-xs" onclick="YARZ.inv.deleteProduct('${esc(p.name)}')" title="স্থায়ী ডিলিট"><i class="ri-delete-bin-6-line"></i></button>
+          </div>
+        </div>
+      </div>
+    `).join('') : '<div class="empty-state"><i class="ri-archive-line" style="font-size:32px;opacity:0.4"></i><p style="margin-top:10px">কোনো Archived প্রোডাক্ট নেই</p></div>';
   }
 };
 
@@ -3866,14 +4237,24 @@ YARZ.ord = {
       </span>
     ` : '';
 
+    // WhatsApp button — show on Pending/Picked/Shipped (not delivered)
+    const waBtn = (stage==='new' || stage==='picked' || stage==='shipped') && o.phone ? `
+      <button class="btn btn-whatsapp btn-xs" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}','website')" title="WhatsApp Confirm">
+        <i class="ri-whatsapp-line"></i> WhatsApp
+      </button>` : '';
+
+    // Source chip
+    const srcChip = o.source ? `<span class="chip" style="background:rgba(99,102,241,0.12);color:#6366F1;font-size:10px"><i class="ri-share-line"></i> ${esc(o.source)}</span>` : '';
+
     return `<div class="order-card ${isNewBadge?'is-new':''}" id="ord-${esc(o.orderId)}">
       <div class="order-head">
         <div style="min-width:0;flex:1">
-          <div class="order-id">#${esc(o.orderId)}</div>
+          <div class="order-id">#${esc(o.orderId)} ${o.courierTrackId?`· <span style="color:var(--info)">📦 ${esc(o.courierTrackId)}</span>`:''}</div>
           <div class="order-name">${esc(o.customer||'—')}</div>
           <div class="order-meta">
             <i class="ri-phone-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.phone||'—')}
             ${o.date ? ` · ${timeHtml}` : ''}
+            ${srcChip ? ` · ${srcChip}` : ''}
             <br>
             <i class="ri-shopping-bag-3-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.product||'—')} ${o.size?`<span class="muted-kbd">${esc(o.size)}</span>`:''} × ${toBn(o.qty||1)}
             ${o.payment?` · <i class="ri-wallet-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.payment)}`:''}
@@ -3888,6 +4269,7 @@ YARZ.ord = {
       </div>
       <div class="order-actions">
         ${actionBtn}
+        ${waBtn}
         ${courierSel}
         ${stage!=='delivered' ? `<button class="btn btn-ghost btn-xs" onclick="YARZ.ord.showStatusMenu('${esc(o.orderId)}')" title="Change Status"><i class="ri-more-2-line"></i></button>` : ''}
         <button class="btn btn-ghost btn-xs" style="margin-left:auto;color:var(--danger)" onclick="YARZ.ord.deleteWebOrder('${esc(o.orderId)}')" title="ডিলিট"><i class="ri-delete-bin-6-line"></i></button>
@@ -3963,6 +4345,114 @@ YARZ.ord = {
     finally { hideLoader(); }
   },
 
+  // ★ NEW v4.2: WhatsApp Order Confirmation
+  // Auto-detects language (Bangla if customer wrote in Bangla, else English)
+  // Auto-detects source (Website / TikTok / Facebook / Instagram / Manual)
+  sendWhatsApp(orderId, kind){
+    let o;
+    if(kind==='website') o = state.data.websiteOrders.find(x=>x.orderId===orderId);
+    else o = state.data.orders.find(x=>x.orderId===orderId);
+    if(!o){ toast('Order not found','error'); return; }
+    if(!o.phone){ toast('ফোন নাম্বার নেই','error'); return; }
+
+    const msg = this._buildWhatsAppMessage(o, kind);
+
+    // Format phone for WhatsApp (BD numbers): strip non-digits, add 88 if missing
+    let phone = String(o.phone).replace(/\D/g,'');
+    if(phone.startsWith('880')) {/* ok */}
+    else if(phone.startsWith('88')) {/* ok */}
+    else if(phone.startsWith('0')) phone = '88'+phone;
+    else if(phone.length===10) phone = '880'+phone;
+    else phone = '88'+phone;
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  },
+
+  // Detect if customer's name/address looks like Bangla (contains Bangla unicode)
+  _isBangla(o){
+    const text = (o.customer||'') + ' ' + (o.address||'') + ' ' + (o.notes||'');
+    return /[\u0980-\u09FF]/.test(text);
+  },
+
+  // Build a localized, source-aware confirmation message
+  _buildWhatsAppMessage(o, kind){
+    const isBn = this._isBangla(o);
+    const storeName = state.data.settings['Store Name'] || 'YARZ';
+    const source = (o.source || (kind==='website'?'Website':'Manual')).trim();
+
+    // Source line — different per platform
+    let srcLineBn = '', srcLineEn = '';
+    if(source==='Website' || kind==='website'){
+      srcLineBn = `আপনি আমাদের ওয়েবসাইট থেকে অর্ডার করেছিলেন।`;
+      srcLineEn = `You placed your order through our website.`;
+    } else if(source==='TikTok'){
+      srcLineBn = `আপনি TikTok থেকে অর্ডার করেছিলেন।`;
+      srcLineEn = `You placed your order via TikTok.`;
+    } else if(source==='Instagram'){
+      srcLineBn = `আপনি Instagram থেকে অর্ডার করেছিলেন।`;
+      srcLineEn = `You placed your order via Instagram.`;
+    } else if(source==='Facebook'){
+      srcLineBn = `আপনি Facebook থেকে অর্ডার করেছিলেন।`;
+      srcLineEn = `You placed your order via Facebook.`;
+    } else if(source==='WhatsApp'){
+      srcLineBn = `আপনি WhatsApp থেকে অর্ডার করেছিলেন।`;
+      srcLineEn = `You placed your order via WhatsApp.`;
+    }
+
+    const customer = o.customer || '';
+    const product = o.product || '';
+    const size = o.size || '';
+    const price = fmtBDT(num(o.price)*int(o.qty||1));
+    const delivery = fmtBDT(o.delivery||0);
+    const total = fmtBDT(o.total);
+    const oid = o.orderId;
+
+    if(isBn){
+      return [
+        `আসসালামু আলাইকুম ${customer} ভাই 🌸`,
+        ``,
+        `🛍️ *${storeName}* থেকে আপনার অর্ডার কনফার্মেশন`,
+        srcLineBn,
+        ``,
+        `📦 *প্রোডাক্ট:* ${product}`,
+        size ? `📏 *সাইজ:* ${size}` : '',
+        `🔢 *পরিমাণ:* ${toBn(o.qty||1)} টি`,
+        `💰 *প্রাইস:* ${price}`,
+        `🚚 *ডেলিভারি চার্জ:* ${delivery}`,
+        `💵 *মোট:* ${total}`,
+        ``,
+        `🆔 *Order ID:* ${oid}`,
+        o.payment ? `💳 *পেমেন্ট:* ${o.payment}` : '',
+        ``,
+        `অর্ডারটি গ্রহণের জন্য ধন্যবাদ। আপনার পার্সেল শীঘ্রই পৌঁছে যাবে। কোনো প্রশ্ন থাকলে এই নাম্বারে রিপ্লাই দিন।`,
+        ``,
+        `— ${storeName}`
+      ].filter(Boolean).join('\n');
+    } else {
+      return [
+        `Hey ${customer} 👋`,
+        ``,
+        `🛍️ *${storeName}* — Order Confirmation`,
+        srcLineEn,
+        ``,
+        `📦 *Product:* ${product}`,
+        size ? `📏 *Size:* ${size}` : '',
+        `🔢 *Quantity:* ${o.qty||1}`,
+        `💰 *Price:* ${price}`,
+        `🚚 *Delivery:* ${delivery}`,
+        `💵 *Total:* ${total}`,
+        ``,
+        `🆔 *Order ID:* ${oid}`,
+        o.payment ? `💳 *Payment:* ${o.payment}` : '',
+        ``,
+        `Thank you for ordering with us! Your parcel will reach you shortly. If you have any questions, please reply to this number.`,
+        ``,
+        `— ${storeName}`
+      ].filter(Boolean).join('\n');
+    }
+  },
+
   renderManual(){
     const q = ($('mo-search')?.value||'').toLowerCase().trim();
     // Status sub-filter
@@ -4014,14 +4504,21 @@ YARZ.ord = {
         actionBtn = `<span class="chip chip-green"><i class="ri-check-line"></i> Done</span>`;
       }
 
+      const waBtn = (s!=='Delivered' && s!=='Cancelled' && o.phone) ? `
+        <button class="btn btn-whatsapp btn-xs" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}','manual')" title="WhatsApp Confirm">
+          <i class="ri-whatsapp-line"></i> WA
+        </button>` : '';
+      const srcChip = o.source ? `<span class="chip" style="background:rgba(99,102,241,0.12);color:#6366F1;font-size:10px"><i class="ri-share-line"></i> ${esc(o.source)}</span>` : '';
+
       return `<div class="list-item">
         <div class="thumb"><i class="ri-shopping-bag-3-line"></i></div>
         <div class="li-body">
-          <div class="li-title">#${esc(o.orderId)} — ${esc(o.customer)}</div>
-          <div class="li-sub"><i class="ri-phone-line"></i> ${esc(o.phone)} · <i class="ri-shopping-bag-line"></i> ${esc(o.product)} (${esc(o.size)}×${toBn(o.qty)})</div>
+          <div class="li-title">#${esc(o.orderId)} — ${esc(o.customer)} ${o.courierTrackId?`<span class="chip" style="background:rgba(59,130,246,0.12);color:var(--info);font-size:10px">📦 ${esc(o.courierTrackId)}</span>`:''}</div>
+          <div class="li-sub"><i class="ri-phone-line"></i> ${esc(o.phone)} · <i class="ri-shopping-bag-line"></i> ${esc(o.product)} (${esc(o.size)}×${toBn(o.qty)}) ${srcChip}</div>
           <div class="li-sub">${fmtDateTime(o.date)} · ${esc(o.payment)} ${o.courier?'· '+esc(o.courier):''}</div>
           <div class="li-actions" style="margin-top:8px;flex-wrap:wrap;gap:6px">
             ${actionBtn}
+            ${waBtn}
             <button class="btn btn-ghost btn-xs" onclick="YARZ.ord.showManualStatusMenu('${esc(o.orderId)}')"><i class="ri-more-2-line"></i></button>
             <button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="YARZ.ord.deleteManualOrder('${esc(o.orderId)}')"><i class="ri-delete-bin-6-line"></i></button>
           </div>
@@ -4178,14 +4675,160 @@ YARZ.finance = {
    ============ REPORTS MODULE ============
 ============================================================ */
 YARZ.rep = {
+  _charts: {}, // store Chart.js instances for cleanup
+
   render(){
-    // Monthly
+    // Only render if reports page exists in DOM
+    if(!$('monthly-chart-canvas')) return;
     const monthly = this._buildGroup('month');
     const yearly = this._buildGroup('year');
-    this._renderChart('monthly-chart', monthly, 'monthly');
-    this._renderChart('yearly-chart', yearly, 'yearly');
+    this._renderChartJS('monthly-chart-canvas', monthly, 'monthly');
+    this._renderChartJS('yearly-chart-canvas', yearly, 'yearly');
     this._renderTable('monthly-table', monthly, 'monthly');
     this._renderTable('yearly-table', yearly, 'yearly');
+    this._renderProfitRanking();
+    this._renderSourceRanking();
+  },
+
+  // ★ Most Profitable Products (top 10)
+  _renderProfitRanking(){
+    const el = $('profit-rank-list');
+    if(!el) return;
+    const items = state.data.inventory.slice()
+      .filter(p=>p.totalSold>0 || p.net!==0)
+      .sort((a,b)=>b.net-a.net)
+      .slice(0,10);
+    if(!items.length){
+      el.innerHTML = '<div class="empty-state" style="padding:20px"><i class="ri-trophy-line" style="font-size:24px;opacity:0.4"></i><p>এখনো কোনো বিক্রয় হয়নি</p></div>';
+      return;
+    }
+    el.innerHTML = items.map((p,i)=>{
+      const rankClass = i===0?'top1':i===1?'top2':i===2?'top3':'';
+      return `<div class="profit-row" onclick="YARZ.inv.showCostingDetails('${esc(p.name)}')" style="cursor:pointer">
+        <div class="profit-rank ${rankClass}">${toBn(i+1)}</div>
+        <div class="thumb" style="width:42px;height:42px;${p.img1?`background-image:url('${esc(p.img1)}')`:''}">${p.img1?'':'<i class="ri-shopping-bag-3-line"></i>'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap">${esc(p.name)}</div>
+          <div style="font-size:11px;opacity:0.7">Sold: ${toBn(p.totalSold)} · Revenue: ${fmtBDT(p.revenue)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:800;color:${p.net>=0?'var(--success)':'var(--danger)'};font-size:14px">${fmtBDT(p.net)}</div>
+          <div style="font-size:10px;opacity:0.6">Net Profit</div>
+        </div>
+      </div>`;
+    }).join('');
+  },
+
+  // ★ Order Source Ranking (TikTok / Facebook / Instagram / Website / Manual)
+  _renderSourceRanking(){
+    const allOrders = [...state.data.orders, ...state.data.websiteOrders];
+    const counts = {};
+    const totals = {};
+    allOrders.forEach(o=>{
+      const src = o.source || (o._kind==='website' ? 'Website' : 'Manual');
+      counts[src] = (counts[src]||0) + 1;
+      totals[src] = (totals[src]||0) + (o.total||0);
+    });
+    const arr = Object.keys(counts).map(k=>({src:k, count:counts[k], total:totals[k]}))
+      .sort((a,b)=>b.count-a.count);
+
+    // List
+    const list = $('source-list');
+    if(list){
+      if(!arr.length){
+        list.innerHTML = '<div class="empty-state" style="padding:14px"><p>এখনো কোনো অর্ডার আসেনি</p></div>';
+      } else {
+        const max = Math.max(...arr.map(a=>a.count));
+        const ICONS = { TikTok:'ri-tiktok-line', Facebook:'ri-facebook-circle-line', Instagram:'ri-instagram-line', Website:'ri-global-line', Manual:'ri-user-settings-line', WhatsApp:'ri-whatsapp-line' };
+        const COLORS = { TikTok:'#FF0050', Facebook:'#1877F2', Instagram:'#E4405F', Website:'#10B981', Manual:'#6B7280', WhatsApp:'#25D366' };
+        list.innerHTML = arr.map((s,i)=>{
+          const pct = Math.round((s.count/max)*100);
+          const ic = ICONS[s.src]||'ri-share-line';
+          const col = COLORS[s.src]||'#6366F1';
+          return `<div style="margin-bottom:10px">
+            <div class="flex-between" style="margin-bottom:4px">
+              <div style="display:flex;align-items:center;gap:8px"><i class="${ic}" style="color:${col};font-size:16px"></i><b>${esc(s.src)}</b></div>
+              <div style="font-size:12px"><b>${toBn(s.count)}</b> orders · ${fmtBDT(s.total)}</div>
+            </div>
+            <div style="height:8px;background:var(--bg-2);border-radius:4px;overflow:hidden"><div style="height:100%;background:${col};width:${pct}%;transition:width .5s"></div></div>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    // Doughnut chart
+    const canvas = $('source-chart');
+    if(canvas && typeof Chart !== 'undefined'){
+      if(this._charts.source){ this._charts.source.destroy(); }
+      if(!arr.length){ canvas.style.display='none'; return; }
+      canvas.style.display='block';
+      const COLORS = { TikTok:'#FF0050', Facebook:'#1877F2', Instagram:'#E4405F', Website:'#10B981', Manual:'#6B7280', WhatsApp:'#25D366' };
+      this._charts.source = new Chart(canvas.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: arr.map(a=>a.src),
+          datasets: [{
+            data: arr.map(a=>a.count),
+            backgroundColor: arr.map(a=>COLORS[a.src]||'#6366F1'),
+            borderWidth: 2,
+            borderColor: getComputedStyle(document.body).getPropertyValue('--surface').trim() || '#fff'
+          }]
+        },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{position:'right', labels:{font:{size:11}, color:getComputedStyle(document.body).getPropertyValue('--ink').trim()||'#000'}} }
+        }
+      });
+    }
+  },
+
+  // ★ Chart.js charts replacing the custom bar chart
+  _renderChartJS(canvasId, data, kind){
+    const canvas = $(canvasId);
+    if(!canvas) return;
+    if(typeof Chart === 'undefined'){
+      canvas.parentElement.innerHTML = '<div class="empty-state"><p>Chart.js লোড হচ্ছে না</p></div>';
+      return;
+    }
+    if(!data.length){
+      canvas.parentElement.innerHTML = '<div class="empty-state"><i class="ri-bar-chart-line" style="font-size:30px;opacity:0.4"></i><p>এখনো কোনো ডেটা নেই</p></div>';
+      return;
+    }
+    if(this._charts[canvasId]){ this._charts[canvasId].destroy(); }
+    const last = data.slice(-12);
+    const labels = last.map(d => kind==='monthly' ? fmtBnMonth(d.key).replace(/\s+\d+$/,'') : toBn(d.key));
+    const inkColor = getComputedStyle(document.body).getPropertyValue('--ink').trim()||'#000';
+    const lineColor = getComputedStyle(document.body).getPropertyValue('--line').trim()||'#ddd';
+
+    this._charts[canvasId] = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label:'Revenue', data:last.map(d=>d.rev), backgroundColor:'rgba(59,130,246,0.7)', borderColor:'#3B82F6', borderWidth:1, borderRadius:6 },
+          { label:'Net Profit', data:last.map(d=>d.net), backgroundColor:last.map(d=>d.net>=0?'rgba(34,197,94,0.7)':'rgba(239,68,68,0.7)'), borderColor:last.map(d=>d.net>=0?'#22C55E':'#EF4444'), borderWidth:1, borderRadius:6 },
+          { label:'Ad Spend', data:last.map(d=>d.ad), backgroundColor:'rgba(168,85,247,0.7)', borderColor:'#A855F7', borderWidth:1, borderRadius:6 }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        scales: {
+          x: { ticks:{ color:inkColor, font:{size:11} }, grid:{ color:lineColor } },
+          y: {
+            ticks:{ color:inkColor, font:{size:11}, callback:v=>'৳'+(v>=1000?(v/1000).toFixed(1)+'K':v) },
+            grid:{ color:lineColor }
+          }
+        },
+        plugins: {
+          legend:{ position:'top', labels:{ color:inkColor, font:{size:11}, boxWidth:12 } },
+          tooltip:{
+            callbacks: {
+              label: ctx => ctx.dataset.label+': '+fmtBDT(ctx.parsed.y)
+            }
+          }
+        }
+      }
+    });
   },
 
   _buildGroup(kind){
@@ -4218,23 +4861,6 @@ YARZ.rep = {
       const margin = r.rev>0 ? Math.round(net/r.rev*100) : 0;
       return { key:k, ...r, net, margin };
     });
-  },
-
-  _renderChart(elId, data, kind){
-    const el = $(elId);
-    if(!data.length){ el.innerHTML='<div class="empty-state"><i class="fas fa-chart-bar"></i><p>ডেটা নেই</p></div>'; return; }
-    const last = data.slice(-12);
-    const max = Math.max(...last.map(d=>d.rev), 1);
-    el.innerHTML = `<div class="bars">${last.map(d=>{
-      const h = Math.max(6, Math.round(d.rev/max*160));
-      const lbl = kind==='monthly' ? fmtBnMonth(d.key).replace(/\s+\d+$/,'') : toBn(d.key);
-      return `<div class="bar-col">
-        <div class="bar-fill" style="height:${h}px">
-          <span class="bv">${fmtBDT(d.rev)}</span>
-        </div>
-        <div class="bar-label">${lbl}</div>
-      </div>`;
-    }).join('')}</div>`;
   },
 
   _renderTable(elId, data, kind){
@@ -4285,17 +4911,39 @@ YARZ.rep = {
    ============ PREVIEW MODULE ============
 ============================================================ */
 YARZ.preview = {
+  // Search query state — only updated by user typing, not by other DOM changes
+  _searchQuery: '',
+
+  // Called only on actual user input (not focus/blur/window resize/etc)
+  onSearchInput(ev){
+    // Guard: only update if event was triggered by genuine input
+    if(!ev || !ev.target) return;
+    this._searchQuery = (ev.target.value||'').toLowerCase().trim();
+    this.render();
+  },
+
   render(){
-    const q = ($('prev-search')?.value||'').toLowerCase().trim();
+    const grid = $('preview-grid');
+    if(!grid) return;
+    // Use stored query, NOT direct DOM read (so events like blur don't reset)
+    const q = this._searchQuery;
     let items = state.data.inventory.filter(p=>p.status==='Active');
     if(q) items = items.filter(p=>(p.name+p.category+p.fabric).toLowerCase().includes(q));
-    $('preview-grid').innerHTML = items.length ? items.map(p=>{
+    grid.innerHTML = items.length ? items.map(p=>{
       const left = Math.max(0,p.remaining);
       const sizesAvail = ['M','L','XL','XXL'].filter(sz=>(p['stk'+sz]-p['sold'+sz])>0);
+      // Multiple images gallery
+      const imgs = [p.img1, p.img2, p.img3].filter(Boolean);
+      const galleryHtml = imgs.length>1 ? `
+        <div class="preview-img-gallery">
+          ${imgs.slice(0,3).map(u=>`<div class="preview-img-thumb" style="background-image:url('${esc(u)}')"></div>`).join('')}
+        </div>` : '';
+
       return `<div class="preview-card" onclick="YARZ.inv.showDetails('${esc(p.name)}')">
         <div class="preview-img" style="${p.img1?`background-image:url('${esc(p.img1)}')`:''}">
           ${p.badge?`<div class="preview-badge">${esc(p.badge)}</div>`:''}
-          ${!p.img1?'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px;opacity:0.3"><i class="fas fa-image"></i></div>':''}
+          ${!p.img1?'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:40px;opacity:0.3"><i class="ri-image-line"></i></div>':''}
+          ${left<=0?'<div style="position:absolute;top:10px;right:10px;background:var(--danger);color:#fff;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:700">SOLD OUT</div>':''}
         </div>
         <div class="preview-body">
           <div class="preview-name">${esc(p.name)}</div>
@@ -4304,11 +4952,12 @@ YARZ.preview = {
             ${p.regular>p.sale?`<span class="preview-reg">${fmtBDT(p.regular)}</span>`:''}
           </div>
           <div class="preview-stock">
-            ${left>0 ? `✅ Available • Sizes: ${sizesAvail.join(', ')||'—'}` : '<span style="color:#F87171">⛔ Out of Stock</span>'}
+            ${left>0 ? `✅ Available • Sizes: ${sizesAvail.join(', ')||'—'}` : '<span style="color:var(--danger)">⛔ Out of Stock</span>'}
           </div>
+          ${galleryHtml}
         </div>
       </div>`;
-    }).join('') : '<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-store"></i><p>কোনো Active পণ্য নেই</p></div>';
+    }).join('') : '<div class="empty-state" style="grid-column:1/-1"><i class="ri-store-2-line"></i><p>কোনো Active পণ্য নেই</p></div>';
   }
 };
 
@@ -4489,12 +5138,13 @@ const modalBuilders = {
       <div class="field"><label>Description</label><textarea id="f-desc" class="textarea"></textarea></div>
       <div class="field"><label>Size Chart</label><textarea id="f-sc" class="textarea" style="min-height:60px"></textarea></div>
 
-      <div class="modal-section-title">💰 মূল্য</div>
+      <div class="modal-section-title">💰 মূল্য (Discount % auto-calculate হবে)</div>
       <div class="row">
-        <div class="field"><label>Cost <span class="req">*</span></label><input id="f-cost" type="number" class="input"></div>
-        <div class="field"><label>Regular <span class="req">*</span></label><input id="f-reg" type="number" class="input"></div>
-        <div class="field"><label>Sale <span class="req">*</span></label><input id="f-sale" type="number" class="input"></div>
+        <div class="field"><label>Cost <span class="req">*</span></label><input id="f-cost" type="number" class="input" oninput="YARZ._autoCalcDisc()"></div>
+        <div class="field"><label>Regular <span class="req">*</span></label><input id="f-reg" type="number" class="input" oninput="YARZ._autoCalcDisc()"></div>
+        <div class="field"><label>Sale <span class="req">*</span></label><input id="f-sale" type="number" class="input" oninput="YARZ._autoCalcDisc()"></div>
       </div>
+      <div id="f-disc-preview" style="font-size:11.5px;color:var(--ink-3);margin-top:-6px;margin-bottom:8px"></div>
 
       <div class="modal-section-title">🚚 ডেলিভারি</div>
       <div class="row">
@@ -4502,7 +5152,7 @@ const modalBuilders = {
         <div class="field"><label>Outside ৳</label><input id="f-dout" type="number" class="input" value="120"></div>
       </div>
 
-      <div class="modal-section-title">📊 স্টক</div>
+      <div class="modal-section-title">📊 স্টক (Initial Stock)</div>
       <div class="row">
         <div class="field"><label>M</label><input id="f-sM" type="number" class="input" value="0"></div>
         <div class="field"><label>L</label><input id="f-sL" type="number" class="input" value="0"></div>
@@ -4512,7 +5162,7 @@ const modalBuilders = {
 
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
-        <button id="save-product" class="btn btn-primary" onclick="YARZ._saveNewProduct()"><i class="fas fa-floppy-disk"></i> সেভ করুন</button>
+        <button id="save-product" class="btn btn-primary" onclick="YARZ._saveNewProduct()"><i class="ri-save-line"></i> সেভ করুন</button>
       </div>
     `;
   },
@@ -4553,12 +5203,13 @@ const modalBuilders = {
       <div class="modal-section-title">📝 বিবরণ</div>
       <div class="field"><label>Description</label><textarea id="f-desc" class="textarea">${esc(p.desc)}</textarea></div>
       <div class="field"><label>Size Chart</label><textarea id="f-sc" class="textarea" style="min-height:60px">${esc(p.sizeChart)}</textarea></div>
-      <div class="modal-section-title">💰 মূল্য</div>
+      <div class="modal-section-title">💰 মূল্য (Discount % auto-calculate হবে)</div>
       <div class="row">
-        <div class="field"><label>Cost</label><input id="f-cost" type="number" class="input" value="${p.cost}"></div>
-        <div class="field"><label>Regular</label><input id="f-reg" type="number" class="input" value="${p.regular}"></div>
-        <div class="field"><label>Sale</label><input id="f-sale" type="number" class="input" value="${p.sale}"></div>
+        <div class="field"><label>Cost</label><input id="f-cost" type="number" class="input" value="${p.cost}" oninput="YARZ._autoCalcDisc()"></div>
+        <div class="field"><label>Regular</label><input id="f-reg" type="number" class="input" value="${p.regular}" oninput="YARZ._autoCalcDisc()"></div>
+        <div class="field"><label>Sale</label><input id="f-sale" type="number" class="input" value="${p.sale}" oninput="YARZ._autoCalcDisc()"></div>
       </div>
+      <div id="f-disc-preview" style="font-size:11.5px;color:var(--ink-3);margin-top:-6px;margin-bottom:8px"></div>
       <div class="modal-section-title">🚚 ডেলিভারি</div>
       <div class="row">
         <div class="field"><label>Dhaka</label><input id="f-din" type="number" class="input" value="${p.deliveryDhaka}"></div>
@@ -4582,47 +5233,78 @@ const modalBuilders = {
     const active = state.data.inventory.filter(p=>p.status==='Active');
     return `
       <div class="modal-header">
-        <h3><i class="fas fa-cash-register"></i> বিক্রয় এন্ট্রি</h3>
-        <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
+        <h3><i class="ri-cash-line"></i> বিক্রয় এন্ট্রি</h3>
+        <button class="modal-close" onclick="YARZ.closeModal()"><i class="ri-close-line"></i></button>
       </div>
       <div class="field"><label>প্রোডাক্ট <span class="req">*</span></label>
-        <select id="se-product" class="select">
+        <select id="se-product" class="select" onchange="YARZ._checkSaleStock()">
           <option value="">— সিলেক্ট করুন —</option>
           ${active.map(p=>`<option value="${esc(p.name)}" ${data.product===p.name?'selected':''}>${esc(p.name)} (৳${p.sale})</option>`).join('')}
         </select>
       </div>
       <div class="row">
-        <div class="field"><label>Size</label><select id="se-size" class="select"><option>M</option><option>L</option><option>XL</option><option>XXL</option></select></div>
-        <div class="field"><label>Quantity</label><input id="se-qty" type="number" class="input" value="1" min="1"></div>
+        <div class="field"><label>Size</label><select id="se-size" class="select" onchange="YARZ._checkSaleStock()"><option>M</option><option>L</option><option>XL</option><option>XXL</option></select></div>
+        <div class="field"><label>Quantity</label><input id="se-qty" type="number" class="input" value="1" min="1" oninput="YARZ._checkSaleStock()"></div>
       </div>
+
+      <!-- Live stock display -->
+      <div id="se-stock-info"></div>
+
       <div style="font-size:12px;opacity:0.7;padding:10px;background:rgba(59,130,246,0.1);border-radius:10px;border:1px solid rgba(59,130,246,0.2)">
-        <i class="fas fa-info-circle"></i> এই এন্ট্রি INVENTORY-এর Sold কলাম আপডেট করবে এবং TRANSACTIONS-এ log রাখবে। স্টক অটো কমে যাবে।
+        <i class="ri-information-line"></i> বিক্রয় কনফার্ম করলে INVENTORY-এর Sold কলাম আপডেট হবে এবং stock অটো কমে যাবে।
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
-        <button id="save-sale" class="btn btn-primary" onclick="YARZ._saveSale()"><i class="fas fa-check"></i> বিক্রয় কনফার্ম</button>
+        <button id="save-sale" class="btn btn-primary" onclick="YARZ._saveSale()"><i class="ri-check-line"></i> বিক্রয় কনফার্ম</button>
       </div>
     `;
   },
 
   'new-order': ()=>{
     const active = state.data.inventory.filter(p=>p.status==='Active');
+    // ★ Generate fresh Order ID every time modal opens (no stale prefill)
     const today = new Date();
     const dateStr = today.getFullYear().toString().slice(-2)+String(today.getMonth()+1).padStart(2,'0')+String(today.getDate()).padStart(2,'0');
     const rnd = Math.floor(1000+Math.random()*9000);
     const oid = `YRZ-${dateStr}-${rnd}`;
+    const SOURCES = ['Manual','TikTok','Facebook','Instagram','WhatsApp','Website','Other'];
     return `
       <div class="modal-header">
-        <h3><i class="fas fa-bag-shopping"></i> নতুন অর্ডার</h3>
-        <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
+        <h3><i class="ri-shopping-bag-3-line"></i> নতুন অর্ডার</h3>
+        <button class="modal-close" onclick="YARZ.closeModal()"><i class="ri-close-line"></i></button>
       </div>
-      <div class="field"><label>Order ID <span class="req">*</span></label><input id="o-oid" class="input" value="${oid}"></div>
+
+      <!-- Auto Order ID: not editable by default, user can click pencil to override -->
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px">
+          <span>Order ID <span class="req">*</span></span>
+          <span style="font-size:10px;background:var(--chip-bg);padding:2px 8px;border-radius:999px;color:var(--ink-3)">Auto-Generated</span>
+          <button type="button" class="btn btn-ghost btn-xs" style="padding:2px 8px;margin-left:auto" onclick="YARZ._regenOID()" title="নতুন ID তৈরি করুন"><i class="ri-refresh-line"></i></button>
+        </label>
+        <input id="o-oid" class="input" value="${oid}" style="font-family:'Inter',monospace;letter-spacing:0.5px">
+      </div>
+
       <div class="field"><label>Customer Name <span class="req">*</span></label><input id="o-name" class="input"></div>
       <div class="row">
-        <div class="field"><label>Phone <span class="req">*</span></label><input id="o-phone" class="input"></div>
+        <div class="field"><label>Phone <span class="req">*</span></label><input id="o-phone" class="input" placeholder="01XXXXXXXXX"></div>
         <div class="field"><label>Location</label><select id="o-loc" class="select" onchange="YARZ._calcOrder()"><option>Dhaka</option><option>Outside</option></select></div>
       </div>
       <div class="field"><label>Address <span class="req">*</span></label><textarea id="o-addr" class="textarea" style="min-height:60px"></textarea></div>
+
+      <!-- ★ Source field -->
+      <div class="row">
+        <div class="field">
+          <label>Order Source <span class="req">*</span></label>
+          <select id="o-source" class="select">
+            ${SOURCES.map(s=>`<option value="${s}">${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>Payment</label>
+          <select id="o-pay" class="select">${PAYMENT_METHODS.map(p=>`<option>${p}</option>`).join('')}</select>
+        </div>
+      </div>
+
       <div class="field"><label>Product <span class="req">*</span></label>
         <select id="o-product" class="select" onchange="YARZ._calcOrder()">
           <option value="">— সিলেক্ট করুন —</option>
@@ -4633,10 +5315,13 @@ const modalBuilders = {
         <div class="field"><label>Size</label><select id="o-size" class="select"><option>M</option><option>L</option><option>XL</option><option>XXL</option></select></div>
         <div class="field"><label>Qty</label><input id="o-qty" type="number" class="input" value="1" min="1" onchange="YARZ._calcOrder()"></div>
       </div>
+
+      <!-- ★ Separate Courier + Courier Tracking ID -->
       <div class="row">
-        <div class="field"><label>Payment</label><select id="o-pay" class="select">${PAYMENT_METHODS.map(p=>`<option>${p}</option>`).join('')}</select></div>
-        <div class="field"><label>Courier</label><select id="o-courier" class="select">${COURIERS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div class="field"><label>Courier</label><select id="o-courier" class="select"><option value="">— None —</option>${COURIERS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div class="field"><label>Courier Tracking ID <span style="font-size:10px;color:var(--ink-3)">(আলাদা)</span></label><input id="o-courierTrack" class="input" placeholder="e.g. SF12345"></div>
       </div>
+
       <div class="field"><label>Status</label>
         <select id="o-status" class="select">
           <option value="Pending" selected>⏳ Pending (নতুন অর্ডার)</option>
@@ -4653,7 +5338,7 @@ const modalBuilders = {
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
-        <button id="save-order" class="btn btn-primary" onclick="YARZ._saveOrder()"><i class="fas fa-check"></i> অর্ডার সেভ</button>
+        <button id="save-order" class="btn btn-primary" onclick="YARZ._saveOrder()"><i class="ri-check-line"></i> অর্ডার সেভ</button>
       </div>
     `;
   },
@@ -4773,19 +5458,73 @@ YARZ._saveEditProduct = async function(){
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-floppy-disk"></i> Update'; }
 };
 
+// ★ Live stock check inside sale modal
+YARZ._checkSaleStock = function(){
+  const productName = $('se-product')?.value;
+  const size = $('se-size')?.value;
+  const qty = int($('se-qty')?.value)||1;
+  const info = $('se-stock-info');
+  const btn = $('save-sale');
+  if(!info || !btn) return;
+  if(!productName){
+    info.innerHTML = '';
+    btn.disabled = false;
+    return;
+  }
+  const p = state.data.inventory.find(x=>x.name===productName);
+  if(!p){ info.innerHTML=''; return; }
+  const initial = p['stk'+size]||0;
+  const sold = p['sold'+size]||0;
+  const left = initial - sold;
+  if(left <= 0){
+    info.innerHTML = `<div class="stock-out-banner"><i class="ri-error-warning-fill" style="font-size:18px"></i><div><b>⛔ Sold Out!</b> এই size এ stock নেই। নতুন stock যোগ করুন।</div></div>`;
+    btn.disabled = true;
+    btn.style.opacity = 0.5;
+  } else if(qty > left){
+    info.innerHTML = `<div class="stock-out-banner"><i class="ri-error-warning-fill"></i><div><b>⛔ অপর্যাপ্ত stock!</b> বর্তমানে শুধু <b>${toBn(left)}</b> টি আছে। Quantity কমান।</div></div>`;
+    btn.disabled = true;
+    btn.style.opacity = 0.5;
+  } else if(left <= 5){
+    info.innerHTML = `<div class="stock-warn-banner">⚠️ মাত্র <b>${toBn(left)}</b> টি বাকি আছে এই size এ। বিক্রয়ের পর: <b>${toBn(left-qty)}</b></div>`;
+    btn.disabled = false;
+    btn.style.opacity = 1;
+  } else {
+    info.innerHTML = `<div style="padding:8px 12px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:10px;color:var(--success);font-size:12px;margin:8px 0">✅ Stock OK · Available: <b>${toBn(left)}</b> · বিক্রয়ের পর: <b>${toBn(left-qty)}</b></div>`;
+    btn.disabled = false;
+    btn.style.opacity = 1;
+  }
+};
+
 YARZ._saveSale = async function(){
   const product = $('se-product').value;
   if(!product){ toast('প্রোডাক্ট সিলেক্ট করুন','error'); return; }
   const size = $('se-size').value;
   const qty = int($('se-qty').value)||1;
-  const btn = $('save-sale'); btn.disabled = true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
+
+  // ★ Client-side stock validation (block sale if out)
+  const p = state.data.inventory.find(x=>x.name===product);
+  if(p){
+    const left = (p['stk'+size]||0) - (p['sold'+size]||0);
+    if(left <= 0){
+      toast(`⛔ Stock নেই! ${size} size এ ${product} sold out।`,'error');
+      return;
+    }
+    if(qty > left){
+      toast(`⛔ মাত্র ${toBn(left)} টি বাকি আছে। Qty কমান।`,'error');
+      return;
+    }
+  }
+
+  const btn = $('save-sale'); btn.disabled = true; btn.innerHTML='<i class="ri-loader-4-line" style="animation:spin 1s linear infinite"></i>';
   try {
     const res = await appsPost('recordSale', { product, size, qty });
     if(res && res.ok===false) throw new Error(res.msg||'Failed');
+    // Optimistic update so UI reflects new stock immediately
+    if(p) p['sold'+size] = (p['sold'+size]||0) + qty;
     toast('বিক্রয় রেকর্ড হয়েছে','success');
     YARZ.closeModal();
     await YARZ.loadAll();
-  } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> বিক্রয় কনফার্ম'; }
+  } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="ri-check-line"></i> বিক্রয় কনফার্ম'; }
 };
 
 YARZ._calcOrder = function(){
@@ -4799,6 +5538,39 @@ YARZ._calcOrder = function(){
   $('o-sub').textContent = fmtBDT(sub);
   $('o-del').textContent = fmtBDT(del);
   $('o-tot').textContent = fmtBDT(sub+del);
+};
+
+// ★ Auto-calculate discount % from regular & sale prices, and show profit margin
+YARZ._autoCalcDisc = function(){
+  const cost = num($('f-cost')?.value);
+  const reg = num($('f-reg')?.value);
+  const sale = num($('f-sale')?.value);
+  const discEl = $('f-disc');
+  const previewEl = $('f-disc-preview');
+  if(reg > 0 && sale > 0 && reg >= sale){
+    const pct = Math.round(((reg - sale) / reg) * 100);
+    if(discEl) discEl.value = pct;
+    if(previewEl){
+      const profit = sale - cost;
+      const profitPct = sale > 0 ? Math.round((profit / sale) * 100) : 0;
+      previewEl.innerHTML = `
+        <span style="color:var(--success)">✓ Discount: <b>${toBn(pct)}%</b></span> ·
+        <span style="color:${profit>=0?'var(--info)':'var(--danger)'}">Profit: <b>${fmtBDT(profit)} (${toBn(profitPct)}%)</b></span>
+      `;
+    }
+  } else if(previewEl){
+    previewEl.innerHTML = '';
+    if(discEl) discEl.value = 0;
+  }
+};
+
+// ★ Regenerate Order ID button
+YARZ._regenOID = function(){
+  const today = new Date();
+  const dateStr = today.getFullYear().toString().slice(-2)+String(today.getMonth()+1).padStart(2,'0')+String(today.getDate()).padStart(2,'0');
+  const rnd = Math.floor(1000+Math.random()*9000);
+  const oidEl = $('o-oid');
+  if(oidEl){ oidEl.value = `YRZ-${dateStr}-${rnd}`; toast('নতুন Order ID তৈরি হয়েছে','info'); }
 };
 
 YARZ._saveOrder = async function(){
@@ -4816,17 +5588,21 @@ YARZ._saveOrder = async function(){
     oid, cn, ph, ad, lo:loc, product,
     size:$('o-size').value, qty:int($('o-qty').value)||1,
     price, delivery:del,
-    pm:$('o-pay').value, courier:$('o-courier').value, notes:$('o-notes').value,
+    pm:$('o-pay').value,
+    courier:$('o-courier').value,
+    courierTrackId: ($('o-courierTrack')?.value||'').trim(),
+    source: ($('o-source')?.value||'Manual'),
+    notes:$('o-notes').value,
     status: $('o-status') ? $('o-status').value : 'Pending'
   };
-  const btn = $('save-order'); btn.disabled = true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
+  const btn = $('save-order'); btn.disabled = true; btn.innerHTML='<i class="ri-loader-4-line" style="animation:spin 1s linear infinite"></i>';
   try {
     const res = await appsPost('saveOrderFromForm', d);
     if(res && res.ok===false) throw new Error(res.msg||'Failed');
     toast('Order সেভ হয়েছে','success');
     YARZ.closeModal();
     await YARZ.loadAll();
-  } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> অর্ডার সেভ'; }
+  } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="ri-check-line"></i> অর্ডার সেভ'; }
 };
 
 YARZ._saveAd = async function(){
