@@ -1,6 +1,6 @@
 /**
  * ╔══════════════════════════════════════════════════════════════╗
- * ║  YARZ PRO Web Dashboard — Apps Script ADD-ON CODE  (v2.1)     ║
+ * ║  YARZ PRO Web Dashboard — Apps Script ADD-ON CODE  (v2.3)     ║
  * ║  মারুফ ভাই: এই কোডটি আপনার বর্তমান Apps Script-এর             ║
  * ║  একদম নিচে paste করে Save করুন, তারপর Deploy → New Deployment ║
  * ║  → Web app → Who has access: Anyone → Deploy                  ║
@@ -11,9 +11,10 @@
  * পুরনো doGet/doPost ফাংশন দুটি **মুছে ফেলুন** তারপর এই পুরো
  * কোডটি পেস্ট করুন।
  *
- * v2.1 UPDATES:
- *  + deleteWebsiteOrder — Website Orders থেকে row remove করে
- *  + deleteManualOrder — Manual Orders থেকে row remove করে
+ * v2.3 UPDATES:
+ *  + বাগ ফিক্স: clearFinancialsOnly এ SOLD columns reset logic ঠিক হয়েছে
+ *  + fullFactoryReset আরো robust করা হয়েছে
+ *  + deleteWebsiteOrder, deleteManualOrder — row remove বেড fixes
  */
 
 // ============ API KEY (existing global থেকে নেয়) ============
@@ -63,6 +64,7 @@ function doPost(e) {
     if (body.key !== WEB_API_KEY) return _webErr_("Invalid API Key", 401);
 
     var action = String(body.action || "").trim();
+    var lowerAction = action.toLowerCase();
 
     switch (action) {
       // Public
@@ -81,8 +83,18 @@ function doPost(e) {
       case "saveOrderFromForm":           return _webJson_(_webSaveOrderWithStatus(body));
       case "updateWebsiteOrderStatus":    return _webJson_(_webUpdateWebsiteOrderStatus(body));
       case "updateManualOrderStatus":     return _webJson_(_webUpdateManualOrderStatus(body));
-      case "deleteWebsiteOrder":          return _webJson_(_webDeleteWebsiteOrder(body));
-      case "deleteManualOrder":           return _webJson_(_webDeleteManualOrder(body));
+      case "deleteWebsiteOrder":          
+      case "deletewebsiteorder":          return _webJson_(_webDeleteWebsiteOrder(body));
+      case "deleteManualOrder":           
+      case "deletemanualorder":           return _webJson_(_webDeleteManualOrder(body));
+      case "deleteProduct":               
+      case "deleteproduct":               return _webJson_(_webDeleteProduct(body));
+      case "fullFactoryReset":            
+      case "fullfactoryreset":            return _webJson_(_webFullFactoryReset());
+      case "clearFinancialsOnly":         
+      case "clearfinancialsonly":         return _webJson_(_webClearFinancialsOnly());
+      case "clearInventoryOnly":
+      case "clearinventoryonly":          return _webJson_(_webClearInventoryOnly());
 
       // Dashboard - Finance
       case "saveAdFromForm":              return _webJson_(saveAdFromForm(body));
@@ -274,14 +286,18 @@ function _getStoreInfo() {
   var lr = sh.getLastRow();
   if (lr < 2) return _webJson_({ success:true, store:{} });
   var rows = sh.getRange(2, 1, lr-1, 2).getValues();
-  var allowed = ["Store Name","Store Tagline","Brand Logo URL","Contact Phone","Contact Email",
+  var allowedPrefixes = ["Store Name","Store Tagline","Brand Logo URL","Contact Phone","Contact Email",
     "Website URL","Facebook Page","Instagram","WhatsApp","YouTube","TikTok","Currency","Country",
     "Default Delivery (Dhaka)","Default Delivery (Outside)","Default Delivery Days",
-    "Free Delivery Minimum","Return Policy Days","Return Policy Description","Shipping Policy","Payment Methods"];
+    "Free Delivery Minimum","Return Policy Days","Return Policy Description","Shipping Policy","Payment Methods",
+    "Announcement Text", "Announcement Active", "Store Status", "Promo Popup Image", "Promo Popup Link", "Promo Popup Active"];
+
   var info = {};
   rows.forEach(function(r){
     var k = String(r[0]||"").trim();
-    if (allowed.indexOf(k) !== -1) info[k.replace(/[^a-zA-Z0-9 ]/g,"").replace(/ +/g,"_").toLowerCase()] = r[1];
+    if (allowedPrefixes.indexOf(k) !== -1 || k.startsWith("Hero Banner ") || k.startsWith("Banner Link ") || k.startsWith("Section ")) {
+      info[k.replace(/[^a-zA-Z0-9 ]/g,"").replace(/ +/g,"_").toLowerCase()] = r[1];
+    }
   });
   return _webJson_({ success:true, store:info });
 }
@@ -396,4 +412,152 @@ function _webUpdateManualOrderStatus(body) {
   } catch (e) { return { ok:false, success:false, msg:e.message }; }
 }
 
-/* END OF ADD-ON v2.2 */
+// ═════════ NEW: Delete Product ═════════
+function _webDeleteProduct(body) {
+  try {
+    var name = body.name;
+    var keepFin = body.keepFinancials;
+    if (!name) return { ok:false, msg:"Name required" };
+    
+    // Delete from INVENTORY
+    var inv = _ss().getSheetByName("INVENTORY");
+    if (inv) {
+      var lr = inv.getLastRow();
+      if (lr >= 2) {
+        var names = inv.getRange(2, 1, lr-1, 1).getValues().flat();
+        var idx = names.indexOf(name);
+        if (idx !== -1) inv.deleteRow(idx + 2);
+      }
+    }
+    
+    // Delete from WEBSITE_SYNC
+    var ws = _ss().getSheetByName("WEBSITE_SYNC");
+    if (ws) {
+      var lr2 = ws.getLastRow();
+      if (lr2 >= 2) {
+        var wnames = ws.getRange(2, 1, lr2-1, 1).getValues().flat();
+        var widx = wnames.indexOf(name);
+        if (widx !== -1) ws.deleteRow(widx + 2);
+      }
+    }
+    
+    // If keepFinancials is false, delete from TRANSACTIONS, Website_Orders, ORDERS
+    if (!keepFin) {
+      _deleteRowsByProduct("TRANSACTIONS", 2, name); // Assuming Col 2 is Product
+      _deleteRowsByProduct("Website_Orders", 9, name); // Col 9 is Product
+      _deleteRowsByProduct("ORDERS", 7, name); // Col 7 is Product
+    }
+    
+    return { ok:true, success:true, message:"Product deleted successfully" };
+  } catch(e) {
+    return { ok:false, msg:e.message };
+  }
+}
+
+function _deleteRowsByProduct(sheetName, prodColIdx, productName) {
+  var sh = _ss().getSheetByName(sheetName);
+  if (!sh) return;
+  var lr = sh.getLastRow();
+  if (lr < 2) return;
+  var data = sh.getRange(2, prodColIdx, lr-1, 1).getValues();
+  // Delete from bottom to top
+  for (var i = data.length - 1; i >= 0; i--) {
+    if (String(data[i][0]).trim() === productName) {
+      sh.deleteRow(i + 2);
+    }
+  }
+}
+
+// শুধু Financial ডেটা মুছে ফেলে। ইনভেন্টরি বাঁচিয়ে রাখে।
+// INVENTORY-তে SOLD_M(23),SOLD_L(24),SOLD_XL(25),SOLD_XXL(26),RETURNS(28) কলাম শুধু 0 হয়
+function _webClearFinancialsOnly() {
+  try {
+    var ss = _ss();
+
+    // 1. এই 5টি Sheet-এর header row (row 1) রেখে বাকি সব রো মুছে ফেলা হবে
+    var sheetsToClear = ["TRANSACTIONS", "Website_Orders", "ORDERS", "AD_TRACKER", "EXPENSES"];
+    sheetsToClear.forEach(function(s) {
+      var sh = ss.getSheetByName(s);
+      if (sh && sh.getLastRow() > 1) {
+        sh.getRange(2, 1, sh.getLastRow() - 1, sh.getLastColumn()).clearContent();
+      }
+    });
+
+    // 2. INVENTORY-তে Sold ও Returns কলামগুলো 0 হবে (কিন্তু Stock থাকবে)
+    //    Column indices (1-based): SOLD_M=23, SOLD_L=24, SOLD_XL=25, SOLD_XXL=26, RETURNS=28
+    //    Financial summary cols: REVENUE=32, TO_RECOVER=33, GROSS=34, FB_AD=35, NET=36, DISC_IMPACT=37
+    var inv = ss.getSheetByName("INVENTORY");
+    if (inv && inv.getLastRow() > 1) {
+      var rowCount = inv.getLastRow() - 1;
+      var zeroCol = function(col) {
+        var vals = [];
+        for (var i = 0; i < rowCount; i++) vals.push([0]);
+        inv.getRange(2, col, rowCount, 1).setValues(vals);
+      };
+      // Sold columns
+      [23, 24, 25, 26].forEach(zeroCol);
+      // Returns column
+      zeroCol(28);
+      // Financial summary columns (only if they exist)
+      var maxCol = inv.getLastColumn();
+      [32, 33, 34, 35, 36, 37].forEach(function(c) {
+        if (c <= maxCol) zeroCol(c);
+      });
+    }
+    return { ok:true, success:true, message:"Financial data cleared successfully" };
+  } catch(e) {
+    return { ok:false, success:false, msg:e.message };
+  }
+}
+
+// শুধু প্রোডাক্ট এবং ইনভেন্টরি মুছে ফেলে। আর্থিক হিসাব ও লেনদেন ঠিক রাখে।
+function _webClearInventoryOnly() {
+  try {
+    var ss = _ss();
+    var sheetsToClear = ["INVENTORY", "WEBSITE_SYNC"];
+    var cleared = [];
+    sheetsToClear.forEach(function(s) {
+      var sh = ss.getSheetByName(s);
+      if (!sh) return;
+      var lr = sh.getLastRow();
+      var lc = sh.getLastColumn();
+      if (lr > 1 && lc > 0) {
+        sh.getRange(2, 1, lr - 1, lc).clearContent();
+        cleared.push(s);
+      }
+    });
+    return { ok:true, success:true, message:"Products and Inventory cleared successfully", cleared: cleared };
+  } catch(e) {
+    return { ok:false, success:false, msg:e.message };
+  }
+}
+
+// সম্পূর্ণ ডেটা মুছে ফেলে (header row বাঁচায়)
+function _webFullFactoryReset() {
+  try {
+    var ss = _ss();
+    var sheetsToClear = ["INVENTORY", "WEBSITE_SYNC", "TRANSACTIONS", "Website_Orders", "ORDERS", "AD_TRACKER", "EXPENSES"];
+    var cleared = [];
+    sheetsToClear.forEach(function(s) {
+      var sh = ss.getSheetByName(s);
+      if (!sh) return;
+      var lr = sh.getLastRow();
+      var lc = sh.getLastColumn();
+      if (lr > 1 && lc > 0) {
+        sh.getRange(2, 1, lr - 1, lc).clearContent();
+        cleared.push(s);
+      }
+    });
+    // Also reset REPORTS sheet if it exists
+    var rsh = ss.getSheetByName("REPORTS");
+    if (rsh && rsh.getLastRow() > 1) {
+      rsh.getRange(2, 1, rsh.getLastRow() - 1, rsh.getLastColumn()).clearContent();
+      cleared.push("REPORTS");
+    }
+    return { ok:true, success:true, message:"Factory reset complete", cleared: cleared };
+  } catch(e) {
+    return { ok:false, success:false, msg:e.message };
+  }
+}
+
+/* END OF ADD-ON v2.3 */
