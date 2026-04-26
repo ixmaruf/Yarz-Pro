@@ -30,62 +30,93 @@
 html,body{height:100%;overflow-x:hidden}
 
 :root{
-  --bg: #FAF9F6;          /* warm cream paper */
-  --bg-2: #F4F2EC;
-  --surface: #FFFFFF;
-  --surface-2: #FBFAF7;
-  --ink: #1A1A1A;
-  --ink-2: #3D3D3D;
-  --ink-3: #6B6B6B;
-  --ink-4: #9B9B9B;
-  --line: rgba(0,0,0,0.08);
-  --line-2: rgba(0,0,0,0.05);
-  --accent: #1A1A1A;       /* near-black primary button */
+  --bg: #EEF2FF;
+  --bg-2: #E0E7FF;
+  --surface: rgba(255,255,255,0.45);
+  --surface-2: rgba(255,255,255,0.25);
+  --ink: #0B0F2A;
+  --ink-2: #1E293B;
+  --ink-3: #475569;
+  --ink-4: #94A3B8;
+  --line: rgba(79,70,229,0.18);
+  --line-2: rgba(79,70,229,0.1);
+  --accent: #4338CA;
   --accent-ink: #FFFFFF;
-  --brand: #2B3A2B;        /* deep forest – subtle */
-  --success: #2E7D57;
-  --warn: #B87619;
-  --danger: #B33A3A;
-  --info: #2F5B8A;
-  --chip-bg: rgba(0,0,0,0.05);
-  --radius: 18px;
-  --radius-sm: 12px;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-  --shadow: 0 2px 8px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.04);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
+  --brand: #4F46E5;
+  --success: #047857; /* Deep strong green */
+  --warn: #B45309;
+  --danger: #B91C1C;
+  --info: #1D4ED8;
+  --purple: #6D28D9;
+  --pink: #BE185D;
+  --teal: #0F766E;
+  --chip-bg: rgba(79,70,229,0.1);
+  --radius: 20px;
+  --radius-sm: 14px;
+  --shadow-sm: 0 4px 12px rgba(67,56,202,0.1);
+  --shadow: 0 8px 30px rgba(67,56,202,0.15), 0 0 0 1px rgba(255,255,255,0.8);
+  --shadow-lg: 0 16px 50px rgba(67,56,202,0.2), 0 0 0 1px rgba(255,255,255,1);
+  --glass: rgba(255,255,255,0.3); /* Water-like clear transparent */
+  --glass-border: rgba(255,255,255,0.65);
 }
 body.dark{
-  --bg: #0E0E0E;
-  --bg-2: #141414;
-  --surface: #161616;
-  --surface-2: #1C1C1C;
-  --ink: #EDEDED;
-  --ink-2: #C9C9C9;
-  --ink-3: #8E8E8E;
-  --ink-4: #5A5A5A;
-  --line: rgba(255,255,255,0.08);
-  --line-2: rgba(255,255,255,0.05);
-  --accent: #EDEDED;
-  --accent-ink: #0E0E0E;
-  --brand: #C9D5C9;
-  --success: #6BBF8F;
-  --warn: #E0A24C;
-  --danger: #E57070;
-  --info: #79A8D6;
-  --chip-bg: rgba(255,255,255,0.06);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
-  --shadow: 0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+  --bg: #040508;
+  --bg-2: #0B0E1B;
+  --surface: rgba(15,20,45,0.5);
+  --surface-2: rgba(20,25,55,0.4);
+  --ink: #F8FAFC;
+  --ink-2: #E2E8F0;
+  --ink-3: #94A3B8;
+  --ink-4: #64748B;
+  --line: rgba(99,102,241,0.25);
+  --line-2: rgba(99,102,241,0.15);
+  --accent: #818CF8;
+  --accent-ink: #040508;
+  --brand: #A5B4FC;
+  --success: #10B981; /* Brighter green */
+  --warn: #FBBF24;
+  --danger: #F87171;
+  --info: #60A5FA;
+  --purple: #C084FC;
+  --pink: #F472B6;
+  --teal: #2DD4BF;
+  --chip-bg: rgba(129,140,248,0.15);
+  --shadow-sm: 0 4px 12px rgba(0,0,0,0.6);
+  --shadow: 0 8px 30px rgba(0,0,0,0.8), 0 0 0 1px rgba(129,140,248,0.15);
+  --shadow-lg: 0 16px 50px rgba(0,0,0,0.9), 0 0 0 1px rgba(129,140,248,0.25);
+  --glass: rgba(11,14,30,0.4); /* Water-like clear transparent dark */
+  --glass-border: rgba(129,140,248,0.25);
 }
 
 body{
-  font-family:'Inter','Hind Siliguri',-apple-system,BlinkMacSystemFont,sans-serif;
+  font-family:'Hind Siliguri','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
   background:var(--bg);color:var(--ink);
-  font-size:14px;line-height:1.55;
+  font-size:14px;line-height:1.6;
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
   overflow-x:hidden;
   letter-spacing:-0.005em;
+  font-feature-settings:'tnum' on, 'lnum' on;
+}
+
+/* Animated gradient mesh background */
+body::after{
+  content:'';
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 10%, rgba(139,92,246,0.28) 0%, transparent 65%),
+    radial-gradient(ellipse 70% 50% at 90% 20%, rgba(59,130,246,0.25) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 50% 80%, rgba(16,185,129,0.2) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 70%, rgba(236,72,153,0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 20% 60%, rgba(245,158,11,0.18) 0%, transparent 55%);
+}
+body.dark::after{
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 10%, rgba(139,92,246,0.4) 0%, transparent 65%),
+    radial-gradient(ellipse 70% 50% at 90% 20%, rgba(59,130,246,0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 50% 80%, rgba(16,185,129,0.25) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 70%, rgba(236,72,153,0.32) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 20% 60%, rgba(245,158,11,0.22) 0%, transparent 55%);
 }
 
 /* ============ GRAIN/NOISE TEXTURE (Pinterest aesthetic) ============ */
@@ -125,10 +156,27 @@ body.dark .blob.b3{background:#28231E;opacity:0.3}
   border:1px solid var(--line);
   border-radius:var(--radius);
 }
-/* Keep old .glass / .glass-strong aliases for compatibility */
+/* ============ CARD / SURFACE UTILITIES ============ */
+.card{
+  background:var(--glass);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+.card-flat{
+  background:var(--glass);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius);
+}
 .glass,.glass-strong{
-  background:var(--surface);
-  border:1px solid var(--line);
+  background:var(--glass);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
 }
@@ -143,8 +191,15 @@ body.dark .blob.b3{background:#28231E;opacity:0.3}
   position:sticky;top:0;height:100vh;
   display:flex;flex-direction:column;gap:2px;
   z-index:50;
-  background:transparent;
-  border-right:1px solid var(--line);
+  background:rgba(255,255,255,0.55);
+  backdrop-filter:blur(28px);
+  -webkit-backdrop-filter:blur(28px);
+  border-right:1px solid rgba(255,255,255,0.7);
+  box-shadow:2px 0 24px rgba(79,70,229,0.06);
+}
+body.dark .sidebar{
+  background:rgba(14,18,44,0.75);
+  border-right:1px solid rgba(129,140,248,0.15);
 }
 .sidebar .brand{
   display:flex;align-items:center;gap:11px;
@@ -233,38 +288,38 @@ body.dark .blob.b3{background:#28231E;opacity:0.3}
 .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 
-/* Stat card — Pinterest clean minimal */
+/* Stat card — Colorful Glassmorphism */
 .stat-card{
   padding:18px 18px 16px;
   border-radius:var(--radius);
   cursor:default;transition:all .2s ease;
   position:relative;overflow:hidden;
-  background:var(--surface);
-  border:1px solid var(--line);
+  background:var(--glass);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--shadow);
 }
 .stat-card.clickable{cursor:pointer}
-.stat-card.clickable:hover{border-color:var(--ink-4);box-shadow:var(--shadow-lg)}
+.stat-card.clickable:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
 .stat-icon{
-  width:34px;height:34px;border-radius:10px;
+  width:40px;height:40px;border-radius:12px;
   display:flex;align-items:center;justify-content:center;
-  font-size:14px;margin-bottom:14px;
-  background:var(--chip-bg);color:var(--ink-2);
-  border:1px solid var(--line);
+  font-size:17px;margin-bottom:14px;
+  border:none;
 }
-.stat-icon.green{background:rgba(46,125,87,0.1);color:var(--success);border-color:rgba(46,125,87,0.2)}
-.stat-icon.blue{background:rgba(47,91,138,0.1);color:var(--info);border-color:rgba(47,91,138,0.2)}
-.stat-icon.purple{background:rgba(127,90,155,0.1);color:#7F5A9B;border-color:rgba(127,90,155,0.2)}
-.stat-icon.amber{background:rgba(184,118,25,0.1);color:var(--warn);border-color:rgba(184,118,25,0.2)}
-.stat-icon.red{background:rgba(179,58,58,0.1);color:var(--danger);border-color:rgba(179,58,58,0.2)}
-body.dark .stat-icon.green{background:rgba(107,191,143,0.12);color:var(--success)}
-body.dark .stat-icon.blue{background:rgba(121,168,214,0.12);color:var(--info)}
-body.dark .stat-icon.amber{background:rgba(224,162,76,0.12);color:var(--warn)}
-body.dark .stat-icon.red{background:rgba(229,112,112,0.12);color:var(--danger)}
-.stat-label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.12em;color:var(--ink-3)}
+.stat-icon.green{background:linear-gradient(135deg,#10B981,#059669);color:#fff;box-shadow:0 4px 14px rgba(16,185,129,0.4)}
+.stat-icon.blue{background:linear-gradient(135deg,#3B82F6,#2563EB);color:#fff;box-shadow:0 4px 14px rgba(59,130,246,0.4)}
+.stat-icon.purple{background:linear-gradient(135deg,#A855F7,#7C3AED);color:#fff;box-shadow:0 4px 14px rgba(168,85,247,0.4)}
+.stat-icon.amber{background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;box-shadow:0 4px 14px rgba(245,158,11,0.4)}
+.stat-icon.red{background:linear-gradient(135deg,#EF4444,#DC2626);color:#fff;box-shadow:0 4px 14px rgba(239,68,68,0.4)}
+.stat-icon.teal{background:linear-gradient(135deg,#14B8A6,#0D9488);color:#fff;box-shadow:0 4px 14px rgba(20,184,166,0.4)}
+.stat-icon.pink{background:linear-gradient(135deg,#EC4899,#DB2777);color:#fff;box-shadow:0 4px 14px rgba(236,72,153,0.4)}
+.stat-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-3)}
 .stat-value{
-  font-size:28px;font-weight:700;margin-top:6px;line-height:1.1;
-  font-family:'Instrument Serif',serif;font-style:italic;
-  letter-spacing:-0.01em;
+  font-size:30px;font-weight:800;margin-top:6px;line-height:1.1;
+  letter-spacing:-0.02em;
+  color:var(--ink);
 }
 .stat-sub{font-size:11px;color:var(--ink-3);margin-top:6px;font-weight:500}
 
@@ -280,25 +335,32 @@ body.dark .stat-icon.red{background:rgba(229,112,112,0.12);color:var(--danger)}
 }
 .section-title .hint{font-size:11.5px;color:var(--ink-3);font-weight:500}
 
-/* Quick Action — Clean minimal */
+/* Quick Action — Colorful glass cards */
 .qa-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .qa-card{
   padding:20px 14px;
   border-radius:var(--radius);
   text-align:left;cursor:pointer;
-  transition:all .2s;position:relative;overflow:hidden;
-  background:var(--surface);
-  border:1px solid var(--line);
+  transition:all .22s;position:relative;overflow:hidden;
+  background:var(--glass);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);
+  box-shadow:var(--shadow);
 }
-.qa-card:hover{border-color:var(--ink-4);box-shadow:var(--shadow-lg)}
+.qa-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
 .qa-card .qa-icon{
-  width:36px;height:36px;border-radius:10px;
+  width:40px;height:40px;border-radius:12px;
   display:flex;align-items:center;justify-content:center;
-  font-size:14px;margin:0 0 14px 0;
-  background:var(--chip-bg);color:var(--ink-2);
-  border:1px solid var(--line);
+  font-size:16px;margin:0 0 14px 0;
 }
-.qa-card .qa-label{font-size:13px;font-weight:600;color:var(--ink)}
+.qa-card:nth-child(1) .qa-icon{background:linear-gradient(135deg,#6366F1,#4F46E5);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,0.45)}
+.qa-card:nth-child(2) .qa-icon{background:linear-gradient(135deg,#10B981,#059669);color:#fff;box-shadow:0 4px 14px rgba(16,185,129,0.45)}
+.qa-card:nth-child(3) .qa-icon{background:linear-gradient(135deg,#F59E0B,#D97706);color:#fff;box-shadow:0 4px 14px rgba(245,158,11,0.45)}
+.qa-card:nth-child(4) .qa-icon{background:linear-gradient(135deg,#EC4899,#DB2777);color:#fff;box-shadow:0 4px 14px rgba(236,72,153,0.45)}
+.qa-card:nth-child(5) .qa-icon{background:linear-gradient(135deg,#14B8A6,#0D9488);color:#fff;box-shadow:0 4px 14px rgba(20,184,166,0.45)}
+.qa-card:nth-child(6) .qa-icon{background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;box-shadow:0 4px 14px rgba(139,92,246,0.45)}
+.qa-card .qa-label{font-size:13px;font-weight:700;color:var(--ink)}
 .qa-card .qa-sub{font-size:11px;color:var(--ink-3);margin-top:2px;font-weight:500}
 
 /* Buttons — Minimal, no gradients, no heavy shadows */
@@ -1532,20 +1594,28 @@ body.dark .order-card{
 
 /* ==== Notification Panel ==== */
 .notif-panel{
-  position:fixed; top:76px; right:24px;
-  width: 360px; max-width: calc(100vw - 24px);
+  position:fixed; top:76px; right:20px;
+  width: 360px; max-width: calc(100vw - 32px);
   max-height: 70vh; overflow-y:auto;
-  background: var(--surface-card) !important;
-  backdrop-filter: blur(30px);
-  border: 1px solid rgba(255,255,255,0.7);
+  background: var(--glass) !important;
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  border: 1px solid var(--glass-border);
   border-radius: 20px;
-  box-shadow: 0 16px 48px rgba(27,37,48,0.18);
-  z-index: 500;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.5);
+  z-index: 99999 !important;
   padding: 14px;
   display:none;
   animation: slideDown .22s ease;
+  isolation: isolate;
 }
-body.dark .notif-panel{ background: rgba(23,28,36,0.95) !important; }
+@media (max-width: 600px) {
+  .notif-panel{
+    right: 16px; top: 68px;
+    width: calc(100vw - 32px);
+  }
+}
+body.dark .notif-panel{ background: var(--glass) !important; border-color: rgba(255,255,255,0.15) !important; }
 .notif-panel.show{ display:block; }
 @keyframes slideDown{ from{ opacity:0; transform:translateY(-10px); } to{ opacity:1; transform:translateY(0); } }
 .notif-panel-header{
@@ -2072,11 +2142,12 @@ body.dark select.select option{
     </div>
     <div class="nav-item active" data-page="home"><i class="ri-dashboard-line"></i><span>ড্যাশবোর্ড</span></div>
     <div class="nav-item" data-page="inventory"><i class="ri-shopping-bag-3-line"></i><span>ইনভেন্টরি</span></div>
-    <div class="nav-item" onclick="YARZ.goPage('inventory'); setTimeout(()=>{$('inv-filter-status').value='Archived';YARZ.inv.render();}, 10)"><i class="ri-archive-line"></i><span>আর্কাইভ</span></div>
+    <div class="nav-item" id="nav-archive" onclick="YARZ.goPage('inventory'); setTimeout(()=>{var el=$('inv-filter-status'); if(el){el.value='Archived';YARZ.inv.render();}}, 150)" style="cursor:pointer"><i class="ri-archive-line"></i><span>আর্কাইভ</span></div>
     <div class="nav-item" data-page="orders"><i class="ri-shopping-cart-2-line"></i><span>অর্ডার</span><span class="nav-badge hidden" id="nav-orders-badge">0</span></div>
     <div class="nav-item" data-page="finance"><i class="ri-wallet-3-line"></i><span>হিসাব</span></div>
     <div class="nav-item" data-page="reports"><i class="ri-line-chart-line"></i><span>রিপোর্ট</span></div>
     <div class="nav-item" data-page="preview"><i class="ri-global-line"></i><span>ওয়েবসাইট</span></div>
+    <div class="nav-item" data-page="web-control"><i class="ri-layout-masonry-line"></i><span>ওয়েবসাইট কন্ট্রোল</span></div>
     <div class="nav-item" data-page="settings"><i class="ri-settings-3-line"></i><span>সেটিংস</span></div>
     <div class="sidebar-footer">
       <div class="nav-item" onclick="YARZ.toggleTheme()"><i class="ri-moon-line" id="theme-icon-side"></i><span>থিম</span></div>
@@ -2278,6 +2349,10 @@ body.dark select.select option{
           <div class="section-title"><h2><i class="ri-medal-line" style="color:var(--warn)"></i> Most Profitable Products</h2></div>
           <div id="profitable-products" class="list" style="margin-top:10px"></div>
         </div>
+        <div class="card" style="padding:20px;margin-top:14px">
+          <div class="section-title"><h2><i class="ri-bar-chart-2-line" style="color:var(--info)"></i> প্ল্যাটফর্ম অর্ডার র‍্যাংকিং</h2><span class="hint">কোন সোর্স থেকে সর্বোচ্চ অর্ডার</span></div>
+          <div id="platform-ranking" style="margin-top:10px"></div>
+        </div>
       </div>
 
       <!-- WEBSITE PREVIEW -->
@@ -2293,6 +2368,394 @@ body.dark select.select option{
           </div>
         </div>
         <div id="preview-grid" class="grid grid-4"></div>
+      </div>
+
+      <!-- WEBSITE CONTROL (CMS) -->
+      <div class="page" data-page="web-control">
+        
+        <!-- CMS Tabs -->
+        <div class="subtab-bar" style="margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+          <button class="subtab active wc-tab" data-wc-tab="general" onclick="YARZ.webControl.setTab('general')"><i class="ri-settings-4-line"></i> General Setup</button>
+          <button class="subtab wc-tab" data-wc-tab="banners" onclick="YARZ.webControl.setTab('banners')"><i class="ri-image-line"></i> Banners & Flash</button>
+          <button class="subtab wc-tab" data-wc-tab="builder" onclick="YARZ.webControl.setTab('builder')"><i class="ri-layout-masonry-line"></i> Builder</button>
+          <button class="subtab wc-tab" data-wc-tab="product" onclick="YARZ.webControl.setTab('product')"><i class="ri-shopping-bag-3-line"></i> Product Page</button>
+          <button class="subtab wc-tab" data-wc-tab="checkout" onclick="YARZ.webControl.setTab('checkout')"><i class="ri-shopping-cart-2-line"></i> Cart & Checkout</button>
+          <button class="subtab wc-tab" data-wc-tab="marketing" onclick="YARZ.webControl.setTab('marketing')"><i class="ri-megaphone-line"></i> Marketing</button>
+          <button class="subtab wc-tab" data-wc-tab="branding" onclick="YARZ.webControl.setTab('branding')"><i class="ri-paint-brush-line"></i> Branding & SEO</button>
+        </div>
+
+        <style>
+          .ios-toggle {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+          }
+          .ios-toggle input { opacity: 0; width: 0; height: 0; }
+          .ios-toggle .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.15);
+            transition: .4s;
+            border-radius: 24px;
+          }
+          .ios-toggle .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          }
+          .ios-toggle input:checked + .slider {
+            background-color: #34C759;
+          }
+          .ios-toggle input:checked + .slider:before {
+            transform: translateX(20px);
+          }
+          .dark .ios-toggle .slider { background-color: rgba(255,255,255,0.2); }
+        </style>
+
+        <!-- TAB: GENERAL -->
+        <div id="wc-tab-general" class="wc-tab-content">
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+              <h2><i class="ri-error-warning-line" style="color:var(--danger)"></i> Global Store Settings</h2>
+              <button class="btn btn-ghost btn-sm" onclick="YARZ.ui.showGuide('general')" style="color:var(--brand); border:1px solid var(--line); font-size:11px; padding:4px 8px; border-radius:6px;"><i class="ri-information-line"></i> কীভাবে ব্যবহার করবেন?</button>
+            </div>
+            <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-store-status"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Maintenance Mode</div><div style="font-size:11px;color:var(--ink-3)">Temporarily hide store</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-b2b-mode"><span class="slider"></span></label>
+                <div><div style="font-weight:600">B2B / Wholesale Mode</div><div style="font-size:11px;color:var(--ink-3)">Hide prices from guests</div></div>
+              </div>
+            </div>
+            <div class="grid grid-2" style="gap:16px">
+              <div class="field"><label>Currency Symbol</label><input type="text" id="wc-currency" class="input" placeholder="e.g. ৳ or BDT or $"></div>
+              <div class="field">
+                <label>Dual Language Support</label>
+                <select id="wc-language" class="input">
+                  <option value="bn">Bengali (Default)</option>
+                  <option value="en">English</option>
+                  <option value="both">Bilingual (Toggle)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-megaphone-line" style="color:var(--brand)"></i> Global Announcement</h2></div>
+            <div class="flex-gap" style="margin-bottom:14px">
+              <label class="ios-toggle">
+                <input type="checkbox" id="wc-announcement-active">
+                <span class="slider"></span>
+              </label>
+              <span style="font-weight:600;color:var(--ink-2)">Show Announcement Bar at Top</span>
+            </div>
+            <div class="field">
+              <label>Announcement Text</label>
+              <input type="text" id="wc-announcement-text" class="input" placeholder="e.g. 🔥 Free delivery on all orders over 2000 BDT!">
+            </div>
+            <div class="grid grid-2" style="gap:16px">
+              <div class="field">
+                <label>Background Color</label>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <input type="color" id="wc-ann-bg-picker" style="width:40px;height:40px;border:none;border-radius:8px;cursor:pointer;background:none" oninput="document.getElementById('wc-ann-bg').value = this.value">
+                  <input type="text" id="wc-ann-bg" class="input" style="flex:1" placeholder="#1A202C" oninput="document.getElementById('wc-ann-bg-picker').value = this.value">
+                </div>
+              </div>
+              <div class="field">
+                <label>Text Color</label>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <input type="color" id="wc-ann-text-picker" style="width:40px;height:40px;border:none;border-radius:8px;cursor:pointer;background:none" oninput="document.getElementById('wc-ann-text').value = this.value">
+                  <input type="text" id="wc-ann-text" class="input" style="flex:1" placeholder="#FFFFFF" oninput="document.getElementById('wc-ann-text-picker').value = this.value">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-window-line" style="color:var(--purple)"></i> Promotional Popup</h2></div>
+            <div class="flex-gap" style="margin-bottom:14px">
+              <label class="ios-toggle">
+                <input type="checkbox" id="wc-popup-active">
+                <span class="slider"></span>
+              </label>
+              <span style="font-weight:600;color:var(--ink-2)">Show Popup on Website Load</span>
+            </div>
+            <div class="grid grid-2" style="gap:16px">
+              <div class="field">
+                <label>Popup Image URL</label>
+                <input type="text" id="wc-popup-img" class="input" placeholder="e.g. imgur.com/promo.jpg" oninput="YARZ.webControl._previewImg(this, 'wc-popup-preview')">
+              </div>
+              <div class="field">
+                <label>Target Link (Optional)</label>
+                <input type="text" id="wc-popup-link" class="input" placeholder="e.g. /category/winter">
+              </div>
+            </div>
+            <div id="wc-popup-preview" style="height:120px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);margin-top:10px;overflow:hidden">
+              <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3"><i class="ri-image-line"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: BANNERS -->
+        <div id="wc-tab-banners" class="wc-tab-content hidden">
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+              <h2><i class="ri-timer-flash-line" style="color:var(--brand)"></i> Flash Sale Timer</h2>
+              <button class="btn btn-ghost btn-sm" onclick="YARZ.ui.showGuide('banners')" style="color:var(--brand); border:1px solid var(--line); font-size:11px; padding:4px 8px; border-radius:6px;"><i class="ri-information-line"></i> কীভাবে ব্যবহার করবেন?</button>
+            </div>
+            <div class="grid grid-2" style="gap:16px; margin-bottom:14px;">
+              <div class="field"><label>Flash Sale End Date</label><input type="datetime-local" id="wc-flash-date" class="input"></div>
+              <div class="field"><label>Flash Sale Title</label><input type="text" id="wc-flash-title" class="input" placeholder="e.g. End of Season Sale!"></div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title">
+              <h2><i class="ri-slideshow-3-line" style="color:var(--info)"></i> Hero Slider Banners</h2>
+              <span class="hint">Upload high-quality 16:9 images or MP4 Video URLs.</span>
+            </div>
+            <div id="wc-banners-container" style="display:grid;gap:16px;">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: HOMEPAGE BUILDER -->
+        <div id="wc-tab-builder" class="wc-tab-content hidden">
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title" style="margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+              <h2><i class="ri-layout-masonry-line" style="color:var(--teal)"></i> Homepage Dynamic Builder</h2>
+              <button class="btn btn-ghost btn-sm" onclick="YARZ.ui.showGuide('builder')" style="color:var(--brand); border:1px solid var(--line); font-size:11px; padding:4px 8px; border-radius:6px;"><i class="ri-information-line"></i> কীভাবে ব্যবহার করবেন?</button>
+            </div>
+            <div style="font-size:12px;color:var(--ink-2);background:rgba(20,184,166,0.1);padding:10px;border-radius:8px;border:1px solid rgba(20,184,166,0.2);margin-bottom:16px;line-height:1.5">
+              <i class="ri-information-line"></i> <b>কিভাবে কাজ করে:</b> এখানে আপনি যত খুশি সেকশন তৈরি করতে পারবেন (সর্বোচ্চ ২৫টি)। ক্যাটাগরি হিসেবে যা সিলেক্ট করবেন, ওয়েবসাইটের ওই সেকশনে অটোমেটিকভাবে সেই ক্যাটাগরির প্রোডাক্টগুলো শো করবে।
+            </div>
+            <div id="wc-sections-container" style="display:flex;flex-direction:column;gap:12px">
+              <!-- Rendered via JS -->
+            </div>
+            <div style="margin-top:16px;text-align:center">
+              <button class="btn btn-ghost" onclick="YARZ.webControl.addSection()" style="color:var(--brand);border:1px dashed var(--brand);width:100%;padding:14px"><i class="ri-add-line"></i> + Add New Dynamic Section</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: PRODUCT & CATALOG -->
+        <div id="wc-tab-product" class="wc-tab-content hidden">
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+              <h2><i class="ri-shopping-bag-3-line" style="color:var(--brand)"></i> Product Page Optimization</h2>
+              <button class="btn btn-ghost btn-sm" onclick="YARZ.ui.showGuide('product')" style="color:var(--brand); border:1px solid var(--line); font-size:11px; padding:4px 8px; border-radius:6px;"><i class="ri-information-line"></i> কীভাবে ব্যবহার করবেন?</button>
+            </div>
+            
+            <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-quick-view"><span class="slider"></span></label>
+                <div><div style="font-weight:600">AJAX Quick View</div><div style="font-size:11px;color:var(--ink-3)">View product in popup</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-stock-bar"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Stock Urgency Bar</div><div style="font-size:11px;color:var(--ink-3)">"Only X items left" warning</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-related-prod"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Upsell / Related Products</div><div style="font-size:11px;color:var(--ink-3)">Show similar items below</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-live-search"><span class="slider"></span></label>
+                <div><div style="font-weight:600">AJAX Live Search</div><div style="font-size:11px;color:var(--ink-3)">Auto-suggest while typing</div></div>
+              </div>
+            </div>
+
+            <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
+              <div class="field">
+                <label>Image Hover Effect</label>
+                <select id="wc-hover-effect" class="input">
+                  <option value="zoom">Zoom In</option>
+                  <option value="swap">Swap to 2nd Image</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+              <div class="field"><label>"Add to Cart" Button Text</label><input type="text" id="wc-add-cart-text" class="input" placeholder="e.g. Buy Now / কার্টে যোগ করুন"></div>
+            </div>
+            <div class="grid grid-2" style="gap:16px;">
+              <div class="field">
+                <label>Max Order Quantity Per Customer</label>
+                <input type="number" id="wc-max-qty" class="input" placeholder="e.g. 5 (Leave empty for unlimited)">
+              </div>
+              <div class="field">
+                <label>Expected Delivery Message</label>
+                <input type="text" id="wc-exp-delivery" class="input" placeholder="e.g. Estimated Delivery: 2-3 Days">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: CART & CHECKOUT -->
+        <div id="wc-tab-checkout" class="wc-tab-content hidden">
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+              <h2><i class="ri-shopping-cart-2-line" style="color:var(--brand)"></i> Checkout Flow & Rules</h2>
+              <button class="btn btn-ghost btn-sm" onclick="YARZ.ui.showGuide('checkout')" style="color:var(--brand); border:1px solid var(--line); font-size:11px; padding:4px 8px; border-radius:6px;"><i class="ri-information-line"></i> কীভাবে ব্যবহার করবেন?</button>
+            </div>
+            
+            <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-cart-drawer"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Slide-out Cart Drawer</div><div style="font-size:11px;color:var(--ink-3)">Instead of redirecting to page</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-order-notes"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Enable Order Notes</div><div style="font-size:11px;color:var(--ink-3)">Let customers add gift messages</div></div>
+              </div>
+            </div>
+
+            <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
+              <div class="field">
+                <label>Primary Checkout Mode</label>
+                <select id="wc-checkout-mode" class="input">
+                  <option value="website">Direct Website Checkout</option>
+                  <option value="whatsapp">WhatsApp Order Redirect</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Custom Checkout Field (Optional)</label>
+                <input type="text" id="wc-custom-field" class="input" placeholder="e.g. Company Name or Bin No">
+              </div>
+              <div class="field">
+                <label>Free Shipping Target Amount (৳)</label>
+                <input type="number" id="wc-free-ship-amt" class="input" placeholder="e.g. 5000">
+                <div style="font-size:10px;margin-top:4px;color:var(--ink-3)">Leaves empty to disable progress bar</div>
+              </div>
+              <div class="field">
+                <label>Minimum Order Amount (৳)</label>
+                <input type="number" id="wc-min-order" class="input" placeholder="e.g. 500">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: MARKETING & LOYALTY -->
+        <div id="wc-tab-marketing" class="wc-tab-content hidden">
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+              <h2><i class="ri-megaphone-line" style="color:var(--brand)"></i> Marketing & Engagement</h2>
+              <button class="btn btn-ghost btn-sm" onclick="YARZ.ui.showGuide('marketing')" style="color:var(--brand); border:1px solid var(--line); font-size:11px; padding:4px 8px; border-radius:6px;"><i class="ri-information-line"></i> কীভাবে ব্যবহার করবেন?</button>
+            </div>
+            
+            <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-exit-popup"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Exit-Intent Popup</div><div style="font-size:11px;color:var(--ink-3)">Show offer when leaving site</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-loyalty"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Loyalty Points System</div><div style="font-size:11px;color:var(--ink-3)">Reward points on purchase</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-trust-badges"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Secure Trust Badges</div><div style="font-size:11px;color:var(--ink-3)">Show 100% Secure on checkout</div></div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Abandoned Cart WhatsApp Message Template</label>
+              <textarea id="wc-abandon-msg" class="textarea" placeholder="Hi! You left some items in your cart..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: BRANDING -->
+        <div id="wc-tab-branding" class="wc-tab-content hidden">
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+              <h2><i class="ri-paint-brush-line" style="color:var(--brand)"></i> Theme & Global Branding</h2>
+              <button class="btn btn-ghost btn-sm" onclick="YARZ.ui.showGuide('branding')" style="color:var(--brand); border:1px solid var(--line); font-size:11px; padding:4px 8px; border-radius:6px;"><i class="ri-information-line"></i> কীভাবে ব্যবহার করবেন?</button>
+            </div>
+            <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
+              <div class="field">
+                <label>Website Logo URL</label>
+                <input type="text" id="wc-logo" class="input" placeholder="e.g. imgur.com/logo.png" oninput="YARZ.webControl._previewImg(this, 'wc-logo-preview')">
+                <div id="wc-logo-preview" style="height:60px;width:180px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);margin-top:10px;overflow:hidden">
+                  <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3"><i class="ri-image-line"></i></div>
+                </div>
+              </div>
+              <div class="field">
+                <label>Global Font Family</label>
+                <select id="wc-font" class="input">
+                  <option value="Inter">Inter (Default)</option>
+                  <option value="Poppins">Poppins</option>
+                  <option value="Hind Siliguri">Hind Siliguri (Bangla)</option>
+                  <option value="Roboto">Roboto</option>
+                </select>
+                <div style="margin-top:16px;">
+                  <label>Theme Primary Accent Color</label>
+                  <div style="display:flex;gap:10px;align-items:center">
+                    <input type="color" id="wc-color-picker" style="width:40px;height:40px;border:none;border-radius:8px;cursor:pointer;background:none" oninput="document.getElementById('wc-theme-color').value = this.value">
+                    <input type="text" id="wc-theme-color" class="input" style="flex:1" placeholder="#1A202C" oninput="document.getElementById('wc-color-picker').value = this.value">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Live Chat Integration</label>
+              <select id="wc-live-chat" class="input">
+                <option value="whatsapp">Floating WhatsApp Button</option>
+                <option value="messenger">Facebook Messenger Plugin</option>
+                <option value="none">None</option>
+              </select>
+            </div>
+            
+            <div class="field">
+              <label>Footer About Text</label>
+              <textarea id="wc-footer-text" class="textarea" style="min-height:80px" placeholder="Write a short description about your brand..."></textarea>
+            </div>
+
+            <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
+              <div class="field"><label><i class="ri-facebook-circle-fill" style="color:#1877F2"></i> Facebook Link</label><input type="text" id="wc-link-fb" class="input"></div>
+              <div class="field"><label><i class="ri-instagram-fill" style="color:#E1306C"></i> Instagram Link</label><input type="text" id="wc-link-ig" class="input"></div>
+              <div class="field"><label><i class="ri-whatsapp-fill" style="color:#25D366"></i> WhatsApp Link</label><input type="text" id="wc-link-wa" class="input"></div>
+              <div class="field"><label><i class="ri-tiktok-fill" style="color:#000000"></i> TikTok Link</label><input type="text" id="wc-link-tt" class="input"></div>
+            </div>
+            
+            <div class="section-title" style="margin-top:24px;"><h2><i class="ri-bar-chart-box-line" style="color:var(--info)"></i> SEO & Analytics</h2></div>
+            <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
+              <div class="field"><label>Global Meta Title</label><input type="text" id="wc-meta-title" class="input" placeholder="Best Online Store in BD"></div>
+              <div class="field"><label>Global Meta Description</label><input type="text" id="wc-meta-desc" class="input" placeholder="Shop the latest trends..."></div>
+              <div class="field"><label>Facebook Pixel ID</label><input type="text" id="wc-fb-pixel" class="input" placeholder="123456789"></div>
+              <div class="field"><label>Google Analytics 4 ID</label><input type="text" id="wc-ga4" class="input" placeholder="G-XXXXXX"></div>
+              <div class="field"><label>Instagram Pixel ID</label><input type="text" id="wc-ig-pixel" class="input" placeholder="Meta Conversion ID / Pixel"></div>
+              <div class="field"><label>TikTok Pixel ID</label><input type="text" id="wc-tt-pixel" class="input" placeholder="Tiktok Event ID"></div>
+              <div class="field"><label>Pinterest Tag ID</label><input type="text" id="wc-pin-pixel" class="input" placeholder="e.g. 26123456789"></div>
+              <div class="field"><label>Snapchat Pixel ID</label><input type="text" id="wc-snap-pixel" class="input" placeholder="e.g. xxxxxxxx-xxxx"></div>
+              <div class="field" style="grid-column:1/-1"><label>Social Sharing Image URL (Open Graph)</label><input type="text" id="wc-og-img" class="input" placeholder="e.g. imgur.com/share-image.jpg"></div>
+              <div class="field" style="grid-column:1/-1"><label>Google Search Console Verification Tag</label><input type="text" id="wc-gsc-tag" class="input" placeholder="e.g. <meta name='google-site-verification' content='...' />"></div>
+            </div>
+
+            <div class="section-title" style="margin-top:24px;"><h2><i class="ri-code-s-slash-line" style="color:var(--purple)"></i> Advanced Code Injection</h2></div>
+            <div class="field">
+              <label>Custom CSS (Head)</label>
+              <textarea id="wc-custom-css" class="textarea" style="font-family:monospace; font-size:12px; min-height:80px; background:#1e1e1e; color:#d4d4d4" placeholder="/* Write custom CSS here */"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- SAVE BUTTON STICKY -->
+        <div class="glass" style="position:sticky;bottom:14px;padding:14px;border-radius:16px;display:flex;justify-content:flex-end;z-index:10;box-shadow:0 8px 32px rgba(0,0,0,0.1)">
+          <button class="btn btn-primary" onclick="YARZ.webControl.save()" style="font-size:16px;padding:12px 32px;box-shadow:0 4px 12px rgba(34,197,94,0.3)"><i class="ri-save-3-fill"></i> Save All Changes</button>
+        </div>
       </div>
 
       <!-- SETTINGS -->
@@ -2313,6 +2776,29 @@ body.dark select.select option{
             <input id="set-api-key" class="input" value="AIzaSyC2WUoTmJ_nwxZ0gV8BkE0UGgZoEfwyQ5k">
           </div>
           <button class="btn btn-primary" onclick="YARZ.settings.saveConn()"><i class="ri-check-line"></i> Save Connection</button>
+        </div>
+
+        <!-- DATA CLEANUP SECTION -->
+        <div class="card" style="padding:22px;margin-bottom:14px;border:1px solid rgba(232,98,92,0.25)">
+          <div class="section-title"><h2><i class="ri-delete-bin-6-line" style="color:var(--danger)"></i> ডেটা ক্লিনআপ</h2></div>
+          <p style="font-size:12.5px;color:var(--ink-3);margin-bottom:18px;line-height:1.7">⚠️ এই অপশনগুলো Google Sheets থেকেও ডেটা মুছে ফেলবে। সাবধানে ব্যবহার করুন।</p>
+          <div style="display:grid;gap:12px">
+            <div style="padding:16px;border-radius:16px;background:rgba(232,165,71,0.08);border:1px solid rgba(232,165,71,0.25)">
+              <div style="font-weight:700;font-size:13.5px;margin-bottom:6px;color:var(--warn)"><i class="ri-coins-line"></i> ১. শুধু Financial ডেটা ক্লিন করুন</div>
+              <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px">প্রোডাক্ট ও ইনভেন্টরি ঠিক থাকবে। শুধু Revenue, Transactions, Orders, Ad Spend, Expenses — এগুলো রিসেট হবে। আজ থেকে নতুন হিসাব শুরু হবে।</div>
+              <button class="btn btn-amber btn-sm" onclick="YARZ.settings.confirmClearFinancials()"><i class="ri-eraser-line"></i> শুধু Financial ডেটা মুছে ফেলুন</button>
+            </div>
+            <div style="padding:16px;border-radius:16px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25)">
+              <div style="font-weight:700;font-size:13.5px;margin-bottom:6px;color:var(--brand)"><i class="ri-box-3-line"></i> ২. শুধু প্রোডাক্ট ও ইনভেন্টরি ক্লিন করুন</div>
+              <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px">আর্থিক হিসাব ও লেনদেন ইতিহাস ঠিক থাকবে। শুধু ইনভেন্টরির প্রোডাক্টগুলো এবং ওয়েবসাইট সিঙ্ক মুছে যাবে।</div>
+              <button class="btn btn-primary btn-sm" onclick="YARZ.settings.confirmClearInventoryOnly()"><i class="ri-eraser-line"></i> শুধু প্রোডাক্ট মুছে ফেলুন</button>
+            </div>
+            <div style="padding:16px;border-radius:16px;background:rgba(232,98,92,0.08);border:1px solid rgba(232,98,92,0.25)">
+              <div style="font-weight:700;font-size:13.5px;margin-bottom:6px;color:var(--danger)"><i class="ri-restart-line"></i> ৩. সম্পূর্ণ Factory Reset</div>
+              <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px">সব কিছু মুছে যাবে — প্রোডাক্ট, ইনভেন্টরি, অর্ডার, টাকার হিসাব — সবকিছু। একদম নতুন ওয়েবসাইট।</div>
+              <button class="btn btn-red btn-sm" onclick="YARZ.settings.confirmFullReset()"><i class="ri-delete-bin-6-fill"></i> সম্পূর্ণ Reset করুন</button>
+            </div>
+          </div>
         </div>
 
         <div class="card" style="padding:22px;margin-bottom:14px">
@@ -2342,6 +2828,7 @@ body.dark select.select option{
       <div class="bn-item" data-page="finance"><i class="ri-wallet-3-line"></i><span>হিসাব</span></div>
       <div class="bn-item" data-page="reports"><i class="ri-line-chart-line"></i><span>রিপোর্ট</span></div>
       <div class="bn-item" data-page="preview"><i class="ri-global-line"></i><span>ওয়েবসাইট</span></div>
+      <div class="bn-item" data-page="web-control"><i class="ri-layout-masonry-line"></i><span>কন্ট্রোল</span></div>
       <div class="bn-item" data-page="settings"><i class="ri-settings-3-line"></i><span>সেটিংস</span></div>
     </div>
   </nav>
@@ -2975,6 +3462,7 @@ const YARZ = window.YARZ = {
     this.finance.render();
     this.rep.render();
     this.preview.render();
+    this.webControl.render();
     this.settings.render();
     this.updateBadges();
   },
@@ -3898,9 +4386,6 @@ Team YARZ`;
     set('cnt-manual-total', state.data.orders.length);
     // Store for later use
     this._newTodayCount = newToday;
-    // Other non-delivered orders except cancelled/returned are "in progress"
-    // Cancelled/Returned don't fit in stages but show in 'new' section is confusing.
-    // Handle: add Cancelled/Returned into "delivered" bucket as closed.
   },
 
   renderWebsite(){
@@ -4034,7 +4519,7 @@ Team YARZ`;
       </div>
       <div class="order-actions">
         ${actionBtn}
-        ${courierSel}
+        ${courierBtn}
         <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WhatsApp</button>
         ${stage!=='delivered' ? `<button class="btn btn-ghost btn-xs" onclick="YARZ.ord.showStatusMenu('${esc(o.orderId)}')" title="Change Status"><i class="ri-more-2-line"></i></button>` : ''}
         <button class="btn btn-ghost btn-xs" style="margin-left:auto;color:var(--danger)" onclick="YARZ.ord.deleteWebOrder('${esc(o.orderId)}')" title="ডিলিট"><i class="ri-delete-bin-6-line"></i></button>
@@ -4088,9 +4573,37 @@ Team YARZ`;
       if(res && res.success===false) throw new Error(res.error||'Failed');
       if(o) o.courier = courier;
       this.renderWebsite();
-      toast(`Courier: ${courier}`,'success');
+      toast(`Courier Info Updated: ${courier}`,'success');
     } catch(e){ toast(e.message,'error'); }
     finally { hideLoader(); }
+  },
+
+  async updateManualCourier(orderId, courier){
+    showLoader('Courier আপডেট হচ্ছে...');
+    try {
+      const o = state.data.orders.find(x=>x.orderId===orderId);
+      const status = o ? o.status : 'Pending';
+      const res = await appsPost('updateManualOrderStatus', { orderId, status, courier });
+      if(res && res.success===false) throw new Error(res.error||'Failed');
+      if(o) o.courier = courier;
+      this.renderManual();
+      toast(`Courier Info Updated: ${courier}`,'success');
+    } catch(e){ toast(e.message,'error'); }
+    finally { hideLoader(); }
+  },
+
+  editCourierId(orderId){
+    const o = state.data.websiteOrders.find(x=>x.orderId===orderId) || state.data.orders.find(x=>x.orderId===orderId);
+    if(!o) return;
+    const current = o.courier || '';
+    const courier = prompt(`Enter Courier / Tracking Info for #${orderId}\n(e.g., "RedX - ID:123456"):`, current);
+    if(courier !== null){
+      if(state.data.websiteOrders.includes(o)) {
+        this.updateCourier(orderId, courier);
+      } else {
+        this.updateManualCourier(orderId, courier);
+      }
+    }
   },
 
   deleteWebOrder(orderId){
@@ -4176,6 +4689,7 @@ Team YARZ`;
           <div class="li-sub">${fmtDateTime(o.date)} · ${esc(o.payment)} ${o.courier?'· '+esc(o.courier):''}</div>
           <div class="li-actions" style="margin-top:8px;flex-wrap:wrap;gap:6px">
             ${actionBtn}
+            <button class="btn btn-ghost btn-xs" onclick="YARZ.ord.editCourierId('${esc(o.orderId)}')"><i class="ri-truck-line"></i> ${o.courier ? esc(o.courier) : '+ Courier/Tracking Info'}</button>
             <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none;margin-right:8px" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WhatsApp</button>
             <button class="btn btn-ghost btn-xs" onclick="YARZ.ord.showManualStatusMenu('${esc(o.orderId)}')"><i class="ri-more-2-line"></i></button>
             <button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="YARZ.ord.deleteManualOrder('${esc(o.orderId)}')"><i class="ri-delete-bin-6-line"></i></button>
@@ -4355,15 +4869,64 @@ YARZ.rep = {
       <div class="list-item" onclick="YARZ.goPage('inventory');YARZ.inv.showDetails('${esc(p.name)}')">
         <div class="thumb" style="${p.img1?`background-image:url('${esc(getImgSrc(p.img1))}')`:''}">${p.img1?'':'<i class=\"ri-shopping-bag-3-line\"></i>'}</div>
         <div class="li-body">
-          <div class="li-title">${esc(p.name)}</div>
-          <div class="li-sub">${esc(p.category||'')} • Sold: ${toBn(p.totalSold)}</div>
+          <div class="li-title" style="font-size:14.5px">${esc(p.name)}</div>
+          <div class="li-sub">${esc(p.category||'')} • Sold: <strong style="font-size:13px;color:var(--ink);font-family:'Inter',sans-serif">${p.totalSold}</strong></div>
         </div>
         <div class="li-right" style="text-align:right">
-          <div class="price text-green">${fmtBDT(p.net)}</div>
-          <div style="font-size:10px;opacity:0.6">Profit</div>
+          <div class="price text-green" style="font-size:17px;font-family:'Inter',sans-serif">${fmtBDT(p.net)}</div>
+          <div style="font-size:10.5px;opacity:0.6;font-weight:600">Profit</div>
         </div>
       </div>
     `).join('') : '<div class="empty-state"><p>ডেটা নেই</p></div>';
+
+    // Platform Ranking
+    this._renderPlatformRanking();
+  },
+
+  _renderPlatformRanking(){
+    const allOrders = [...state.data.orders, ...state.data.websiteOrders];
+    const PLATFORMS = {
+      'Facebook':   { icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="#1877F2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>', color: '#1877F2' },
+      'Instagram':  { icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="url(#ig)"><defs><linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>', color: '#E1306C' },
+      'WhatsApp':   { icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>', color: '#25D366' },
+      'TikTok':     { icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="#000"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V9.09a8.16 8.16 0 004.77 1.52V7.16a4.85 4.85 0 01-1-.47z"/></svg>', color: '#000000' },
+      'Website':    { icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="#5B8DEF"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm-1 17.93A8.014 8.014 0 014.07 13H7c.13 1.04.38 2.03.73 2.93L11 17.93zM11 13H4.07A8.014 8.014 0 014.07 11H11v2zm0-4H4.458A8.047 8.047 0 0111 4.07V9zm2 8.93l3.27-2c.35-.9.6-1.89.73-2.93h2.93A8.014 8.014 0 0113 17.93zM13 13v-2h6.93A8.014 8.014 0 0113 13zM13 9V4.07A8.047 8.047 0 0119.542 9H13z"/></svg>', color: '#5B8DEF' },
+      'Manual':     { icon: '<i class="ri-user-settings-line"></i>', color: '#8B7FD9' }
+    };
+    const rankMap = {};
+    allOrders.forEach(o => {
+      const src = o.source || 'Manual';
+      rankMap[src] = rankMap[src] || { count:0, total:0 };
+      rankMap[src].count++;
+      rankMap[src].total += num(o.total);
+    });
+    const ranked = Object.keys(rankMap).map(k=>({src:k,...rankMap[k]})).sort((a,b)=>b.count-a.count);
+    const maxCount = ranked[0]?.count || 1;
+    const el = $('platform-ranking');
+    if(!el) return;
+    if(!ranked.length){
+      el.innerHTML = '<div class="empty-state"><p>অর্ডার ডেটা নেই</p></div>'; return;
+    }
+    el.innerHTML = ranked.map((p,i) => {
+      const pf = PLATFORMS[p.src] || { icon: `<i class="ri-globe-line"></i>`, color:'var(--ink-3)' };
+      const pct = Math.round(p.count/maxCount*100);
+      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      return `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.6);margin-bottom:8px" class="dark-card">
+        <div style="width:32px;height:32px;border-radius:10px;background:rgba(255,255,255,0.8);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.08)">${pf.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+            <span style="font-weight:700;font-size:13.5px">${medal} ${esc(p.src)}</span>
+            <span class="chip chip-blue" style="margin-left:auto">${toBn(p.count)} অর্ডার</span>
+          </div>
+          <div style="height:6px;background:rgba(0,0,0,0.06);border-radius:999px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${pf.color};border-radius:999px;transition:width 0.6s ease"></div>
+          </div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:4px">মোট: ${fmtBDT(p.total)}</div>
+        </div>
+        <div style="font-size:22px;font-weight:800;color:${pf.color};min-width:36px;text-align:right">${toBn(pct)}%</div>
+      </div>`;
+    }).join('');
   },
 
   _buildGroup(kind){
@@ -4515,6 +5078,325 @@ YARZ.preview = {
 };
 
 /* ============================================================
+   ============ WEBSITE CONTROL (CMS) MODULE ============
+============================================================ */
+YARZ.webControl = {
+  setTab(tab) {
+    qsa('.wc-tab').forEach(el => el.classList.remove('active'));
+    qsa('.wc-tab-content').forEach(el => el.classList.add('hidden'));
+    const btn = qs(`.wc-tab[data-wc-tab="${tab}"]`);
+    const content = $(`wc-tab-${tab}`);
+    if(btn) btn.classList.add('active');
+    if(content) content.classList.remove('hidden');
+  },
+
+  render() {
+    const s = state.data.settings || {};
+    
+    // --- General & Promo ---
+    const storeStatus = s['Store Status'];
+    const cbStatus = $('wc-store-status');
+    if(cbStatus) cbStatus.checked = (storeStatus === 'Maintenance');
+
+    const active = s['Announcement Active'];
+    const checkbox = $('wc-announcement-active');
+    if(checkbox) checkbox.checked = (active === 'true' || active === true);
+    
+    const textEl = $('wc-announcement-text');
+    if(textEl) textEl.value = s['Announcement Text'] || '';
+    if($('wc-ann-bg')) { $('wc-ann-bg').value = s['Announcement BG']||'#1A202C'; $('wc-ann-bg-picker').value = $('wc-ann-bg').value; }
+    if($('wc-ann-text')) { $('wc-ann-text').value = s['Announcement Text Color']||'#FFFFFF'; $('wc-ann-text-picker').value = $('wc-ann-text').value; }
+
+    const popupActive = s['Promo Popup Active'];
+    const cbPopup = $('wc-popup-active');
+    if(cbPopup) cbPopup.checked = (popupActive === 'true' || popupActive === true);
+
+    const popupImg = $('wc-popup-img');
+    if(popupImg) {
+      popupImg.value = s['Promo Popup Image'] || '';
+      this._previewImg(popupImg, 'wc-popup-preview');
+    }
+    const popupLink = $('wc-popup-link');
+    if(popupLink) popupLink.value = s['Promo Popup Link'] || '';
+
+    // --- Branding ---
+    const logoEl = $('wc-logo'); if(logoEl) { logoEl.value = s['Website Logo URL']||''; this._previewImg(logoEl, 'wc-logo-preview'); }
+    const colorEl = $('wc-theme-color'); if(colorEl) { colorEl.value = s['Theme Color']||'#1A202C'; $('wc-color-picker').value = colorEl.value; }
+    const footEl = $('wc-footer-text'); if(footEl) footEl.value = s['Footer Text']||'';
+    const fbEl = $('wc-link-fb'); if(fbEl) fbEl.value = s['Link Facebook']||'';
+    const igEl = $('wc-link-ig'); if(igEl) igEl.value = s['Link Instagram']||'';
+    const waEl = $('wc-link-wa'); if(waEl) waEl.value = s['Link WhatsApp']||'';
+    const ttEl = $('wc-link-tt'); if(ttEl) ttEl.value = s['Link TikTok']||'';
+
+    // --- Hero Banners ---
+    let bannersHtml = '';
+    for(let i=1; i<=5; i++){
+      const img = s[`Hero Banner ${i}`] || '';
+      const link = s[`Banner Link ${i}`] || '';
+      const title = s[`Banner Title ${i}`] || '';
+      const imgSrc = img ? (typeof getImgSrc === 'function' ? getImgSrc(img) : img) : '';
+      bannersHtml += `
+        <div style="display:flex;gap:16px;align-items:flex-start;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1);margin-bottom:12px">
+          <div id="wc-bprev-${i}" style="width:160px;height:90px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);flex-shrink:0;overflow:hidden">
+            ${imgSrc ? `<img src="${esc(imgSrc)}" style="width:100%;height:100%;object-fit:cover">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3"><i class="ri-image-line" style="font-size:24px"></i></div>'}
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+            <div class="field" style="margin:0">
+              <label style="font-size:12px">Banner Title (Overlay Text)</label>
+              <input id="wc-btitle-${i}" class="input" style="padding:8px 12px" placeholder="e.g. New Summer Collection" value="${esc(title)}">
+            </div>
+            <div class="grid grid-2" style="gap:12px">
+              <div class="field" style="margin:0">
+                <label style="font-size:12px">Banner Image URL ${i}</label>
+                <input id="wc-bimg-${i}" class="input" style="padding:8px 12px" placeholder="e.g. imgur.com/xyz.jpg" value="${esc(img)}" oninput="YARZ.webControl._previewImg(this, 'wc-bprev-${i}')">
+              </div>
+              <div class="field" style="margin:0">
+                <label style="font-size:12px">Banner Target Link</label>
+                <input id="wc-blink-${i}" class="input" style="padding:8px 12px" placeholder="e.g. /category/shirts" value="${esc(link)}">
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    const bContainer = $('wc-banners-container');
+    if(bContainer) bContainer.innerHTML = bannersHtml;
+
+    // --- Homepage Builder Sections ---
+    const cats = [...new Set(state.data.inventory.map(p=>p.category).filter(Boolean))];
+    let datalistHtml = `<datalist id="wc-cat-list">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist>`;
+    
+    let sectionsHtml = datalistHtml;
+    let count = 0;
+    for(let i=1; i<=25; i++){
+      const secTitle = s[`Section ${i} Title`];
+      const secCat = s[`Section ${i} Category`];
+      if (!secTitle && !secCat && i > 1) continue; // Only render existing ones, but ensure at least 1 is shown
+      
+      count++;
+      const secActive = s[`Section ${i} Active`] !== 'false';
+      sectionsHtml += this._buildSectionHTML(secTitle||'', secCat||'', secActive);
+    }
+    if(count === 0) {
+      count = 1;
+      sectionsHtml += this._buildSectionHTML('', '', true);
+    }
+    this._secCount = count;
+    
+    const sContainer = $('wc-sections-container');
+    if(sContainer) sContainer.innerHTML = sectionsHtml;
+
+    // --- Product Page ---
+    const qv = $('wc-quick-view'); if(qv) qv.checked = (s['Quick View'] === 'true');
+    const sb = $('wc-stock-bar'); if(sb) sb.checked = (s['Stock Bar'] === 'true');
+    const rp = $('wc-related-prod'); if(rp) rp.checked = (s['Related Prod'] === 'true');
+    const ls = $('wc-live-search'); if(ls) ls.checked = (s['Live Search'] === 'true');
+    const he = $('wc-hover-effect'); if(he) he.value = s['Hover Effect'] || 'zoom';
+    const ac = $('wc-add-cart-text'); if(ac) ac.value = s['Add Cart Text'] || '';
+    const mq = $('wc-max-qty'); if(mq) mq.value = s['Max Qty'] || '';
+    const ed = $('wc-exp-delivery'); if(ed) ed.value = s['Exp Delivery'] || '';
+
+    // --- Cart & Checkout ---
+    const cd = $('wc-cart-drawer'); if(cd) cd.checked = (s['Cart Drawer'] === 'true');
+    const on = $('wc-order-notes'); if(on) on.checked = (s['Order Notes'] === 'true');
+    const cm = $('wc-checkout-mode'); if(cm) cm.value = s['Checkout Mode'] || 'website';
+    const cf = $('wc-custom-field'); if(cf) cf.value = s['Custom Field'] || '';
+    const fs = $('wc-free-ship-amt'); if(fs) fs.value = s['Free Ship Amt'] || '';
+    const mo = $('wc-min-order'); if(mo) mo.value = s['Min Order'] || '';
+
+    // --- Marketing ---
+    const ep = $('wc-exit-popup'); if(ep) ep.checked = (s['Exit Popup'] === 'true');
+    const ly = $('wc-loyalty'); if(ly) ly.checked = (s['Loyalty System'] === 'true');
+    const tb = $('wc-trust-badges'); if(tb) tb.checked = (s['Trust Badges'] === 'true');
+    const am = $('wc-abandon-msg'); if(am) am.value = s['Abandon Msg'] || '';
+
+    // --- SEO Tracking Fields ---
+    const igpx = $('wc-ig-pixel'); if(igpx) igpx.value = s['IG Pixel'] || '';
+    const ttpx = $('wc-tt-pixel'); if(ttpx) ttpx.value = s['TT Pixel'] || '';
+    const pinpx = $('wc-pin-pixel'); if(pinpx) pinpx.value = s['Pinterest Pixel'] || '';
+    const snappx = $('wc-snap-pixel'); if(snappx) snappx.value = s['Snapchat Pixel'] || '';
+    const ogimg = $('wc-og-img'); if(ogimg) ogimg.value = s['OG Image'] || '';
+    const gsct = $('wc-gsc-tag'); if(gsct) gsct.value = s['GSC Tag'] || '';
+  },
+
+  _buildSectionHTML(title, category, isActive, imgUrl='', linkUrl='') {
+    return `
+        <div class="wc-section-block" style="display:flex;align-items:flex-start;gap:16px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1);margin-bottom:12px;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.02)">
+          <button onclick="YARZ.ui.confirmDeleteSection(this.parentElement)" style="position:absolute;top:-8px;right:-8px;background:var(--danger);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.2);z-index:2" title="Delete Section"><i class="ri-close-line"></i></button>
+          
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;margin-top:6px">
+            <span style="font-size:10px;font-weight:700;color:var(--ink-3)">SHOW</span>
+            <label class="ios-toggle">
+              <input type="checkbox" class="wc-sec-active" ${isActive ? 'checked' : ''}>
+              <span class="slider"></span>
+            </label>
+          </div>
+          
+          <div style="flex:1; display:flex; flex-direction:column; gap:12px">
+            <div style="display:flex; gap:12px; flex-wrap:wrap">
+              <div class="field" style="margin:0;flex:1;min-width:150px">
+                <label style="font-size:11px">Section Title</label>
+                <input type="text" class="input wc-sec-title" placeholder="e.g. Winter Collection" value="${esc(title)}">
+              </div>
+              <div class="field" style="margin:0;flex:1;min-width:150px">
+                <label style="font-size:11px">Product Category / Tag</label>
+                <input type="text" class="input wc-sec-cat" list="wc-cat-list" placeholder="Select category..." value="${esc(category)}">
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap">
+              <div class="field" style="margin:0;flex:1;min-width:150px">
+                <label style="font-size:11px">Section Banner Image URL (Optional)</label>
+                <input type="text" class="input wc-sec-img" placeholder="e.g. imgur.com/banner.jpg" value="${esc(imgUrl)}">
+              </div>
+              <div class="field" style="margin:0;flex:1;min-width:150px">
+                <label style="font-size:11px">Target Link (Optional)</label>
+                <input type="text" class="input wc-sec-link" placeholder="e.g. /category/shoes" value="${esc(linkUrl)}">
+              </div>
+            </div>
+          </div>
+        </div>
+    `;
+  },
+
+  addSection() {
+    this._secCount = (this._secCount || 0) + 1;
+    if(this._secCount > 50) { toast('Maximum 50 sections allowed','error'); return; }
+    const container = $('wc-sections-container');
+    const div = document.createElement('div');
+    div.innerHTML = this._buildSectionHTML('', '', true, '', '');
+    container.appendChild(div.firstElementChild);
+  },
+
+  _previewImg(inputEl, previewId) {
+    const val = (typeof inputEl === 'string' ? inputEl : inputEl.value).trim();
+    const container = $(previewId);
+    if(!container) return;
+    if(val) {
+      const src = (typeof getImgSrc === 'function') ? getImgSrc(val) : val;
+      container.innerHTML = `<img src="${esc(src)}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3;color:var(--danger)\\'><i class=\\'ri-error-warning-line\\' style=\\'font-size:24px\\'></i></div>'">`;
+    } else {
+      container.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3"><i class="ri-image-line" style="font-size:24px"></i></div>';
+    }
+  },
+
+  async save() {
+    const updates = {
+      // General
+      'Store Status': $('wc-store-status')?.checked ? 'Maintenance' : 'Live',
+      'B2B Mode': $('wc-b2b-mode')?.checked ? 'true' : 'false',
+      'Currency': $('wc-currency')?.value.trim(),
+      'Language': $('wc-language')?.value,
+      'Announcement Active': $('wc-announcement-active')?.checked ? 'true' : 'false',
+      'Announcement Text': $('wc-announcement-text')?.value.trim(),
+      'Announcement BG': $('wc-ann-bg')?.value.trim() || '',
+      'Announcement Text Color': $('wc-ann-text')?.value.trim() || '',
+      'Promo Popup Active': $('wc-popup-active')?.checked ? 'true' : 'false',
+      'Promo Popup Image': $('wc-popup-img')?.value.trim(),
+      'Promo Popup Link': $('wc-popup-link')?.value.trim(),
+
+      // Banners
+      'Flash Date': $('wc-flash-date')?.value.trim(),
+      'Flash Title': $('wc-flash-title')?.value.trim(),
+
+      // Product Page
+      'Quick View': $('wc-quick-view')?.checked ? 'true' : 'false',
+      'Stock Bar': $('wc-stock-bar')?.checked ? 'true' : 'false',
+      'Related Prod': $('wc-related-prod')?.checked ? 'true' : 'false',
+      'Live Search': $('wc-live-search')?.checked ? 'true' : 'false',
+      'Hover Effect': $('wc-hover-effect')?.value,
+      'Add Cart Text': $('wc-add-cart-text')?.value.trim(),
+      'Max Qty': $('wc-max-qty')?.value.trim() || '',
+      'Exp Delivery': $('wc-exp-delivery')?.value.trim() || '',
+
+      // Checkout
+      'Cart Drawer': $('wc-cart-drawer')?.checked ? 'true' : 'false',
+      'Order Notes': $('wc-order-notes')?.checked ? 'true' : 'false',
+      'Checkout Mode': $('wc-checkout-mode')?.value,
+      'Custom Field': $('wc-custom-field')?.value.trim(),
+      'Free Ship Amt': $('wc-free-ship-amt')?.value.trim(),
+      'Min Order': $('wc-min-order')?.value.trim(),
+
+      // Marketing
+      'Exit Popup': $('wc-exit-popup')?.checked ? 'true' : 'false',
+      'Loyalty System': $('wc-loyalty')?.checked ? 'true' : 'false',
+      'Trust Badges': $('wc-trust-badges')?.checked ? 'true' : 'false',
+      'Abandon Msg': $('wc-abandon-msg')?.value.trim(),
+
+      // Branding & SEO
+      'Website Logo URL': $('wc-logo')?.value.trim() || '',
+      'Font': $('wc-font')?.value,
+      'Theme Color': $('wc-theme-color')?.value.trim() || '',
+      'Live Chat': $('wc-live-chat')?.value,
+      'Footer Text': $('wc-footer-text')?.value.trim() || '',
+      'Link Facebook': $('wc-link-fb')?.value.trim() || '',
+      'Link Instagram': $('wc-link-ig')?.value.trim() || '',
+      'Link WhatsApp': $('wc-link-wa')?.value.trim() || '',
+      'Link TikTok': $('wc-link-tt')?.value.trim() || '',
+      'Meta Title': $('wc-meta-title')?.value.trim() || '',
+      'Meta Desc': $('wc-meta-desc')?.value.trim() || '',
+      'FB Pixel': $('wc-fb-pixel')?.value.trim() || '',
+      'GA4': $('wc-ga4')?.value.trim() || '',
+      'IG Pixel': $('wc-ig-pixel')?.value.trim() || '',
+      'TT Pixel': $('wc-tt-pixel')?.value.trim() || '',
+      'Pinterest Pixel': $('wc-pin-pixel')?.value.trim() || '',
+      'Snapchat Pixel': $('wc-snap-pixel')?.value.trim() || '',
+      'OG Image': $('wc-og-img')?.value.trim() || '',
+      'GSC Tag': $('wc-gsc-tag')?.value.trim() || '',
+      'Custom CSS': $('wc-custom-css')?.value.trim() || ''
+    };
+
+    // Hero Banners loop
+    for(let i=1; i<=5; i++){
+      updates[`Hero Banner ${i}`] = $(`wc-bimg-${i}`)?.value.trim() || '';
+      updates[`Banner Link ${i}`] = $(`wc-blink-${i}`)?.value.trim() || '';
+      updates[`Banner Title ${i}`] = $(`wc-btitle-${i}`)?.value.trim() || '';
+    }
+
+    // Dynamic Sections loop
+    const blocks = document.querySelectorAll('.wc-section-block');
+    let secIdx = 1;
+    blocks.forEach(block => {
+      const active = block.querySelector('.wc-sec-active').checked ? 'true' : 'false';
+      const title = block.querySelector('.wc-sec-title').value.trim();
+      const cat = block.querySelector('.wc-sec-cat').value.trim();
+      const img = block.querySelector('.wc-sec-img')?.value.trim() || '';
+      const link = block.querySelector('.wc-sec-link')?.value.trim() || '';
+      
+      if(title || cat || img) {
+        updates[`Section ${secIdx} Active`] = active;
+        updates[`Section ${secIdx} Title`] = title;
+        updates[`Section ${secIdx} Category`] = cat;
+        updates[`Section ${secIdx} Image`] = img;
+        updates[`Section ${secIdx} Link`] = link;
+        secIdx++;
+      }
+    });
+    
+    // Clear remaining up to 50
+    for(let i=secIdx; i<=50; i++){
+      updates[`Section ${i} Active`] = 'false';
+      updates[`Section ${i} Title`] = '';
+      updates[`Section ${i} Category`] = '';
+      updates[`Section ${i} Image`] = '';
+      updates[`Section ${i} Link`] = '';
+    }
+
+    showLoader('ওয়েবসাইট ডাটা সেভ হচ্ছে...');
+    try {
+      const res = await appsPost('updateSettings', { settings: updates });
+      if(res && res.success===false) throw new Error(res.msg||'Failed');
+      
+      // Update local state
+      state.data.settings = state.data.settings || {};
+      Object.assign(state.data.settings, updates);
+      
+      toast('ওয়েবসাইট 체ঞ্জ সেভ হয়েছে! (Website updated successfully)','success');
+    } catch(e){ toast(e.message,'error'); }
+    finally { hideLoader(); }
+  }
+};
+
+/* ============================================================
    ============ SETTINGS MODULE ============
 ============================================================ */
 YARZ.settings = {
@@ -4606,6 +5488,120 @@ YARZ.settings = {
     try {
       const res = await appsPost('githubSyncNow',{});
       toast('Sync সফল','success');
+    } catch(e){ toast(e.message,'error'); }
+    finally { hideLoader(); }
+  },
+
+  confirmClearFinancials(){
+    const html = `
+      <div class="modal-header">
+        <h3><i class="ri-eraser-line" style="color:var(--warn)"></i> শুধু Financial ডেটা ক্লিন</h3>
+        <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
+      </div>
+      <p style="margin-bottom:18px;color:var(--ink-2);line-height:1.7">⚠️ এই অপশনটি বাছাই প্রোডাক্ট ও ইনভেন্টরি <b>ঠিক রাখবে</b> কিন্তু Transactions, Orders, Ad Spend, Expenses সব <b>মুছে ফেলবে</b>। Google Sheets-এও ডেটা মুছে যাবে। এটি উল্টা করা যাবে না!</p>
+      <p style="font-size:12px;background:rgba(232,165,71,0.1);padding:10px;border-radius:10px;border:1px solid rgba(232,165,71,0.3);margin-bottom:18px">নিশ্চিত হতে নিচে বাক্সে লিখুন: <b>CLEAR FINANCIAL</b></p>
+      <div class="field"><input id="clear-confirm-text" class="input" placeholder="CLEAR FINANCIAL"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
+        <button class="btn btn-amber" onclick="YARZ.settings._doClearFinancials()">হ্যাঁ, শুধু Financial ডেটা মুছে ফেলুন</button>
+      </div>
+    `;
+    $('modal-content').innerHTML = html;
+    $('modal-overlay').classList.add('show');
+  },
+
+  async _doClearFinancials(){
+    const txt = ($('clear-confirm-text')?.value||'').trim();
+    if(txt !== 'CLEAR FINANCIAL'){
+      toast('সঠিক টেক্সট লিখুন','error'); return;
+    }
+    YARZ.closeModal();
+    showLoader('Financial ডেটা মুছে ফেলা হচ্ছে...');
+    try {
+      const res = await appsPost('clearFinancialsOnly', {});
+      if(res && res.success===false) throw new Error(res.error||res.msg||'Failed');
+      state.data.transactions = [];
+      state.data.orders = [];
+      state.data.websiteOrders = [];
+      state.data.adTracker = [];
+      state.data.expenses = [];
+      YARZ.render();
+      toast('বিত্তীয় ডেটা মুছে ফেলা হয়েছে ✔️', 'success');
+    } catch(e){ toast(e.message,'error'); }
+    finally { hideLoader(); }
+  },
+
+  confirmClearInventoryOnly(){
+    const html = `
+      <div class="modal-header">
+        <h3><i class="ri-box-3-line" style="color:var(--brand)"></i> শুধু প্রোডাক্ট ও ইনভেন্টরি ক্লিন</h3>
+        <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
+      </div>
+      <p style="margin-bottom:18px;color:var(--ink-2);line-height:1.7">⚠️ এই অপশনটি আর্থিক লেনদেন <b>ঠিক রাখবে</b> কিন্তু INVENTORY ও WEBSITE_SYNC থেকে সব প্রোডাক্ট <b>মুছে ফেলবে</b>।<br><br>🛡️ <b>ভয় নেই! আপনার ওয়েবসাইট কন্ট্রোল সেটিংস (CMS), হিরো ব্যানার এবং হোমপেজ সেকশন কনফিগারেশন সুরক্ষিত থাকবে।</b></p>
+      <p style="font-size:12px;background:rgba(99,102,241,0.1);padding:10px;border-radius:10px;border:1px solid rgba(99,102,241,0.3);margin-bottom:18px">নিশ্চিত হতে নিচে বাক্সে লিখুন: <b>CLEAR PRODUCTS</b></p>
+      <div class="field"><input id="clear-prod-confirm-text" class="input" placeholder="CLEAR PRODUCTS"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
+        <button class="btn btn-primary" onclick="YARZ.settings._doClearInventoryOnly()">হ্যাঁ, শুধু প্রোডাক্ট মুছে ফেলুন</button>
+      </div>
+    `;
+    $('modal-content').innerHTML = html;
+    $('modal-overlay').classList.add('show');
+  },
+
+  async _doClearInventoryOnly(){
+    const txt = ($('clear-prod-confirm-text')?.value||'').trim();
+    if(txt !== 'CLEAR PRODUCTS'){
+      toast('সঠিক টেক্সট লিখুন','error'); return;
+    }
+    YARZ.closeModal();
+    showLoader('প্রোডাক্ট মুছে ফেলা হচ্ছে...');
+    try {
+      const res = await appsPost('clearInventoryOnly', {});
+      if(res && res.success===false) throw new Error(res.error||res.msg||'Failed');
+      state.data.inventory = [];
+      YARZ.render();
+      toast('প্রোডাক্ট মুছে ফেলা হয়েছে ✔️', 'success');
+    } catch(e){ toast(e.message,'error'); }
+    finally { hideLoader(); }
+  },
+
+  confirmFullReset(){
+    const html = `
+      <div class="modal-header">
+        <h3><i class="ri-restart-line" style="color:var(--danger)"></i> সম্পূর্ণ Factory Reset</h3>
+        <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
+      </div>
+      <p style="margin-bottom:18px;color:var(--ink-2);line-height:1.7">️️⚠️⚠️ সব কিছু মুছে যাবে — <b>প্রোডাক্ট, ইনভেন্টরি, অর্ডার, টাকার হিসাব</b> — সবকিছু। Google Sheets-এও মুছে যাবে। <b>এটি উল্টা করা যাবে না!</b><br><br>🛡️ <b>ভয় নেই! আপনার ওয়েবসাইট কন্ট্রোল সেটিংস (CMS), হিরো ব্যানার এবং হোমপেজ সেকশন কনফিগারেশন সুরক্ষিত থাকবে।</b></p>
+      <p style="font-size:12px;background:rgba(232,98,92,0.1);padding:10px;border-radius:10px;border:1px solid rgba(232,98,92,0.3);margin-bottom:18px">নিশ্চিত হতে নিচে বাক্সে লিখুন: <b>FACTORY RESET</b></p>
+      <div class="field"><input id="reset-confirm-text" class="input" placeholder="FACTORY RESET"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
+        <button class="btn btn-red" onclick="YARZ.settings._doFullReset()">হ্যাঁ, সব মুছে ফেলুন</button>
+      </div>
+    `;
+    $('modal-content').innerHTML = html;
+    $('modal-overlay').classList.add('show');
+  },
+
+  async _doFullReset(){
+    const txt = ($('reset-confirm-text')?.value||'').trim();
+    if(txt !== 'FACTORY RESET'){
+      toast('সঠিক টেক্সট লিখুন','error'); return;
+    }
+    YARZ.closeModal();
+    showLoader('সম্পূর্ণ Reset হচ্ছে...');
+    try {
+      const res = await appsPost('fullFactoryReset', {});
+      if(res && res.success===false) throw new Error(res.error||res.msg||'Failed');
+      state.data.inventory = [];
+      state.data.orders = [];
+      state.data.websiteOrders = [];
+      state.data.transactions = [];
+      state.data.adTracker = [];
+      state.data.expenses = [];
+      YARZ.render();
+      toast('Factory Reset সম্পন্ন ✔️', 'success');
     } catch(e){ toast(e.message,'error'); }
     finally { hideLoader(); }
   }
@@ -4828,7 +5824,7 @@ const modalBuilders = {
     const today = new Date();
     const dateStr = today.getFullYear().toString().slice(-2)+String(today.getMonth()+1).padStart(2,'0')+String(today.getDate()).padStart(2,'0');
     const rnd = Math.floor(1000+Math.random()*9000);
-    const oid = `MAN-${dateStr}-${rnd}`;
+    const oid = `YARZ-${dateStr}-${rnd}`;
     return `
       <div class="modal-header">
         <h3><i class="fas fa-bag-shopping"></i> নতুন অর্ডার</h3>
@@ -4836,7 +5832,7 @@ const modalBuilders = {
       </div>
       <div class="row">
         <div class="field"><label>Order ID <span class="req">*</span></label><input id="o-oid" class="input" value="${oid}"></div>
-        <div class="field"><label>Source</label><select id="o-source" class="select"><option>Facebook</option><option>Instagram</option><option>WhatsApp</option><option>Manual</option></select></div>
+        <div class="field"><label>Source</label><select id="o-source" class="select"><option value="Facebook">📘 Facebook</option><option value="Instagram">📸 Instagram</option><option value="WhatsApp">💬 WhatsApp</option><option value="TikTok">🎵 TikTok</option><option value="Website">🌐 Website</option></select></div>
       </div>
       <div class="field"><label>Customer Name <span class="req">*</span></label><input id="o-name" class="input"></div>
       <div class="row">
@@ -4845,10 +5841,22 @@ const modalBuilders = {
       </div>
       <div class="field"><label>Address <span class="req">*</span></label><textarea id="o-addr" class="textarea" style="min-height:60px"></textarea></div>
       <div class="field"><label>Product <span class="req">*</span></label>
-        <select id="o-product" class="select" onchange="YARZ._calcOrder(); YARZ._updateStkBadge('o')">
+        <select id="o-product" class="select" onchange="YARZ._calcOrder(); YARZ._updateStkBadge('o'); YARZ._showProductPreview();">
           <option value="">— সিলেক্ট করুন —</option>
           ${active.map(p=>`<option value="${esc(p.name)}" data-sale="${p.sale}" data-din="${p.deliveryDhaka}" data-dout="${p.deliveryOutside}">${esc(p.name)} (৳${p.sale})</option>`).join('')}
         </select>
+        <!-- Product Preview Card -->
+        <div id="o-product-preview" style="display:none;margin-top:10px;padding:12px;border-radius:14px;background:rgba(63,191,165,0.07);border:1px solid rgba(63,191,165,0.22)">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div id="o-prod-img" style="width:64px;height:64px;border-radius:12px;background:rgba(0,0,0,0.05) center/cover no-repeat;flex-shrink:0;border:1px solid rgba(63,191,165,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--ink-4)"><i class="ri-shopping-bag-3-line"></i></div>
+            <div style="flex:1;min-width:0">
+              <div id="o-prod-name" style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:3px"></div>
+              <div id="o-prod-cat" style="font-size:11px;color:var(--ink-3);margin-bottom:5px"></div>
+              <div id="o-prod-price" style="font-size:15px;font-weight:800;color:var(--accent-2);margin-bottom:5px"></div>
+              <div id="o-prod-stock" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="row">
         <div class="field"><label>Size <span id="o-stk-badge" class="chip chip-gray" style="font-size:10px;padding:2px 4px;margin-left:4px;display:none"></span></label>
@@ -4860,7 +5868,7 @@ const modalBuilders = {
         <div class="field"><label>Payment</label><select id="o-pay" class="select">${PAYMENT_METHODS.map(p=>`<option>${p}</option>`).join('')}</select></div>
         <div class="field"><label>Courier</label><select id="o-courier" class="select">${COURIERS.map(c=>`<option>${c}</option>`).join('')}</select></div>
       </div>
-      <div class="field"><label>Tracking ID</label><input id="o-tracking" class="input" placeholder="Consignment No"></div>
+      <div class="field"><label>কুরিয়ার ট্র্যাকিং আইডি</label><input id="o-tracking" class="input" placeholder="Consignment / Tracking No"></div>
       <div class="field"><label>Status</label>
         <select id="o-status" class="select">
           <option value="Pending" selected>⏳ Pending (নতুন অর্ডার)</option>
@@ -5030,6 +6038,31 @@ YARZ._saveSale = async function(){
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> বিক্রয় কনফার্ম'; }
 };
 
+YARZ._showProductPreview = function(){
+  const sel = $('o-product');
+  const preview = $('o-product-preview');
+  if(!preview || !sel) return;
+  const pName = sel.value;
+  if(!pName){ preview.style.display='none'; return; }
+  const p = state.data.inventory.find(x=>x.name===pName);
+  if(!p){ preview.style.display='none'; return; }
+  preview.style.display='block';
+  const imgEl = $('o-prod-img');
+  const imgSrc = p.img1 ? getImgSrc(p.img1) : '';
+  if(imgSrc){
+    imgEl.style.backgroundImage = `url('${imgSrc}')`;
+    imgEl.innerHTML = '';
+  } else {
+    imgEl.style.backgroundImage = '';
+    imgEl.innerHTML = '<i class="ri-shopping-bag-3-line"></i>';
+  }
+  $('o-prod-name').textContent = p.name;
+  $('o-prod-cat').textContent = (p.category||'') + (p.fabric?' · '+p.fabric:'') + (p.badge?' · '+p.badge:'');
+  $('o-prod-price').textContent = fmtBDT(p.sale) + (p.regular>p.sale ? '  (MRP: '+fmtBDT(p.regular)+')' : '');
+  const sizes = [['M',p.stkM-p.soldM],['L',p.stkL-p.soldL],['XL',p.stkXL-p.soldXL],['XXL',p.stkXXL-p.soldXXL]];
+  $('o-prod-stock').innerHTML = sizes.map(([sz,qty])=>`<span class="chip ${qty>0?'chip-green':'chip-red'}" style="font-size:10px">${sz}: ${toBn(Math.max(0,qty))}</span>`).join('');
+};
+
 YARZ._calcOrder = function(){
   const sel = $('o-product'); const opt = sel.options[sel.selectedIndex];
   if(!opt || !opt.value){ $('o-sub').textContent='৳0'; $('o-del').textContent='৳0'; $('o-tot').textContent='৳0'; return; }
@@ -5119,6 +6152,154 @@ YARZ._saveRet = async function(){
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-rotate-left"></i> Return'; }
 };
 
+// ============ CUSTOM UI MODULE ============
+YARZ.ui = {
+  confirmDeleteSection(element) {
+    $('ui-confirm-modal').style.display = 'flex';
+    this._deleteTarget = element;
+  },
+  executeDelete() {
+    if(this._deleteTarget) {
+      this._deleteTarget.remove();
+      this._deleteTarget = null;
+    }
+    this.closeConfirm();
+  },
+  closeConfirm() {
+    $('ui-confirm-modal').style.display = 'none';
+    this._deleteTarget = null;
+  },
+
+  showGuide(tabName) {
+    const data = {
+      'general': {
+        icon: 'ri-settings-4-line', color: 'var(--brand)', title: 'General Setup - গাইডলাইন',
+        body: `<b>১. স্টোর মেইনটেন্যান্স (Store Maintenance):</b><br>
+যখন আপনি আপনার ওয়েবসাইটে নতুন কোনো থিম আপডেট করবেন, বা স্টক মিলাবেন, কিংবা সাময়িকভাবে অর্ডার নেওয়া বন্ধ রাখতে চাইবেন, তখন এই অপশনটি অন করবেন। এটি অন থাকলে সাধারণ কাস্টমাররা ওয়েবসাইটে ঢুকতে পারবে না, তারা একটি "Under Maintenance" পেজ দেখতে পাবে। তবে আপনি ড্যাশবোর্ডে লগইন থাকা অবস্থায় সাইট ভিজিট করতে পারবেন।<br><br>
+
+<b>২. B2B / Wholesale Mode:</b><br>
+আপনি যদি পাইকারি ব্যবসা করেন এবং চান না যে সাধারণ মানুষ আপনার প্রোডাক্টের দাম জানুক, তাহলে এটি অন করুন। এটি অন করলে ওয়েবসাইটে প্রোডাক্ট দেখা যাবে কিন্তু দাম হাইড করা থাকবে। শুধুমাত্র রেজিস্টার্ড বা লগইন করা হোলসেলাররাই দাম দেখতে এবং অর্ডার করতে পারবে। এটি আপনার প্রাইসিং স্ট্র্যাটেজি গোপন রাখতে সাহায্য করে।<br><br>
+
+<b>৩. কারেন্সি (Currency) ও ভাষা (Language):</b><br>
+আপনার ওয়েবসাইটের ডিফল্ট কারেন্সি কী হবে (যেমন: ৳ বা BDT) তা এখানে লিখুন। পাশাপাশি ওয়েবসাইটের লেখাগুলো কি ডিফল্টভাবে বাংলাতে থাকবে নাকি ইংরেজিতে, তা নির্বাচন করুন। "Bilingual (Toggle)" সিলেক্ট করলে কাস্টমাররা ওয়েবসাইটের মেনু থেকে নিজেদের পছন্দমতো ভাষা চেঞ্জ করে নিতে পারবে, যা ইউজার এক্সপেরিয়েন্স অনেক বাড়িয়ে দেয়।<br><br>
+
+<b>৪. গ্লোবাল অ্যানাউন্সমেন্ট (Global Announcement):</b><br>
+ওয়েবসাইটের একদম উপরে একটি চিকন স্ট্রিপ বা ব্যানার থাকে, যা সব পেজ থেকে দেখা যায়। এটিকে গ্লোবাল অ্যানাউন্সমেন্ট বলে। এখানে আপনি বিভিন্ন আকর্ষণীয় অফার লিখে রাখতে পারেন। যেমন: "🔥 সারা দেশে ফ্রি হোম ডেলিভারি পেতে ২০০০ টাকার বেশি অর্ডার করুন!"। এই ব্যানারের ব্যাকগ্রাউন্ড কালার এমনভাবে সিলেক্ট করবেন যা আপনার ওয়েবসাইটের থিমের সাথে মানানসই এবং মানুষের চোখে দ্রুত পড়ে। টেক্সট কালার সাধারণত সাদা বা কালো রাখলে পড়তে সুবিধা হয়।<br><br>
+
+<b>৫. প্রোমো পপআপ (Promotional Popup):</b><br>
+ওয়েবসাইটে কোনো ভিজিটর প্রবেশ করলেই স্ক্রিনের মাঝে একটি অফার ব্যানার পপআপ হিসেবে ভেসে উঠবে। এটি ইমপালস বায়িং (Impulse Buying) বাড়াতে দারুণ কাজ করে। এখানে একটি আকর্ষণীয় ছবি দেবেন (যেমন: "Welcome Offer - 10% Discount")। এবং "Target Link" এ ওই ডিসকাউন্ট ক্যাটাগরির লিংক দিয়ে দেবেন। এতে কাস্টমার পপআপে ক্লিক করলেই সরাসরি অফারের পেজে চলে যাবে। এটি কনভার্শন রেট বহুগুণ বাড়িয়ে দেয়।`
+      },
+      'banners': {
+        icon: 'ri-image-line', color: 'var(--info)', title: 'Banners & Flash - গাইডলাইন',
+        body: `<b>১. ফ্ল্যাশ সেল টাইমার (Flash Sale Timer):</b><br>
+ফ্ল্যাশ সেল হলো একটি লিমিটেড সময়ের অফার যা কাস্টমারের মনে "Fear of Missing Out (FOMO)" বা হারিয়ে ফেলার ভয় তৈরি করে। যখন আপনি একটি নির্দিষ্ট তারিখ ও সময় সিলেক্ট করে দেবেন, তখন ওয়েবসাইটের হেডারের নিচে একটি কাউন্টডাউন টাইমার শুরু হয়ে যাবে (যেমন: 02 Days 14 Hours 30 Minutes)। এর সাথে একটি আকর্ষণীয় টাইটেল দিন যেমন "স্টক শেষ হওয়ার আগেই লুফে নিন!"। এটি কাস্টমারকে দ্রুত অর্ডার করতে বাধ্য করে।<br><br>
+
+<b>২. হিরো স্লাইডার ব্যানার (Hero Slider Banners):</b><br>
+ওয়েবসাইটের হোমপেজে ঢোকার পরেই সবচেয়ে বড় যে ব্যানারগুলো স্লাইড হতে থাকে, সেটিই হিরো ব্যানার। একটি ওয়েবসাইটের ইম্প্রেশনের প্রথম ৩ সেকেন্ড এই ব্যানারের ওপর নির্ভর করে। এখানে সর্বোচ্চ ৫টি ব্যানার দিতে পারবেন। ব্যানারগুলো অবশ্যই হাই-কোয়ালিটি এবং 16:9 রেশিও (যেমন: 1920x1080 পিক্সেল) হতে হবে। সাধারণ ছবির বদলে আপনি চাইলে শর্ট MP4 ভিডিওর লিংকও দিতে পারেন। ভিডিও ব্যানার কাস্টমারের এটেনশন বেশি গ্র্যাব করে।<br><br>
+
+<b>৩. ব্যানার টেক্সট (Overlay Text):</b><br>
+ছবির উপরে যদি কোনো লেখা দেখাতে চান, সেটি এখানে লিখবেন। তবে ব্যানার ইমেজের ভেতরেই যদি সুন্দর করে লেখা ডিজাইন করা থাকে, তাহলে এটি ফাঁকা রাখাই ভালো।<br><br>
+
+<b>৪. টার্গেট লিংক (Banner Target Link):</b><br>
+শুধু ব্যানার দেখালেই হবে না, কাস্টমার যেন ব্যানারে ক্লিক করে সরাসরি প্রোডাক্ট কিনতে পারে সেই ব্যবস্থা করতে হবে। ধরুন, ব্যানারটি "Winter Collection" নিয়ে। তাহলে আপনার ওয়েবসাইটের উইন্টার ক্যাটাগরির লিংকটি কপি করে এখানে পেস্ট করুন। লিংক দেওয়ার সময় পুরো URL না দিয়ে শুধু <code>/category/winter</code> এভাবে দিলে ওয়েবসাইট দ্রুত লোড হয়।`
+      },
+      'builder': {
+        icon: 'ri-layout-masonry-line', color: 'var(--teal)', title: 'Homepage Builder - গাইডলাইন',
+        body: `<b>১. ডাইনামিক সেকশন (Dynamic Sections):</b><br>
+একটি ই-কমার্স ওয়েবসাইটের হোমপেজ যত সুন্দরভাবে সাজানো থাকে, কাস্টমার তত বেশি সময় কাটায় এবং বেশি প্রোডাক্ট কেনে। এই বিল্ডার দিয়ে আপনি আপনার ওয়েবসাইটের হোমপেজকে নিজের ইচ্ছামতো ৫০টি ব্লকে সাজাতে পারবেন। কোনো কোডিং ছাড়াই আপনি ড্র্যাগ-এন্ড-ড্রপ এর মতো করে সেকশন তৈরি করতে পারবেন।<br><br>
+
+<b>২. সেকশন টাইটেল (Section Title):</b><br>
+প্রতিটি সেকশনের উপরে যে হেডিং থাকে সেটি এখানে দিন। যেমন: "New Arrivals", "Best Sellers", বা "Top Gadgets"। আকর্ষণীয় টাইটেল ব্যবহার করবেন যাতে কাস্টমার প্রোডাক্টগুলো দেখতে আগ্রহী হয়।<br><br>
+
+<b>৩. ক্যাটাগরি লিংকিং (Category Linking):</b><br>
+এটি সবচেয়ে গুরুত্বপূর্ণ অপশন। এই সেকশনে আপনি কোন প্রোডাক্টগুলো দেখাতে চান তা নির্ধারণ করতে হবে। আপনি ইনভেন্টরিতে প্রোডাক্ট আপলোড করার সময় যে ক্যাটাগরি বা ট্যাগ ব্যবহার করেছেন, সেটি এখান থেকে সিলেক্ট করুন। সিস্টেম স্বয়ংক্রিয়ভাবে ওই ক্যাটাগরির নতুন প্রোডাক্টগুলো এই সেকশনে নিয়ে আসবে।<br><br>
+
+<b>৪. ব্যানার ইমেজ ও লিংক (Optional):</b><br>
+প্রোডাক্ট লিস্ট শুরু হওয়ার আগে আপনি চাইলে ওই সেকশনের জন্য একটি ডেডিকেটেড ব্যানার ছবি দিতে পারেন। এটি সেকশনটিকে আরও আকর্ষণীয় করে তোলে। এছাড়া "Target Link" এ ক্লিক করলে কাস্টমার পুরো ক্যাটাগরির পেজে চলে যাবে, যেখানে সে ওই ক্যাটাগরির সবগুলো প্রোডাক্ট একসাথে দেখতে পাবে।`
+      },
+      'product': {
+        icon: 'ri-shopping-bag-3-line', color: 'var(--purple)', title: 'Product Page - গাইডলাইন',
+        body: `<b>১. কুইক ভিউ (AJAX Quick View):</b><br>
+কাস্টমার যখন প্রোডাক্টের লিস্টে থাকে, তখন বারবার ভিন্ন পেজে গেলে তার কেনাকাটার আগ্রহ কমে যেতে পারে। এটি অন করলে প্রোডাক্টের ওপর ক্লিক করা মাত্রই একটি সুন্দর পপআপে প্রোডাক্টের ছবি, দাম এবং কার্টে যোগ করার বাটন চলে আসবে। পেজ লোড ছাড়াই কাস্টমার প্রোডাক্ট দেখে কিনতে পারবে।<br><br>
+
+<b>২. স্টক আর্জেন্সি বার (Stock Urgency Bar):</b><br>
+ফেসবুক অ্যাড থেকে আসা কাস্টমারদের দ্রুত অর্ডার করানোর এটি একটি জাদুকরী ট্রিকস! এটি অন করলে প্রোডাক্ট পেজে একটি প্রোগ্রেস বার দেখাবে এবং লেখা থাকবে "Hurry up! Only 5 items left in stock"। এটি কাস্টমারের মনে তাড়াহুড়ো সৃষ্টি করে (Scarcity Marketing), ফলে সে দ্রুত চেকআউটে চলে যায়।<br><br>
+
+<b>৩. হোভার ইফেক্ট (Image Hover Effect):</b><br>
+ডেস্কটপ থেকে যারা আপনার ওয়েবসাইট ভিজিট করবে, তারা প্রোডাক্টের ছবির ওপর মাউস নিলে কী হবে তা এখান থেকে ঠিক করুন। 'Zoom In' দিলে ছবিটি বড় হয়ে প্রোডাক্টের ডিটেইলস দেখাবে। আর 'Swap to 2nd Image' দিলে স্বয়ংক্রিয়ভাবে প্রোডাক্টের দ্বিতীয় ছবিটি দেখাবে, যা কাপড়ের বা ফ্যাশন আইটেমের ক্ষেত্রে খুব ভালো কাজ করে।<br><br>
+
+<b>৪. সর্বোচ্চ অর্ডার লিমিট (Max Order Quantity):</b><br>
+কোনো কাস্টমার যাতে ভুলে বা ইচ্ছাকৃতভাবে একবারে ১০০-২০০ পিস অর্ডার করে ফেক অর্ডারের সৃষ্টি না করে, সেজন্য একটি লিমিট সেট করে দিন। যেমন: "5" লিখে দিলে একজন কাস্টমার একবারে ৫টির বেশি পিস কার্টে যোগ করতে পারবে না।<br><br>
+
+<b>৫. সম্ভাব্য ডেলিভারি মেসেজ (Expected Delivery):</b><br>
+কাস্টমার প্রোডাক্ট পছন্দ করার পর সবচেয়ে বেশি যে জিনিসটি জানতে চায় তা হলো "কবে ডেলিভারি পাবো?"। প্রোডাক্ট পেজে যদি লেখা থাকে "Expected Delivery: Inside Dhaka 2 Days, Outside 3 Days", তাহলে কাস্টমারের মনে আর কোনো দ্বিধা থাকে না এবং কনভার্শন রেট বেড়ে যায়।`
+      },
+      'checkout': {
+        icon: 'ri-shopping-cart-2-line', color: 'var(--accent)', title: 'Cart & Checkout - গাইডলাইন',
+        body: `<b>১. কার্ট ড্রয়ার (Slide-out Cart Drawer):</b><br>
+কাস্টমার যখন "Add to Cart" এ ক্লিক করে, তখন তাকে সরাসরি কার্ট পেজে নিয়ে গেলে সে আর অন্য প্রোডাক্ট দেখে না। কিন্তু কার্ট ড্রয়ার অন রাখলে প্রোডাক্ট কার্টে যোগ হওয়ার পর স্ক্রিনের ডানপাশ থেকে সুন্দর একটি স্লাইডার বের হয়ে আসে। কাস্টমার চাইলে সেটি ক্লোজ করে আরও কেনাকাটা চালিয়ে যেতে পারে, যা আপনার এভারেজ অর্ডার ভ্যালু (AOV) বাড়াতে সাহায্য করে।<br><br>
+
+<b>২. চেকআউট মোড (Checkout Mode):</b><br>
+"Direct Website Checkout" সিলেক্ট করলে কাস্টমার ওয়েবসাইটের ভেতরেই নাম, ফোন নম্বর, ঠিকানা দিয়ে অর্ডার সাবমিট করবে। আর যদি "WhatsApp Order Redirect" সিলেক্ট করেন, তবে কার্টের সমস্ত প্রোডাক্টের লিস্ট স্বয়ংক্রিয়ভাবে মেসেজ আকারে কাস্টমারের হোয়াটসঅ্যাপে চলে যাবে এবং সেখান থেকে সে আপনার সাথে কথা বলে অর্ডার কনফার্ম করবে। নতুন ব্যবসার ক্ষেত্রে হোয়াটসঅ্যাপে অর্ডার নিলে কাস্টমারের বিশ্বাস বাড়ে।<br><br>
+
+<b>৩. অর্ডার নোটস ও কাস্টম ফিল্ড:</b><br>
+কাস্টমার যদি স্পেশাল কোনো রিকোয়েস্ট (যেমন: "ভাই, প্রোডাক্টটি সুন্দর করে প্যাকেজিং করে দিয়েন, এটি গিফট হিসেবে দেব") করতে চায়, তবে Order Notes অন রাখুন। আর আপনি যদি কাস্টমারের কাছ থেকে অতিরিক্ত তথ্য নিতে চান (যেমন: কোম্পানির নাম বা BIN নম্বর), তাহলে Custom Field ব্যবহার করুন।<br><br>
+
+<b>৪. ফ্রি শিপিং প্রোগ্রেস বার (Free Shipping Target):</b><br>
+এটি সেলস বাড়ানোর অন্যতম সেরা কৌশল। আপনি যদি এখানে "2000" সেট করে দেন, তবে কাস্টমার ৫০০ টাকার প্রোডাক্ট কার্টে রাখলে তাকে দেখাবে "Add 1500৳ more to get FREE SHIPPING!"। ফ্রি ডেলিভারির আশায় কাস্টমার আরও কিছু প্রোডাক্ট কার্টে যোগ করবে।`
+      },
+      'marketing': {
+        icon: 'ri-megaphone-line', color: 'var(--danger)', title: 'Marketing - গাইডলাইন',
+        body: `<b>১. এক্সিট-ইন্টেন্ট পপআপ (Exit-Intent Popup):</b><br>
+আপনার ওয়েবসাইটের ভিজিটর যখন কোনো প্রোডাক্ট না কিনেই ওয়েবসাইট থেকে বের হয়ে যাওয়ার জন্য মাউসটিকে উপরের দিকে (Close বাটন বা ট্যাবের দিকে) নিয়ে যাবে, ঠিক তখনই স্ক্রিনে একটি পপআপ আসবে। সেখানে লেখা থাকবে "Wait! Don't go! Here is a 10% special discount for you."। এই ফিচারটি ব্যবহার করে অনেক হারানো কাস্টমারকে ফিরিয়ে আনা সম্ভব।<br><br>
+
+<b>২. লয়্যালটি পয়েন্ট (Loyalty Points System):</b><br>
+আপনার কাস্টমাররা যেন বারবার আপনার ওয়েবসাইট থেকেই কেনাকাটা করে, সেজন্য এই সিস্টেমটি অসাধারণ কাজ করে। কাস্টমার ১০০ টাকার কেনাকাটা করলে তাকে কিছু পয়েন্ট দিন, যা দিয়ে সে পরবর্তী কেনাকাটায় ডিসকাউন্ট পাবে। এতে রিটার্নিং কাস্টমার (Returning Customer) বৃদ্ধি পায় এবং কাস্টমার অ্যাকুইজিশন কস্ট (CAC) অনেক কমে যায়।<br><br>
+
+<b>৩. ট্রাস্ট ব্যাজ (Secure Trust Badges):</b><br>
+নতুন ওয়েবসাইটে কাস্টমাররা পেমেন্ট করতে বা অ্যাডভান্স টাকা দিতে ভয় পায়। চেকআউট পেজ এবং প্রোডাক্ট পেজে যদি "100% Secure Checkout", "SSL Secured", বা "Verified Merchant" এর মতো ট্রাস্ট ব্যাজগুলো দেখানো হয়, তবে কাস্টমারের বিশ্বাস অনেক বেড়ে যায় এবং ফেক অর্ডার কমে গিয়ে জেনুইন অর্ডার আসে।<br><br>
+
+<b>৪. অ্যাবান্ডন কার্ট মেসেজ (Abandon Cart Recovery):</b><br>
+অনেক কাস্টমার প্রোডাক্ট কার্টে যোগ করে কিন্তু পেমেন্ট না করে বা অর্ডার কনফার্ম না করেই বের হয়ে যায়। এদেরকে রিমার্কেটিং করা খুব জরুরি। এখানে আপনি একটি মেসেজ টেমপ্লেট লিখে রাখবেন, যেমন: "Hello! আপনি আমাদের ওয়েবসাইটে কিছু প্রোডাক্ট কার্টে রেখে গিয়েছিলেন। আপনার জন্য কি অর্ডারটি কনফার্ম করে দেবো?"। পরবর্তীতে আপনি ড্যাশবোর্ড থেকে মাত্র এক ক্লিকেই এই মেসেজটি কাস্টমারের হোয়াটসঅ্যাপে পাঠাতে পারবেন।`
+      },
+      'branding': {
+        icon: 'ri-paint-brush-line', color: 'var(--ink-1)', title: 'Branding, SEO & Ads Tracking - গাইডলাইন',
+        body: `<b>ফেসবুক অ্যাড থেকে হাই-কোয়ালিটি সেলস আনা এবং খরচ কমানোর এ-টু-জেড গাইডলাইন:</b><br><br>
+
+<b>১. পিক্সেল (Pixel) কী এবং কেন লাগে?</b><br>
+আপনি যখন ফেসবুকে অ্যাড দেন, তখন ফেসবুক অনেক মানুষকে আপনার ওয়েবসাইট দেখায়। কিন্তু সবাই প্রোডাক্ট কেনে না। পিক্সেল হলো একটি ছোট্ট ট্র্যাকিং কোড বা ID, যা ফেসবুককে বলে দেয় যে কোন মানুষগুলো আপনার ওয়েবসাইটে ঢুকেছে, কারা প্রোডাক্ট কার্টে যোগ করেছে, এবং কারা সত্যি সত্যি অর্ডার কনফার্ম করেছে। এই ডেটা পেয়ে ফেসবুক তার এআই (AI) সিস্টেমকে আরও স্মার্ট করে তোলে এবং পরবর্তীতে অ্যাডটি শুধুমাত্র সেই ধরনের মানুষদেরকেই দেখায় যাদের প্রোডাক্ট কেনার সম্ভাবনা সবচেয়ে বেশি। পিক্সেল ছাড়া অ্যাড চালানো মানে অন্ধকারে ঢিল ছোঁড়া, এতে আপনার প্রচুর টাকা নষ্ট হবে কিন্তু সেলস আসবে না।<br><br>
+
+<b>২. কিভাবে পিক্সেল আইডি (Pixel ID) বের করবেন?</b><br>
+• <b>Facebook Pixel:</b> আপনার Facebook Business Manager এ লগইন করুন। <code>Events Manager</code> > <code>Data Sources</code> এ যান। সেখানে আপনার ওয়েবসাইটের নামে একটি Pixel তৈরি করুন। পিক্সেল তৈরি হলে একটি ১৫-১৬ ডিজিটের নম্বর পাবেন (যেমন: 101234567890123), সেটি কপি করে এখানকার Facebook Pixel ID ফিল্ডে বসিয়ে দিন।<br>
+• <b>Instagram/TikTok/Snapchat Pixel:</b> একইভাবে TikTok Ads Manager বা Snapchat Ads Manager এর Events অপশনে গিয়ে পিক্সেল তৈরি করে তার ID গুলো সংশ্লিষ্ট ঘরে বসিয়ে দিন।<br>
+• পিক্সেল বসানোর পর আপনাকে আর কোডিং নিয়ে ভাবতে হবে না। এই সিস্টেম স্বয়ংক্রিয়ভাবে ViewContent, AddToCart, InitiateCheckout এবং Purchase ইভেন্টগুলো ফেসবুকে পাঠাতে থাকবে।<br><br>
+
+<b>৩. অ্যাড রান করার সময় করণীয়:</b><br>
+ফেসবুকে অ্যাড রান করার সময় অবশ্যই <code>Traffic</code> বা <code>Engagement</code> অবজেক্টিভের বদলে <b><code>Sales</code></b> বা <b><code>Conversions</code></b> অবজেক্টিভ সিলেক্ট করবেন। কনভার্শন ইভেন্ট হিসেবে <code>Purchase</code> সিলেক্ট করবেন। এতে ফেসবুক জানবে যে আপনার মূল লক্ষ্য হলো সেলস আনা, শুধু লাইক বা ক্লিক আনা নয়। ফলে আপনার অ্যাডের খরচ (CPA) অনেক কমে যাবে এবং ফেক অর্ডার না এসে হাই-কোয়ালিটি অর্ডার আসবে।<br><br>
+
+<b>৪. Google Analytics 4 (GA4):</b><br>
+আপনার ওয়েবসাইটে প্রতিদিন কত মানুষ ঢুকছে, তারা কোন শহর থেকে আসছে, মোবাইল না কম্পিউটার ব্যবহার করছে, এবং কোন পেজে সবচেয়ে বেশি সময় কাটাচ্ছে—এই সব এনালাইটিক্স দেখার জন্য GA4 ব্যবহার করা হয়। analytics.google.com এ গিয়ে প্রোপার্টি ক্রিয়েট করে "G-XXXXXXX" ফরম্যাটের Measurement ID টি এখানে বসিয়ে দিন।<br><br>
+
+<b>৫. Social Sharing Image (OG Image):</b><br>
+আপনার ওয়েবসাইটের লিংক যখন কেউ মেসেঞ্জারে বা হোয়াটসঅ্যাপে শেয়ার করে, তখন একটি প্রিভিউ ছবি দেখা যায়। এটিকে Open Graph Image বলে। আপনি ক্যানভা (Canva) দিয়ে 1200x630 সাইজের সুন্দর একটি কভার ফটো বানিয়ে imgur.com এ আপলোড করে তার লিংকটি এখানে দিয়ে দিন। এটি আপনার ব্র্যান্ডের প্রফেশনালিজম প্রকাশ করে।<br><br>
+
+<b>৬. Google Search Console (GSC):</b><br>
+কেউ গুগল সার্চে আপনার ব্যান্ডের নাম বা প্রোডাক্ট লিখে সার্চ দিলে যেন আপনার ওয়েবসাইটটি প্রথম পেজেই আসে, তার জন্য ওয়েবসাইটটিকে গুগলে ভেরিফাই করতে হয়। search.google.com/search-console এ গিয়ে "HTML Tag" মেথডটি সিলেক্ট করুন। সেখান থেকে <code>&lt;meta name="google-site-verification" content="xxx..." /&gt;</code> কোডটি কপি করে এখানে বসিয়ে দিন। এরপর গুগল খুব সহজেই আপনার ওয়েবসাইট ইনডেক্স করে নেবে।`
+      }
+    };
+    
+    const d = data[tabName];
+    if(!d) return;
+    
+    $('ui-guide-title').innerHTML = `<i class="${d.icon}" style="color:${d.color}"></i> ${d.title}`;
+    $('ui-guide-body').innerHTML = d.body;
+    $('ui-guide-modal').style.display = 'flex';
+  },
+  closeGuide() {
+    $('ui-guide-modal').style.display = 'none';
+  }
+};
+
 // ============ BOOT ============
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', setupLogin);
@@ -5128,5 +6309,36 @@ if (document.readyState === 'loading') {
 
 })();
 </script>
+
+<!-- CUSTOM CONFIRM MODAL -->
+<div id="ui-confirm-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:var(--surface-1); border:1px solid var(--line); border-radius:16px; padding:24px; width:100%; max-width:320px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.2); animation:slideUp 0.3s ease;">
+    <div style="width:48px; height:48px; border-radius:50%; background:rgba(239,68,68,0.1); color:var(--danger); display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 16px;">
+      <i class="ri-delete-bin-line"></i>
+    </div>
+    <h3 style="margin-bottom:8px; color:var(--ink-1); font-size:18px;">Delete Section?</h3>
+    <p style="color:var(--ink-2); font-size:14px; margin-bottom:24px;">আপনি কি সত্যি এই সেকশনটি ডিলিট করতে চান? এটি আর ফিরিয়ে আনা যাবে না।</p>
+    <div style="display:flex; gap:12px;">
+      <button onclick="YARZ.ui.closeConfirm()" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink-1); cursor:pointer; font-weight:600;">ক্যান্সেল</button>
+      <button onclick="YARZ.ui.executeDelete()" style="flex:1; padding:10px; border-radius:8px; border:none; background:var(--danger); color:#fff; cursor:pointer; font-weight:600;">হ্যাঁ, ডিলিট করুন</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOW TO USE GUIDE MODAL -->
+<div id="ui-guide-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:99999; align-items:center; justify-content:center; padding:16px;">
+  <div style="background:var(--surface-1); border:1px solid var(--line); border-radius:16px; width:100%; max-width:500px; box-shadow:0 10px 30px rgba(0,0,0,0.2); animation:slideUp 0.3s ease; display:flex; flex-direction:column; max-height:85vh;">
+    <div style="padding:20px 24px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+      <h3 id="ui-guide-title" style="margin:0; font-size:18px; color:var(--ink-1); display:flex; align-items:center; gap:8px;"></h3>
+      <button onclick="YARZ.ui.closeGuide()" style="background:none; border:none; color:var(--ink-3); cursor:pointer; font-size:20px;"><i class="ri-close-line"></i></button>
+    </div>
+    <div id="ui-guide-body" style="padding:24px; overflow-y:auto; color:var(--ink-2); font-size:14px; line-height:1.6;">
+    </div>
+    <div style="padding:16px 24px; border-top:1px solid var(--line); text-align:right;">
+      <button onclick="YARZ.ui.closeGuide()" style="padding:10px 24px; border-radius:8px; border:none; background:var(--brand); color:#fff; cursor:pointer; font-weight:600;">বুঝতে পেরেছি</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
