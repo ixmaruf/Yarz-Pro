@@ -60,60 +60,59 @@ function doGet(e) {
 // ═════════ doPost — Dashboard write actions ═════════
 function doPost(e) {
   try {
-    var body = JSON.parse(e.postData.contents);
+    var contents = e.postData.contents;
+    var body = JSON.parse(contents);
     if (body.key !== WEB_API_KEY) return _webErr_("Invalid API Key", 401);
 
     var action = String(body.action || "").trim();
     var lowerAction = action.toLowerCase();
 
-    switch (action) {
+    switch (lowerAction) {
       // Public
       case "place_order":                 return _placeWebsiteOrder(body.order || body);
       case "update_order_status":         return _updateWebOrderStatus(body);
 
       // Dashboard - Products
-      case "saveProductFromForm":         return _webJson_(saveProductFromForm(body));
-      case "saveProductEditFromForm":     return _webJson_(saveProductEditFromForm(body));
-      case "updateProductStatus":         return _webJson_(updateProductStatus(body));
-      case "applyStockChange":            return _webJson_(applyStockChange(body));
-      case "applyBulkEdit":               return _webJson_(applyBulkEdit(body));
-      case "recordSale":                  return _webJson_(_webRecordSale(body));
+      case "saveproductfromform":         return _webJson_(saveProductFromForm(body));
+      case "saveproducteditfromform":     return _webJson_(saveProductEditFromForm(body));
+      case "updateproductstatus":         return _webJson_(updateProductStatus(body));
+      case "applystockchange":            return _webJson_(applyStockChange(body));
+      case "applybulkedit":               return _webJson_(applyBulkEdit(body));
+      case "recordsale":                  return _webJson_(_webRecordSale(body));
 
       // Dashboard - Orders
-      case "saveOrderFromForm":           return _webJson_(_webSaveOrderWithStatus(body));
-      case "updateWebsiteOrderStatus":    return _webJson_(_webUpdateWebsiteOrderStatus(body));
-      case "updateManualOrderStatus":     return _webJson_(_webUpdateManualOrderStatus(body));
-      case "deleteWebsiteOrder":          
+      case "saveorderfromform":           return _webJson_(_webSaveOrderWithStatus(body));
+      case "updatewebsiteorderstatus":    return _webJson_(_webUpdateWebsiteOrderStatus(body));
+      case "updatemanualorderstatus":     return _webJson_(_webUpdateManualOrderStatus(body));
+      
       case "deletewebsiteorder":          return _webJson_(_webDeleteWebsiteOrder(body));
-      case "deleteManualOrder":           
       case "deletemanualorder":           return _webJson_(_webDeleteManualOrder(body));
-      case "deleteProduct":               
+      
       case "deleteproduct":               return _webJson_(_webDeleteProduct(body));
-      case "fullFactoryReset":            
+      
+      // Cleanup Actions (The ones user reported)
       case "fullfactoryreset":            return _webJson_(_webFullFactoryReset());
-      case "clearFinancialsOnly":         
       case "clearfinancialsonly":         return _webJson_(_webClearFinancialsOnly());
-      case "clearInventoryOnly":
       case "clearinventoryonly":          return _webJson_(_webClearInventoryOnly());
 
       // Dashboard - Finance
-      case "saveAdFromForm":              return _webJson_(saveAdFromForm(body));
-      case "saveExpenseFromForm":         return _webJson_(saveExpenseFromForm(body));
-      case "saveReturnFromForm":          return _webJson_(saveReturnFromForm(body));
+      case "saveadfromform":              return _webJson_(saveAdFromForm(body));
+      case "saveexpensefromform":         return _webJson_(saveExpenseFromForm(body));
+      case "savereturnfromform":          return _webJson_(saveReturnFromForm(body));
 
       // Dashboard - Settings
-      case "updateSettings":              return _webJson_(_webUpdateSettings(body));
-      case "saveGitHubSettings":          return _webJson_(saveGitHubSettings(body));
-      case "githubSyncNow":               try { githubSyncNow(); return _webJson_({ ok:true, success:true }); } catch(x){ return _webErr_(x.message); }
+      case "updatesettings":              return _webJson_(_webUpdateSettings(body));
+      case "savegithubsettings":          return _webJson_(saveGitHubSettings(body));
+      case "githubsyncnow":               try { githubSyncNow(); return _webJson_({ ok:true, success:true }); } catch(x){ return _webErr_(x.message); }
 
       // Dashboard - Reports
-      case "generateMonthlyReport":       try { generateMonthlyReport(); return _webJson_({ ok:true, success:true }); } catch(x){ return _webErr_(x.message); }
-      case "generateYearlyReport":        try { generateYearlyReport(); return _webJson_({ ok:true, success:true }); } catch(x){ return _webErr_(x.message); }
+      case "generatemonthlyreport":       try { generateMonthlyReport(); return _webJson_({ ok:true, success:true }); } catch(x){ return _webErr_(x.message); }
+      case "generateyearlyreport":        try { generateYearlyReport(); return _webJson_({ ok:true, success:true }); } catch(x){ return _webErr_(x.message); }
 
-      default: return _webErr_("Unknown action: "+action);
+      default: return _webErr_("Unknown action: " + action);
     }
   } catch (err) {
-    return _webErr_("Server error: "+err.message, 500);
+    return _webErr_("Server error: " + err.message, 500);
   }
 }
 
@@ -561,3 +560,43 @@ function _webFullFactoryReset() {
 }
 
 /* END OF ADD-ON v2.3 */
+
+// ============ STANDALONE HELPERS (Added for robustness) ============
+function _ss() { 
+  return SpreadsheetApp.getActiveSpreadsheet(); 
+}
+
+function _getActualLastRow(sh, colIdx) {
+  var data = sh.getRange(1, colIdx, sh.getLastRow(), 1).getValues();
+  for (var i = data.length - 1; i >= 0; i--) {
+    if (data[i][0] != "") return i + 1;
+  }
+  return 0;
+}
+
+function _num(v) { 
+  var n = parseFloat(v); 
+  return isNaN(n) ? 0 : n; 
+}
+
+function _ensureRows(sh, next) {
+  var max = sh.getMaxRows();
+  if (next > max) sh.insertRowsAfter(max, next - max);
+}
+
+function _logTransaction(vals) {
+  try {
+    var sh = _ss().getSheetByName("TRANSACTIONS");
+    if (!sh) return;
+    var next = _getActualLastRow(sh, 1) + 1;
+    _ensureRows(sh, next);
+    sh.getRange(next, 1, 1, vals.length).setValues([vals]);
+  } catch(e) {}
+}
+
+var COL = {
+  NAME:1, CAT:2, COST:3, REGULAR:4, SALE:5, 
+  STOCK_M:10, STOCK_L:11, STOCK_XL:12, STOCK_XXL:13,
+  SOLD_M:23, SOLD_L:24, SOLD_XL:25, SOLD_XXL:26, 
+  RETURNS:28, UPDATED:29
+};
