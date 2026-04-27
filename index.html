@@ -4428,10 +4428,54 @@ YARZ.ord = {
   currentTab: 'manual',
   currentStage: 'new',
 
+  /* ---------------------------------------------------------------
+     Normalize any Bangladeshi phone input to E.164 format: +8801XXXXXXXXX
+     Handles ALL common formats:
+       01817667212        -> +8801817667212
+       1817667212         -> +8801817667212
+       8801817667212      -> +8801817667212
+       +8801817667212     -> +8801817667212
+       880 1817-667212    -> +8801817667212
+       +880 1817 667 212  -> +8801817667212
+     Returns '' if phone is invalid.
+     The leading '+' is REQUIRED so WhatsApp can resolve the contact
+     profile (otherwise it shows "Unknown number").
+  --------------------------------------------------------------- */
+  _normalizeBdPhone(raw){
+    if(!raw) return '';
+    // Strip everything except digits
+    let d = String(raw).replace(/[^0-9]/g, '');
+    if(!d) return '';
+
+    // Case 1: starts with 880 (country code already present)
+    if(d.startsWith('880')){
+      d = d.slice(3);                 // remove 880
+    }
+    // Case 2: starts with 0 (local format like 01817...)
+    if(d.startsWith('0')){
+      d = d.slice(1);                 // remove leading 0
+    }
+    // After cleanup we expect a 10-digit BD mobile starting with '1'
+    // (e.g. 1817667212). If user gave extra/less digits, take the LAST 10.
+    if(d.length > 10){
+      d = d.slice(-10);
+    }
+    if(d.length !== 10 || !d.startsWith('1')){
+      return '';                      // invalid BD number
+    }
+    return '+880' + d;                // final: +8801XXXXXXXXX (with '+')
+  },
+
   sendWhatsApp(oid){
     const o = state.data.websiteOrders.find(x=>x.orderId===oid) || state.data.orders.find(x=>x.orderId===oid);
     if(!o || !o.phone) { toast('Phone number not found', 'error'); return; }
-    
+
+    const phone = this._normalizeBdPhone(o.phone);
+    if(!phone){
+      toast('Invalid phone number: ' + o.phone, 'error');
+      return;
+    }
+
     const qty = o.qty || 1;
     const del = o.delivery || 0;
     const total = o.total || (o.price*qty+del) || 0;
@@ -4459,7 +4503,9 @@ Your parcel is being processed and will be on its way to you shortly. If you hav
 Best regards,
 Team YARZ`;
 
-    const url = `https://wa.me/+88${o.phone.replace(/[^0-9]/g,'').slice(-11)}?text=${encodeURIComponent(msg)}`;
+    // wa.me URL with leading '+' so WhatsApp resolves the contact profile
+    // even when the number is NOT saved in the user's contact list.
+    const url = `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   },
 
