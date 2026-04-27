@@ -2259,15 +2259,29 @@ body.dark select.select option{
 
       <!-- ORDERS -->
       <div class="page" data-page="orders">
-        <!-- Main tabs: Website / Manual / Customers -->
+        <!-- Main tabs: Manual → Website → Customers (Manual default for fast access) -->
         <div class="subtab-bar">
-          <button class="subtab active ord-tab" data-ord-tab="website" onclick="YARZ.ord.setTab('website')"><i class="ri-global-line"></i> Website Orders<span class="sub-count" id="cnt-website-total">0</span></button>
-          <button class="subtab ord-tab" data-ord-tab="manual" onclick="YARZ.ord.setTab('manual')"><i class="ri-user-settings-line"></i> Manual<span class="sub-count" id="cnt-manual-total">0</span></button>
+          <button class="subtab active ord-tab" data-ord-tab="manual" onclick="YARZ.ord.setTab('manual')"><i class="ri-user-settings-line"></i> Manual<span class="sub-count" id="cnt-manual-total">0</span></button>
+          <button class="subtab ord-tab" data-ord-tab="website" onclick="YARZ.ord.setTab('website')"><i class="ri-global-line"></i> Website Orders<span class="sub-count" id="cnt-website-total">0</span></button>
           <button class="subtab ord-tab" data-ord-tab="customers" onclick="YARZ.ord.setTab('customers')"><i class="ri-team-line"></i> Customers</button>
         </div>
 
+        <!-- Manual Orders (DEFAULT - fastest access) -->
+        <div id="ord-tab-manual">
+          <div class="flex-gap mb-3" style="justify-content:flex-end">
+            <button class="btn btn-primary btn-sm" onclick="YARZ.openModal('new-order')"><i class="ri-add-line"></i> নতুন অর্ডার</button>
+          </div>
+          <div class="card" style="padding:16px">
+            <div class="search-wrap">
+              <i class="ri-search-line sicon"></i>
+              <input id="mo-search" class="input" placeholder="Order ID, Phone, Name..." oninput="YARZ.ord.renderManual()">
+            </div>
+            <div id="mo-list" class="list"></div>
+          </div>
+        </div>
+
         <!-- Website Orders with 4 sub-tabs -->
-        <div id="ord-tab-website">
+        <div id="ord-tab-website" class="hidden">
           <!-- 4-stage sub tabs -->
           <div class="subtab-bar">
             <button class="subtab active wo-stage" data-stage="new" onclick="YARZ.ord.setStage('new')"><i class="ri-inbox-archive-line"></i> নতুন অর্ডার<span class="sub-count" id="cnt-new">0</span></button>
@@ -2282,19 +2296,6 @@ body.dark select.select option{
               <input id="wo-search" class="input" placeholder="Order ID, Phone, Name দিয়ে খুঁজুন..." oninput="YARZ.ord.renderWebsite()">
             </div>
             <div id="wo-list"></div>
-          </div>
-        </div>
-
-        <div id="ord-tab-manual" class="hidden">
-          <div class="flex-gap mb-3" style="justify-content:flex-end">
-            <button class="btn btn-primary btn-sm" onclick="YARZ.openModal('new-order')"><i class="ri-add-line"></i> নতুন অর্ডার</button>
-          </div>
-          <div class="card" style="padding:16px">
-            <div class="search-wrap">
-              <i class="ri-search-line sicon"></i>
-              <input id="mo-search" class="input" placeholder="Order ID, Phone, Name..." oninput="YARZ.ord.renderManual()">
-            </div>
-            <div id="mo-list" class="list"></div>
           </div>
         </div>
 
@@ -4120,29 +4121,156 @@ YARZ.inv = {
     const q = ($('sm-search')?.value||'').toLowerCase().trim();
     let items = state.data.inventory.slice();
     if(q) items = items.filter(p=>p.name.toLowerCase().includes(q));
-    $('sm-list').innerHTML = items.map(p=>`
+    // Track pending changes per product (in memory) so user can edit multiple sizes then Save once
+    if(!YARZ.inv._smPending) YARZ.inv._smPending = {};
+    const pending = YARZ.inv._smPending;
+    $('sm-list').innerHTML = items.map(p=>{
+      const imgUrl = p.img1 ? getImgSrc(p.img1) : '';
+      const thumbStyle = imgUrl
+        ? `background-image:url('${esc(imgUrl)}');background-size:cover;background-position:center`
+        : '';
+      const pend = pending[p.name] || {};
+      const hasPending = Object.keys(pend).some(sz => pend[sz] !== undefined && pend[sz] !== null && pend[sz] !== '');
+      return `
       <div class="glass mb-2" style="padding:10px">
-        <div class="flex-between mb-2">
-          <div class="li-title">${esc(p.name)}</div>
-          <span class="chip ${p.status==='Active'?'chip-green':'chip-amber'}">${esc(p.status)}</span>
+        <div class="flex-between mb-2" style="gap:10px;align-items:center">
+          <div class="thumb" style="width:46px;height:46px;border-radius:10px;flex-shrink:0;${thumbStyle};display:flex;align-items:center;justify-content:center;background-color:rgba(255,255,255,0.05)">
+            ${imgUrl ? '' : '<i class="ri-shopping-bag-3-line" style="opacity:0.5"></i>'}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div class="li-title" style="font-size:13px;line-height:1.3">${esc(p.name)}</div>
+            <div style="font-size:10.5px;opacity:0.6;margin-top:2px">${fmtBDT(p.sale)} · Stock: ${toBn(Math.max(0,p.remaining))}</div>
+          </div>
+          <span class="chip ${p.status==='Active'?'chip-green':'chip-amber'}" style="font-size:10px">${esc(p.status)}</span>
         </div>
         <div class="grid grid-4" style="gap:6px">
           ${['M','L','XL','XXL'].map(sz=>{
             const left = p['stk'+sz]-p['sold'+sz];
+            const pendVal = pend[sz];
+            const previewLeft = (pendVal !== undefined && pendVal !== null && pendVal !== '')
+              ? (parseInt(pendVal,10) || 0) - p['sold'+sz]
+              : left;
+            const colorVal = (pendVal !== undefined && pendVal !== null && pendVal !== '') ? previewLeft : left;
             return `<div style="text-align:center;padding:6px;background:rgba(255,255,255,0.04);border-radius:10px">
-              <div style="font-size:10px;opacity:0.6">${sz}</div>
-              <div style="font-weight:800;color:${left<=0?'#F87171':left<5?'#FBBF24':'#34D399'}">${toBn(left)}</div>
-              <div class="flex" style="gap:3px;justify-content:center;margin-top:3px">
-                <button class="btn btn-ghost btn-xs" style="padding:2px 6px" onclick="YARZ.inv._adjustStock('${esc(p.name)}','${sz}',-1)">-</button>
-                <button class="btn btn-primary btn-xs" style="padding:2px 6px" onclick="YARZ.inv._adjustStock('${esc(p.name)}','${sz}',1)">+</button>
+              <div style="font-size:10px;opacity:0.6">${sz} <span style="opacity:0.5">(${toBn(left)})</span></div>
+              <input type="number" inputmode="numeric" min="0" 
+                class="input sm-stock-input" 
+                data-product="${esc(p.name)}" data-size="${sz}" 
+                placeholder="${p['stk'+sz]}" 
+                value="${pendVal !== undefined && pendVal !== null ? esc(String(pendVal)) : ''}"
+                style="text-align:center;padding:6px 4px;font-size:13px;font-weight:800;margin:4px 0;color:${colorVal<=0?'#F87171':colorVal<5?'#FBBF24':'#34D399'}"
+                oninput="YARZ.inv._smOnInput('${esc(p.name)}','${sz}',this.value)">
+              <div class="flex" style="gap:3px;justify-content:center;margin-top:2px">
+                <button class="btn btn-ghost btn-xs" style="padding:2px 6px" onclick="YARZ.inv._smStep('${esc(p.name)}','${sz}',-1)">-</button>
+                <button class="btn btn-primary btn-xs" style="padding:2px 6px" onclick="YARZ.inv._smStep('${esc(p.name)}','${sz}',1)">+</button>
               </div>
             </div>`;
           }).join('')}
         </div>
+        <div class="flex-gap" style="margin-top:8px;justify-content:flex-end;gap:6px">
+          <button class="btn btn-ghost btn-xs" ${hasPending?'':'disabled style="opacity:0.4"'} onclick="YARZ.inv._smReset('${esc(p.name)}')"><i class="ri-close-line"></i> বাতিল</button>
+          <button class="btn btn-success btn-xs" ${hasPending?'':'disabled style="opacity:0.4"'} onclick="YARZ.inv._smSave('${esc(p.name)}')"><i class="ri-save-line"></i> সেভ করুন</button>
+        </div>
       </div>
-    `).join('') || '<div class="empty-state">নেই</div>';
+      `;
+    }).join('') || '<div class="empty-state">নেই</div>';
   },
 
+  // Track typed input (does not save until user clicks Save)
+  _smOnInput(name, size, val){
+    if(!YARZ.inv._smPending) YARZ.inv._smPending = {};
+    if(!YARZ.inv._smPending[name]) YARZ.inv._smPending[name] = {};
+    YARZ.inv._smPending[name][size] = val;
+    // Re-render only the buttons enable state without losing focus: light update
+    // We rebuild whole list (cheap) — but preserve focus on this input.
+    const activeKey = `${name}__${size}`;
+    YARZ.inv._smRenderKeepFocus(activeKey);
+  },
+
+  _smRenderKeepFocus(activeKey){
+    YARZ.inv._renderSM();
+    if(activeKey){
+      const [n, s] = activeKey.split('__');
+      const sel = `input.sm-stock-input[data-product="${(window.CSS&&CSS.escape)?CSS.escape(n):n.replace(/"/g,'\\"')}"][data-size="${s}"]`;
+      try {
+        const el = document.querySelector(sel);
+        if(el){
+          el.focus();
+          const v = el.value;
+          el.value = '';
+          el.value = v; // move cursor to end
+        }
+      } catch(e){}
+    }
+  },
+
+  // +/- step: also goes through pending (no immediate API call)
+  _smStep(name, size, delta){
+    if(!YARZ.inv._smPending) YARZ.inv._smPending = {};
+    if(!YARZ.inv._smPending[name]) YARZ.inv._smPending[name] = {};
+    const p = state.data.inventory.find(x=>x.name===name);
+    if(!p) return;
+    const cur = (YARZ.inv._smPending[name][size] !== undefined && YARZ.inv._smPending[name][size] !== '')
+      ? parseInt(YARZ.inv._smPending[name][size],10)
+      : p['stk'+size];
+    const next = Math.max(0, (isNaN(cur)?0:cur) + delta);
+    YARZ.inv._smPending[name][size] = String(next);
+    YARZ.inv._renderSM();
+  },
+
+  _smReset(name){
+    if(YARZ.inv._smPending) delete YARZ.inv._smPending[name];
+    YARZ.inv._renderSM();
+  },
+
+  // Save all pending size changes for a single product in ONE API call
+  async _smSave(name){
+    const pend = YARZ.inv._smPending && YARZ.inv._smPending[name];
+    if(!pend) return;
+    const p = state.data.inventory.find(x=>x.name===name);
+    if(!p){ toast('Product নেই','error'); return; }
+
+    // Compute deltas based on new desired stock vs current stk
+    const data = { name, dM:0, dL:0, dXL:0, dXXL:0 };
+    let anyChange = false;
+    ['M','L','XL','XXL'].forEach(sz=>{
+      const v = pend[sz];
+      if(v === undefined || v === null || v === '') return;
+      const newVal = parseInt(v,10);
+      if(isNaN(newVal)) return;
+      const delta = newVal - p['stk'+sz];
+      if(delta !== 0){
+        data['d'+sz] = delta;
+        anyChange = true;
+      }
+    });
+
+    if(!anyChange){
+      toast('কোনো পরিবর্তন নেই','info');
+      delete YARZ.inv._smPending[name];
+      YARZ.inv._renderSM();
+      return;
+    }
+
+    showLoader('Stock সেভ হচ্ছে...');
+    try {
+      const res = await appsPost('applyStockChange', data);
+      if(res && res.ok===false) throw new Error(res.msg||'Failed');
+      // Apply locally
+      ['M','L','XL','XXL'].forEach(sz=>{
+        if(data['d'+sz] !== 0){
+          p['stk'+sz] = Math.max(0, p['stk'+sz] + data['d'+sz]);
+        }
+      });
+      delete YARZ.inv._smPending[name];
+      toast('স্টক আপডেট হয়েছে ✅','success');
+      YARZ.inv._renderSM();
+      YARZ.inv.render();
+    } catch(e){ toast(e.message,'error'); }
+    finally { hideLoader(); }
+  },
+
+  // Legacy single-step (kept for compatibility, not used now)
   async _adjustStock(name, size, delta){
     showLoader('Stock আপডেট হচ্ছে...');
     try {
@@ -4297,7 +4425,7 @@ YARZ.inv = {
    Plus: every card has a Delete button (removes from Google Sheet).
 ============================================================ */
 YARZ.ord = {
-  currentTab: 'website',
+  currentTab: 'manual',
   currentStage: 'new',
 
   sendWhatsApp(oid){
@@ -4485,13 +4613,20 @@ Team YARZ`;
       actionBtn = `<span class="chip ${sc}">${esc(o.status)}</span>`;
     }
 
-    // Courier selector (useful at picked/shipped)
+    // Courier selector (useful at picked/shipped) — quick courier name
     const courierSel = (stage==='picked' || stage==='shipped') ? `
       <select class="select" style="max-width:150px;padding:7px 12px;font-size:11px;border-radius:999px" onchange="if(this.value)YARZ.ord.updateCourier('${esc(o.orderId)}',this.value)">
         <option value="">Courier...</option>
-        ${COURIERS.map(c=>`<option ${o.courier===c?'selected':''}>${c}</option>`).join('')}
+        ${COURIERS.map(c=>`<option ${(o.courier||'').startsWith(c)?'selected':''}>${c}</option>`).join('')}
       </select>
     ` : '';
+
+    // Courier / Tracking ID button — available in ALL stages so user can paste tracking ID later
+    // Shows existing tracking info if set; otherwise prompts user to enter
+    const trackBtnLabel = o.courier
+      ? `<i class="ri-truck-line"></i> ${esc(o.courier.length>22?o.courier.slice(0,22)+'…':o.courier)}`
+      : `<i class="ri-add-line"></i> Tracking ID`;
+    const trackBtn = `<button class="btn btn-amber btn-xs" onclick="YARZ.ord.editCourierId('${esc(o.orderId)}')" title="Courier Tracking ID বসান">${trackBtnLabel}</button>`;
 
     // Time display — full date-time with relative hint
     const timeHtml = o.date ? `
@@ -4521,9 +4656,10 @@ Team YARZ`;
           ${stage!=='delivered' && o.status ? `<div style="margin-top:6px"><span class="chip ${sc}">${esc(o.status)}</span></div>`:''}
         </div>
       </div>
-      <div class="order-actions">
+      <div class="order-actions" style="flex-wrap:wrap;gap:6px">
         ${actionBtn}
-        ${courierBtn}
+        ${courierSel}
+        ${stage!=='delivered' ? trackBtn : ''}
         <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WhatsApp</button>
         ${stage!=='delivered' ? `<button class="btn btn-ghost btn-xs" onclick="YARZ.ord.showStatusMenu('${esc(o.orderId)}')" title="Change Status"><i class="ri-more-2-line"></i></button>` : ''}
         <button class="btn btn-ghost btn-xs" style="margin-left:auto;color:var(--danger)" onclick="YARZ.ord.deleteWebOrder('${esc(o.orderId)}')" title="ডিলিট"><i class="ri-delete-bin-6-line"></i></button>
@@ -4610,14 +4746,67 @@ Team YARZ`;
   editCourierId(orderId){
     const o = state.data.websiteOrders.find(x=>x.orderId===orderId) || state.data.orders.find(x=>x.orderId===orderId);
     if(!o) return;
+    const isWeb = state.data.websiteOrders.includes(o);
     const current = o.courier || '';
-    const courier = prompt(`Enter Courier / Tracking Info for #${orderId}\n(e.g., "RedX - ID:123456"):`, current);
-    if(courier !== null){
-      if(state.data.websiteOrders.includes(o)) {
-        this.updateCourier(orderId, courier);
-      } else {
-        this.updateManualCourier(orderId, courier);
-      }
+    // Try to split current into "Courier Name - Tracking ID"
+    let curName = '', curTrack = '';
+    if(current.includes(' - ')){
+      const parts = current.split(' - ');
+      curName = parts[0].trim();
+      curTrack = parts.slice(1).join(' - ').trim();
+    } else if(COURIERS.includes(current)) {
+      curName = current;
+    } else {
+      curTrack = current;
+    }
+
+    const html = `
+      <div class="modal-header">
+        <h3>🚚 Courier / Tracking — #${esc(orderId)}</h3>
+        <button class="modal-close" onclick="YARZ.closeModal()"><i class="ri-close-line"></i></button>
+      </div>
+      <p style="font-size:12px;color:var(--ink-3);margin-bottom:14px">
+        কুরিয়ার সার্ভিসে সাবমিট করার পর তাদের দেওয়া Tracking ID এখানে বসান। পরবর্তীতে যেকোনো সময় edit করতে পারবেন।
+      </p>
+
+      <div class="field" style="margin-bottom:12px">
+        <label>কুরিয়ার সার্ভিস</label>
+        <select id="ci-name" class="select">
+          <option value="">— Select Courier —</option>
+          ${COURIERS.map(c=>`<option value="${esc(c)}" ${curName===c?'selected':''}>${esc(c)}</option>`).join('')}
+        </select>
+      </div>
+
+      <div class="field" style="margin-bottom:14px">
+        <label>Tracking ID / Consignment No.</label>
+        <input id="ci-track" class="input" placeholder="যেমন: 12345678" value="${esc(curTrack)}">
+        <div style="font-size:10.5px;opacity:0.6;margin-top:4px">কুরিয়ার থেকে পাওয়া ট্র্যাকিং নাম্বার বা কনসাইনমেন্ট আইডি</div>
+      </div>
+
+      <div class="modal-actions">
+        ${current ? `<button class="btn btn-ghost" onclick="YARZ.ord._saveCourierInfo('${esc(orderId)}', ${isWeb}, true)" style="color:var(--danger)"><i class="ri-delete-bin-6-line"></i> মুছে ফেলুন</button>` : ''}
+        <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
+        <button class="btn btn-primary" onclick="YARZ.ord._saveCourierInfo('${esc(orderId)}', ${isWeb}, false)"><i class="ri-save-line"></i> Save</button>
+      </div>
+    `;
+    $('modal-content').innerHTML = html;
+    $('modal-overlay').classList.add('show');
+    setTimeout(()=>{ const t=$('ci-track'); if(t) t.focus(); },100);
+  },
+
+  _saveCourierInfo(orderId, isWeb, clear){
+    let val = '';
+    if(!clear){
+      const name = ($('ci-name')?.value||'').trim();
+      const track = ($('ci-track')?.value||'').trim();
+      if(name && track) val = `${name} - ${track}`;
+      else val = name || track;
+    }
+    YARZ.closeModal();
+    if(isWeb){
+      this.updateCourier(orderId, val);
+    } else {
+      this.updateManualCourier(orderId, val);
     }
   },
 
@@ -4704,8 +4893,8 @@ Team YARZ`;
           <div class="li-sub">${fmtDateTime(o.date)} · ${esc(o.payment)} ${o.courier?'· '+esc(o.courier):''}</div>
           <div class="li-actions" style="margin-top:8px;flex-wrap:wrap;gap:6px">
             ${actionBtn}
-            <button class="btn btn-ghost btn-xs" onclick="YARZ.ord.editCourierId('${esc(o.orderId)}')"><i class="ri-truck-line"></i> ${o.courier ? esc(o.courier) : '+ Courier/Tracking Info'}</button>
-            <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none;margin-right:8px" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WhatsApp</button>
+            <button class="btn ${o.courier?'btn-ghost':'btn-amber'} btn-xs" onclick="YARZ.ord.editCourierId('${esc(o.orderId)}')" title="Courier Tracking ID বসান"><i class="ri-truck-line"></i> ${o.courier ? esc(o.courier.length>22?o.courier.slice(0,22)+'…':o.courier) : '+ Tracking ID'}</button>
+            <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WhatsApp</button>
             <button class="btn btn-ghost btn-xs" onclick="YARZ.ord.showManualStatusMenu('${esc(o.orderId)}')"><i class="ri-more-2-line"></i></button>
             <button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="YARZ.ord.deleteManualOrder('${esc(o.orderId)}')"><i class="ri-delete-bin-6-line"></i></button>
           </div>
