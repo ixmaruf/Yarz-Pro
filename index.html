@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://script.google.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css">
 <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -89,7 +89,7 @@ body.dark{
 }
 
 body{
-  font-family:'BnDigitsClear','Hind Siliguri','Noto Sans Bengali','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  font-family:'Noto Sans Bengali','Hind Siliguri','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
   background:var(--bg);color:var(--ink);
   font-size:14px;line-height:1.6;
   -webkit-font-smoothing:antialiased;
@@ -97,6 +97,92 @@ body{
   overflow-x:hidden;
   letter-spacing:-0.005em;
   font-feature-settings:'tnum' on, 'lnum' on;
+}
+
+/* ============================================================
+   ✅ BANGLA NUMBER FIX — 'Noto Sans Bengali' has very clear ১/১/৪ etc.
+   .bn-num class + auto-applied for any toBn() output via JS where needed
+============================================================ */
+.bn-num,
+.bn-digits{
+  font-family:'Noto Sans Bengali','Hind Siliguri',sans-serif !important;
+  font-feature-settings:'lnum' on, 'tnum' on;
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing:0.01em;
+}
+
+/* ============================================================
+   ✅ TRACKING ID DEDICATED STYLES — Highly visible, monospaced, copyable
+============================================================ */
+.tracking-row{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  margin-top:8px; padding:8px 10px;
+  background:linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.04));
+  border:1.5px solid rgba(245,158,11,0.45);
+  border-radius:10px;
+}
+body.dark .tracking-row{
+  background:linear-gradient(135deg, rgba(251,191,36,0.14), rgba(251,191,36,0.05));
+  border-color:rgba(251,191,36,0.4);
+}
+.tracking-label{
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:10.5px; font-weight:700; letter-spacing:0.04em;
+  text-transform:uppercase;
+  color:#B45309;
+  white-space:nowrap;
+}
+body.dark .tracking-label{ color:#FCD34D; }
+.tracking-id{
+  font-family:'JetBrains Mono','Roboto Mono','Courier New',monospace;
+  font-size:15px; font-weight:800;
+  color:#92400E;
+  background:#FEF3C7;
+  padding:3px 9px; border-radius:6px;
+  letter-spacing:0.5px;
+  user-select:all; -webkit-user-select:all;
+  cursor:pointer;
+  border:1px solid rgba(180,83,9,0.25);
+  flex:1; min-width:0;
+  overflow-wrap:anywhere;
+  word-break:break-all;
+  line-height:1.3;
+}
+body.dark .tracking-id{
+  background:rgba(251,191,36,0.15);
+  color:#FDE68A;
+  border-color:rgba(251,191,36,0.3);
+}
+.tracking-id:hover{ filter:brightness(0.98); }
+.tracking-courier-tag{
+  display:inline-flex; align-items:center; gap:3px;
+  font-size:11px; font-weight:700;
+  color:#7C3AED;
+  background:rgba(124,58,237,0.10);
+  padding:2px 7px; border-radius:999px;
+  white-space:nowrap;
+}
+body.dark .tracking-courier-tag{
+  color:#C4B5FD;
+  background:rgba(124,58,237,0.18);
+}
+.tracking-copy-btn{
+  background:transparent; border:none; color:#B45309;
+  cursor:pointer; padding:4px; border-radius:6px;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:13px;
+  transition:background 0.15s;
+}
+.tracking-copy-btn:hover{ background:rgba(180,83,9,0.12); }
+body.dark .tracking-copy-btn{ color:#FCD34D; }
+body.dark .tracking-copy-btn:hover{ background:rgba(251,191,36,0.15); }
+
+/* Highlight matched search term inside tracking id */
+.tr-hi{
+  background:#FCD34D;
+  color:#7C2D12;
+  padding:0 2px; border-radius:3px;
+  font-weight:900;
 }
 
 /* Animated gradient mesh background */
@@ -787,101 +873,6 @@ body.light .load-overlay p{color:var(--ink)}
 }
 .order-name{font-size:14.5px;font-weight:600;color:var(--ink);margin-top:2px}
 .order-meta{font-size:11.5px;color:var(--ink-3);margin-top:4px;line-height:1.6}
-
-/* ============ BANGLA NUMERALS — clear & legible ============
-   Hind Siliguri-তে '১' সংখ্যা ছোট/অস্পষ্ট দেখায়, তাই Bangla
-   ডিজিট-গুলোর জন্য Noto Sans Bengali ব্যবহার করি। 'bn-num'
-   ক্লাস বা [data-bn] এলিমেন্টে এটা apply হবে; পাশাপাশি বাংলা
-   সংখ্যা অটো-ডিটেক্ট করতে unicode-range fallback দেওয়া আছে। */
-@font-face{
-  font-family:'BnDigitsClear';
-  src:local('Noto Sans Bengali'), local('NotoSansBengali');
-  unicode-range: U+09E6-09EF; /* Bangla digits ০-৯ */
-  font-weight: 400 900;
-  font-display: swap;
-}
-body{
-  font-family:'BnDigitsClear','Hind Siliguri','Noto Sans Bengali','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
-}
-.bn-num, .order-id, .order-total, .stat-value, .li-sub, .li-title,
-.order-name, .order-meta, .price, .sub-count, .chip, .dg-count, .dg-date{
-  font-feature-settings:'tnum' on, 'lnum' on, 'ss01' on;
-}
-
-/* ============ TRACKING ID — \u09aa\u09cd\u09b0\u09be\u09a7\u09be\u09a8 \u09b9\u09be\u0987\u09b2\u09be\u0987\u099f ============ */
-.tracking-row{
-  display:flex;align-items:center;gap:8px;
-  margin-top:10px;padding:9px 12px;
-  background:linear-gradient(135deg, rgba(180,83,9,0.08), rgba(245,158,11,0.06));
-  border:1.5px dashed rgba(180,83,9,0.45);
-  border-radius:12px;
-  flex-wrap:wrap;
-}
-body.dark .tracking-row{
-  background:linear-gradient(135deg, rgba(251,191,36,0.10), rgba(245,158,11,0.06));
-  border-color:rgba(251,191,36,0.45);
-}
-.tracking-row .tr-icon{
-  width:30px;height:30px;flex:none;
-  display:flex;align-items:center;justify-content:center;
-  border-radius:9px;
-  background:var(--warn);color:#fff;
-  font-size:14px;
-  box-shadow:0 2px 6px rgba(180,83,9,0.35);
-}
-.tracking-row .tr-body{flex:1;min-width:140px;display:flex;flex-direction:column;gap:1px}
-.tracking-row .tr-courier-name{
-  font-size:11px;font-weight:600;color:var(--warn);
-  text-transform:uppercase;letter-spacing:0.06em;
-  line-height:1;
-}
-.tracking-row .tr-code{
-  font-family:'JetBrains Mono','SF Mono',Menlo,monospace;
-  font-size:16px;font-weight:700;
-  color:var(--ink);
-  letter-spacing:0.02em;
-  word-break:break-all;
-  user-select:all;
-  -webkit-user-select:all;
-  cursor:text;
-  line-height:1.25;
-}
-.tracking-row .tr-copy{
-  flex:none;
-  width:34px;height:34px;
-  display:flex;align-items:center;justify-content:center;
-  border-radius:10px;
-  background:var(--surface-2);
-  border:1px solid var(--line);
-  color:var(--ink-2);
-  cursor:pointer;
-  transition:all 0.15s;
-  font-size:14px;
-}
-.tracking-row .tr-copy:hover{background:var(--warn);color:#fff;border-color:var(--warn);transform:scale(1.05)}
-.tracking-row .tr-copy.copied{background:var(--success);color:#fff;border-color:var(--success)}
-.tracking-row .tr-edit{
-  flex:none;
-  width:32px;height:32px;
-  display:flex;align-items:center;justify-content:center;
-  border-radius:9px;
-  background:transparent;
-  border:1px solid var(--line);
-  color:var(--ink-3);
-  cursor:pointer;
-  font-size:13px;
-  transition:all 0.15s;
-}
-.tracking-row .tr-edit:hover{background:var(--surface-2);color:var(--ink)}
-
-/* Tracking row in compact list-item (manual orders) */
-.list-item .tracking-row{margin-top:8px}
-
-/* Search highlight — tracking id match */
-mark.tr-hl{
-  background:linear-gradient(180deg, transparent 50%, rgba(245,158,11,0.45) 50%);
-  color:var(--ink);font-weight:700;padding:0 2px;border-radius:3px;
-}
 .order-total{
   font-size:17px;font-weight:700;color:var(--ink);
   font-family:'Instrument Serif',serif;font-style:italic;letter-spacing:-0.01em;
@@ -2369,7 +2360,7 @@ body.dark select.select option{
           <div class="card" style="padding:16px">
             <div class="search-wrap">
               <i class="ri-search-line sicon"></i>
-              <input id="mo-search" class="input" placeholder="🚚 Tracking ID / Order ID / Phone / Name..." oninput="YARZ.ord.renderManual()">
+              <input id="mo-search" class="input" placeholder="🔍 Tracking ID, Order ID, Phone, Name দিয়ে খুঁজুন..." oninput="YARZ.ord.renderManual()">
             </div>
             <div id="mo-list" class="list"></div>
           </div>
@@ -2388,7 +2379,7 @@ body.dark select.select option{
           <div class="card" style="padding:16px">
             <div class="search-wrap">
               <i class="ri-search-line sicon"></i>
-              <input id="wo-search" class="input" placeholder="🚚 Tracking ID / Order ID / Phone / Name দিয়ে খুঁজুন..." oninput="YARZ.ord.renderWebsite()">
+              <input id="wo-search" class="input" placeholder="🔍 Tracking ID, Order ID, Phone, Name দিয়ে খুঁজুন..." oninput="YARZ.ord.renderWebsite()">
             </div>
             <div id="wo-list"></div>
           </div>
@@ -3170,70 +3161,69 @@ const BN_MONTHS = ["জানুয়ারি","ফেব্রুয়ার
 const BN_DIGITS = ["০","১","২","৩","৪","৫","৬","৭","৮","৯"];
 function toBn(n){ return String(n).replace(/\d/g, d=>BN_DIGITS[d]); }
 
-/* ========================================================
-   parseCourier — কুরিয়ার তথ্য থেকে Courier Name ও Tracking
-   ID আলাদা করে দেয়। Format গুলো support করে:
-     - "RedX - 12345678"
-     - "RedX: 12345678"
-     - "RedX 12345678"
-     - "12345678"  (only tracking id)
-     - "RedX"      (only courier name)
-   Returns: { name:'', code:'', display:'', hasCode:bool }
-======================================================== */
-function parseCourier(raw){
-  const s = (raw||'').toString().trim();
-  if(!s) return { name:'', code:'', display:'', hasCode:false };
-
-  // First try delimiter split: " - " or ": " or " — "
-  let name='', code='';
-  const delimMatch = s.match(/^(.+?)\s*[-—:]\s*(.+)$/);
-  if(delimMatch){
-    name = delimMatch[1].trim();
-    code = delimMatch[2].trim();
-  } else {
-    // Try: "<CourierName> <code>" — courier name from known list
-    const known = COURIERS.find(c=>{
-      const re = new RegExp('^'+c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s+',' i');
-      return re.test(s);
-    });
-    if(known){
-      name = known;
-      code = s.slice(known.length).trim();
-    } else if(/^[A-Za-z0-9][A-Za-z0-9\-\/]*$/.test(s) && /\d/.test(s)){
-      // Looks like a pure tracking code (alphanumeric with at least 1 digit)
-      code = s;
-    } else if(COURIERS.includes(s)){
-      name = s;
-    } else {
-      // Fallback: whole thing is code if it contains a digit, else name
-      if(/\d/.test(s)) code = s; else name = s;
+/* ============================================================
+   ✅ TRACKING / COURIER PARSING HELPERS
+   The Apps Script stores combined string in column O ("🚀 Courier"):
+     "CourierName - TrackingID"   e.g. "SteadFast - 12345678"
+   We parse it client-side into { courier, tracking } so the UI can
+   display the tracking ID prominently AND let the search bar match it.
+   No Google Sheet column changes required → existing data stays SAFE.
+============================================================ */
+function parseCourierField(raw){
+  const s = String(raw||'').trim();
+  if(!s) return { courier:'', tracking:'', raw:'' };
+  // Try " - " separator first (the format that editCourierId saves)
+  let idx = s.indexOf(' - ');
+  if(idx === -1){
+    // Sometimes user typed without spaces: "SteadFast-12345" or just "12345"
+    // If the string is one of the known courier names → only courier
+    if(COURIERS.includes(s)) return { courier:s, tracking:'', raw:s };
+    // If contains a known courier prefix, split on first dash
+    for(const c of COURIERS){
+      if(s.toLowerCase().startsWith(c.toLowerCase())){
+        const rest = s.slice(c.length).replace(/^\s*[-:|/]\s*/,'').trim();
+        if(rest) return { courier:c, tracking:rest, raw:s };
+        return { courier:c, tracking:'', raw:s };
+      }
     }
+    // Otherwise treat the whole value as a tracking ID
+    return { courier:'', tracking:s, raw:s };
   }
-  return {
-    name, code,
-    display: code || name,
-    hasCode: !!code
-  };
+  const courier = s.slice(0, idx).trim();
+  const tracking = s.slice(idx+3).trim();
+  return { courier, tracking, raw:s };
 }
 
-/* Copy helper for tracking id */
-function copyTracking(btn, code){
-  try{
-    navigator.clipboard.writeText(code).then(()=>{
-      btn.classList.add('copied');
-      const old = btn.innerHTML;
-      btn.innerHTML = '<i class="ri-check-line"></i>';
-      setTimeout(()=>{ btn.classList.remove('copied'); btn.innerHTML = old; }, 1400);
-      if(typeof toast === 'function') toast('Tracking ID কপি হয়েছে: '+code, 'success');
-    }).catch(()=>{ fallbackCopy(code); });
-  }catch(e){ fallbackCopy(code); }
+/* Highlight the part of the tracking ID that matches the current search query */
+function highlightTracking(tid, query){
+  const safe = esc(tid);
+  if(!query) return safe;
+  const q = String(query).trim();
+  if(!q) return safe;
+  // Case-insensitive match
+  const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'ig');
+  return safe.replace(re, m=>`<span class="tr-hi">${m}</span>`);
 }
-function fallbackCopy(text){
-  const ta = document.createElement('textarea');
-  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
-  document.body.appendChild(ta); ta.select();
-  try{ document.execCommand('copy'); if(typeof toast==='function') toast('কপি হয়েছে','success'); }catch(e){}
-  document.body.removeChild(ta);
+
+/* Build the prominent Tracking ID block. Returns '' if no tracking & no courier. */
+function renderTrackingBlock(courierRaw, orderId, searchQuery){
+  const p = parseCourierField(courierRaw);
+  if(!p.tracking && !p.courier) return '';
+  // If we only have courier (no tracking), show a small chip
+  if(!p.tracking){
+    return `<div style="margin-top:6px"><span class="tracking-courier-tag"><i class="ri-truck-line"></i> ${esc(p.courier)}</span></div>`;
+  }
+  const tHtml = highlightTracking(p.tracking, searchQuery);
+  const courierTag = p.courier ? `<span class="tracking-courier-tag"><i class="ri-truck-line"></i> ${esc(p.courier)}</span>` : '';
+  return `
+    <div class="tracking-row" onclick="event.stopPropagation()">
+      <span class="tracking-label"><i class="ri-barcode-line"></i> Tracking</span>
+      ${courierTag}
+      <span class="tracking-id bn-num" title="ক্লিক করে কপি করুন" onclick="YARZ.ord.copyTracking('${esc(p.tracking)}', this)">${tHtml}</span>
+      <button class="tracking-copy-btn" title="Copy Tracking ID" onclick="event.stopPropagation();YARZ.ord.copyTracking('${esc(p.tracking)}', this)"><i class="ri-file-copy-line"></i></button>
+      <button class="tracking-copy-btn" title="Edit / Change" onclick="event.stopPropagation();YARZ.ord.editCourierId('${esc(orderId)}')"><i class="ri-edit-2-line"></i></button>
+    </div>
+  `;
 }
 
 // ============ STATE ============
@@ -4739,22 +4729,12 @@ Team YARZ`;
     } else {
       items = items.filter(o=> stageList.includes(o.status||''));
     }
-    if(q){
-      // Tracking ID কে সার্চ-এ সর্বোচ্চ প্রাধান্য — কুরিয়ার আইডি/কোড দিয়ে খুঁজলে কাজ করবে
-      // (also order id, phone, customer, product, courier name)
-      items = items.filter(o=>{
-        const ci = parseCourier(o.courier);
-        const blob = (
-          (ci.code||'') + ' ' +     // Tracking ID — main priority
-          (o.courier||'') + ' ' +
-          (o.orderId||'') + ' ' +
-          (o.phone||'') + ' ' +
-          (o.customer||'') + ' ' +
-          (o.product||'')
-        ).toLowerCase();
-        return blob.includes(q);
-      });
-    }
+    if(q) items = items.filter(o=>{
+      // ✅ Tracking ID search — parse the courier field so user can match the bare tracking number
+      const tp = parseCourierField(o.courier);
+      const hay = (o.orderId+'|'+o.phone+'|'+o.customer+'|'+o.product+'|'+(o.courier||'')+'|'+tp.tracking+'|'+tp.courier).toLowerCase();
+      return hay.includes(q);
+    });
 
     // Sort by date DESC (newest first)
     items.sort((a,b)=>{
@@ -4843,33 +4823,23 @@ Team YARZ`;
       </select>
     ` : '';
 
-    // Courier / Tracking ID button — available in ALL stages so user can paste tracking ID later
-    // Shows existing tracking info if set; otherwise prompts user to enter
-    const trackBtnLabel = o.courier
-      ? `<i class="ri-truck-line"></i> ${esc(o.courier.length>22?o.courier.slice(0,22)+'…':o.courier)}`
-      : `<i class="ri-add-line"></i> Tracking ID`;
-    const trackBtn = `<button class="btn btn-amber btn-xs" onclick="YARZ.ord.editCourierId('${esc(o.orderId)}')" title="Courier Tracking ID বসান">${trackBtnLabel}</button>`;
+    // Parse current courier field into { courier, tracking }
+    const parsed = parseCourierField(o.courier);
+    const hasTracking = !!parsed.tracking;
+
+    // "Add tracking ID" button (only shown if NO tracking yet)
+    const addTrackBtn = !hasTracking ? `<button class="btn btn-amber btn-xs" onclick="YARZ.ord.editCourierId('${esc(o.orderId)}')" title="Courier Tracking ID বসান"><i class="ri-add-line"></i> Tracking ID যোগ করুন</button>` : '';
+
+    // Prominent tracking block (with current search query for highlight)
+    const searchQ = ($('wo-search')?.value||'').trim();
+    const trackingHtml = renderTrackingBlock(o.courier, o.orderId, searchQ);
 
     // Time display — full date-time with relative hint
     const timeHtml = o.date ? `
-      <span style="display:inline-flex;align-items:center;gap:4px;color:var(--ink-3)">
+      <span style="display:inline-flex;align-items:center;gap:4px;color:var(--ink-3)" class="bn-num">
         <i class="ri-time-line" style="font-size:11px"></i>
         ${esc(fmtTimeBn(o.date))} · ${esc(fmtDateBn(o.date))}
       </span>
-    ` : '';
-
-    // Parse courier into Courier Name + Tracking Code (separate)
-    const ci = parseCourier(o.courier);
-    const trackingHtml = ci.hasCode ? `
-      <div class="tracking-row" title="Courier Tracking ID">
-        <div class="tr-icon"><i class="ri-truck-line"></i></div>
-        <div class="tr-body">
-          <div class="tr-courier-name">${esc(ci.name || 'Courier')} · Tracking ID</div>
-          <div class="tr-code" id="trk-${esc(o.orderId)}">${esc(ci.code)}</div>
-        </div>
-        <button class="tr-copy" title="কপি করুন" onclick="copyTracking(this, ${JSON.stringify(ci.code).replace(/"/g,'&quot;')})"><i class="ri-file-copy-line"></i></button>
-        <button class="tr-edit" title="Edit Tracking" onclick="YARZ.ord.editCourierId('${esc(o.orderId)}')"><i class="ri-pencil-line"></i></button>
-      </div>
     ` : '';
 
     return `<div class="order-card ${isNewBadge?'is-new':''}" id="ord-${esc(o.orderId)}">
@@ -4878,25 +4848,24 @@ Team YARZ`;
           <div class="order-id">#${esc(o.orderId)}</div>
           <div class="order-name">${esc(o.customer||'—')}</div>
           <div class="order-meta">
-            <i class="ri-phone-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.phone||'—')}
+            <i class="ri-phone-line" style="font-size:11px;opacity:0.6"></i> <span class="bn-num">${esc(o.phone||'—')}</span>
             ${o.date ? ` · ${timeHtml}` : ''}
             <br>
-            <i class="ri-shopping-bag-3-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.product||'—')} ${o.size?`<span class="muted-kbd">${esc(o.size)}</span>`:''} × ${toBn(o.qty||1)}
+            <i class="ri-shopping-bag-3-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.product||'—')} ${o.size?`<span class="muted-kbd">${esc(o.size)}</span>`:''} × <span class="bn-num">${toBn(o.qty||1)}</span>
             ${o.payment?` · <i class="ri-wallet-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.payment)}`:''}
-            ${ci.name && !ci.hasCode ? ` · <i class="ri-truck-line" style="font-size:11px;opacity:0.6"></i> ${esc(ci.name)}`:''}
             ${o.address?`<br><i class="ri-map-pin-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.address)}`:''}
           </div>
         </div>
         <div style="text-align:right">
-          <div class="order-total">${fmtBDT(o.total)}</div>
+          <div class="order-total bn-num">${fmtBDT(o.total)}</div>
           ${stage!=='delivered' && o.status ? `<div style="margin-top:6px"><span class="chip ${sc}">${esc(o.status)}</span></div>`:''}
         </div>
       </div>
       ${trackingHtml}
-      <div class="order-actions" style="flex-wrap:wrap;gap:6px">
+      <div class="order-actions" style="flex-wrap:wrap;gap:6px;margin-top:${trackingHtml?'8px':'0'}">
         ${actionBtn}
         ${courierSel}
-        ${stage!=='delivered' && !ci.hasCode ? trackBtn : ''}
+        ${stage!=='delivered' ? addTrackBtn : ''}
         <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WhatsApp</button>
         ${stage!=='delivered' ? `<button class="btn btn-ghost btn-xs" onclick="YARZ.ord.showStatusMenu('${esc(o.orderId)}')" title="Change Status"><i class="ri-more-2-line"></i></button>` : ''}
         <button class="btn btn-ghost btn-xs" style="margin-left:auto;color:var(--danger)" onclick="YARZ.ord.deleteWebOrder('${esc(o.orderId)}')" title="ডিলিট"><i class="ri-delete-bin-6-line"></i></button>
@@ -5015,9 +4984,11 @@ Team YARZ`;
       </div>
 
       <div class="field" style="margin-bottom:14px">
-        <label>Tracking ID / Consignment No.</label>
-        <input id="ci-track" class="input" placeholder="যেমন: 12345678" value="${esc(curTrack)}">
-        <div style="font-size:10.5px;opacity:0.6;margin-top:4px">কুরিয়ার থেকে পাওয়া ট্র্যাকিং নাম্বার বা কনসাইনমেন্ট আইডি</div>
+        <label>Tracking ID / Consignment No. <span style="color:var(--danger)">★</span></label>
+        <input id="ci-track" class="input" placeholder="যেমন: 12345678" value="${esc(curTrack)}" style="font-family:'JetBrains Mono','Roboto Mono','Courier New',monospace;font-size:16px;font-weight:700;letter-spacing:0.5px;background:#FEF3C7;border:2px solid rgba(180,83,9,0.4);color:#92400E">
+        <div style="font-size:11px;opacity:0.75;margin-top:6px;color:var(--ink-2)">
+          <i class="ri-information-line"></i> কুরিয়ার থেকে পাওয়া ট্র্যাকিং নাম্বার (যেমন SteadFast এর Consignment ID) — এটা সবচেয়ে গুরুত্বপূর্ণ। সঠিকভাবে পেস্ট করুন।
+        </div>
       </div>
 
       <div class="modal-actions">
@@ -5044,6 +5015,33 @@ Team YARZ`;
       this.updateCourier(orderId, val);
     } else {
       this.updateManualCourier(orderId, val);
+    }
+  },
+
+  /* Copy tracking ID to clipboard with visual feedback */
+  copyTracking(tid, btn){
+    if(!tid) return;
+    const showOk = ()=>{
+      toast('Tracking ID কপি হয়েছে: '+tid, 'success');
+      if(btn){
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="ri-check-line" style="color:#059669"></i>';
+        setTimeout(()=>{ btn.innerHTML = orig; }, 1200);
+      }
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(tid).then(showOk).catch(()=>{
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = tid; document.body.appendChild(ta); ta.select();
+        try{ document.execCommand('copy'); showOk(); }catch(e){ toast('কপি ব্যর্থ','error'); }
+        document.body.removeChild(ta);
+      });
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = tid; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); showOk(); }catch(e){ toast('কপি ব্যর্থ','error'); }
+      document.body.removeChild(ta);
     }
   },
 
@@ -5087,20 +5085,12 @@ Team YARZ`;
       const allowed = stageMap[stage] || [];
       items = items.filter(o=>allowed.includes(o.status||'Pending'));
     }
-    if(q){
-      items = items.filter(o=>{
-        const ci = parseCourier(o.courier);
-        const blob = (
-          (ci.code||'') + ' ' +
-          (o.courier||'') + ' ' +
-          (o.orderId||'') + ' ' +
-          (o.phone||'') + ' ' +
-          (o.customer||'') + ' ' +
-          (o.product||'')
-        ).toLowerCase();
-        return blob.includes(q);
-      });
-    }
+    if(q) items = items.filter(o=>{
+      // ✅ Tracking ID search — parse the courier field so user can match the bare tracking number
+      const tp = parseCourierField(o.courier);
+      const hay = (o.orderId+'|'+o.phone+'|'+o.customer+'|'+o.product+'|'+(o.courier||'')+'|'+tp.tracking+'|'+tp.courier).toLowerCase();
+      return hay.includes(q);
+    });
 
     // Count by status
     const counts = { all: state.data.orders.length, pending:0, shipped:0, completed:0 };
@@ -5135,38 +5125,33 @@ Team YARZ`;
         actionBtn = `<span class="chip chip-green"><i class="ri-check-line"></i> Done</span>`;
       }
 
-      const ci = parseCourier(o.courier);
-      const trackingHtml = ci.hasCode ? `
-        <div class="tracking-row">
-          <div class="tr-icon"><i class="ri-truck-line"></i></div>
-          <div class="tr-body">
-            <div class="tr-courier-name">${esc(ci.name || 'Courier')} · Tracking ID</div>
-            <div class="tr-code">${esc(ci.code)}</div>
-          </div>
-          <button class="tr-copy" title="কপি করুন" onclick="copyTracking(this, ${JSON.stringify(ci.code).replace(/"/g,'&quot;')})"><i class="ri-file-copy-line"></i></button>
-          <button class="tr-edit" title="Edit" onclick="YARZ.ord.editCourierId('${esc(o.orderId)}')"><i class="ri-pencil-line"></i></button>
-        </div>
-      ` : '';
+      const parsed = parseCourierField(o.courier);
+      const hasTracking = !!parsed.tracking;
+      const searchQ = ($('mo-search')?.value||'').trim();
+      const trackingHtml = renderTrackingBlock(o.courier, o.orderId, searchQ);
+      const addTrackBtn = !hasTracking
+        ? `<button class="btn btn-amber btn-xs" onclick="YARZ.ord.editCourierId('${esc(o.orderId)}')" title="Courier Tracking ID বসান"><i class="ri-add-line"></i> Tracking ID যোগ করুন</button>`
+        : '';
 
       return `<div class="list-item" style="flex-wrap:wrap">
         <div class="thumb"><i class="ri-shopping-bag-3-line"></i></div>
-        <div class="li-body">
+        <div class="li-body" style="min-width:0;flex:1">
           <div class="li-title">#${esc(o.orderId)} — ${esc(o.customer)}</div>
-          <div class="li-sub"><i class="ri-phone-line"></i> ${esc(o.phone)} · <i class="ri-shopping-bag-line"></i> ${esc(o.product)} (${esc(o.size)}×${toBn(o.qty)})</div>
-          <div class="li-sub">${fmtDateTime(o.date)} · ${esc(o.payment)} ${ci.name && !ci.hasCode ? '· '+esc(ci.name) : ''}</div>
+          <div class="li-sub"><i class="ri-phone-line"></i> <span class="bn-num">${esc(o.phone)}</span> · <i class="ri-shopping-bag-line"></i> ${esc(o.product)} (${esc(o.size)}×<span class="bn-num">${toBn(o.qty)}</span>)</div>
+          <div class="li-sub bn-num">${fmtDateTime(o.date)} · ${esc(o.payment)}</div>
+          ${trackingHtml}
           <div class="li-actions" style="margin-top:8px;flex-wrap:wrap;gap:6px">
             ${actionBtn}
-            ${!ci.hasCode ? `<button class="btn btn-amber btn-xs" onclick="YARZ.ord.editCourierId('${esc(o.orderId)}')" title="Courier Tracking ID বসান"><i class="ri-add-line"></i> Tracking ID</button>` : ''}
+            ${addTrackBtn}
             <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WhatsApp</button>
             <button class="btn btn-ghost btn-xs" onclick="YARZ.ord.showManualStatusMenu('${esc(o.orderId)}')"><i class="ri-more-2-line"></i></button>
             <button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="YARZ.ord.deleteManualOrder('${esc(o.orderId)}')"><i class="ri-delete-bin-6-line"></i></button>
           </div>
         </div>
         <div class="li-right">
-          <div class="price">${fmtBDT(o.total)}</div>
+          <div class="price bn-num">${fmtBDT(o.total)}</div>
           <span class="chip ${sc}">${esc(s)}</span>
         </div>
-        ${trackingHtml ? `<div style="flex-basis:100%;margin-top:4px">${trackingHtml}</div>` : ''}
       </div>`;
     }).join('') : '<div class="empty-state"><i class="ri-file-list-3-line" style="font-size:32px;opacity:0.4"></i><p style="margin-top:10px">কোনো অর্ডার নেই</p></div>';
 
