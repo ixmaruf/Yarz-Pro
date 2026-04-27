@@ -4327,7 +4327,7 @@ Your parcel is being processed and will be on its way to you shortly. If you hav
 Best regards,
 Team YARZ`;
 
-    const url = `https://wa.me/88${o.phone.replace(/[^0-9]/g,'').slice(-11)}?text=${encodeURIComponent(msg)}`;
+    const url = `https://wa.me/+88${o.phone.replace(/[^0-9]/g,'').slice(-11)}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   },
 
@@ -4537,9 +4537,15 @@ Team YARZ`;
         <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
       </div>
       <p style="font-size:12.5px;color:var(--ink-3);margin-bottom:14px">Current: <span class="chip ${STATUS_COLORS[o.status]||'chip-gray'}">${esc(o.status||'—')}</span></p>
+
+      <div class="field" style="margin-bottom:16px;">
+        <label style="font-size:11px;color:var(--ink-2)">Courier / Tracking Code (Optional)</label>
+        <input id="status-courier-input" class="input" style="font-size:13px;" placeholder="e.g. RedX - 12345" value="${esc(o.courier || '')}">
+      </div>
+
       <div style="display:grid;gap:8px">
         ${statuses.map(s=>`
-          <button class="btn btn-ghost" style="justify-content:flex-start;${o.status===s?'border-color:var(--ink);font-weight:700':''}" onclick="YARZ.closeModal();YARZ.ord.updateWebStatus('${esc(orderId)}','${s}')">
+          <button class="btn btn-ghost" style="justify-content:flex-start;${o.status===s?'border-color:var(--ink);font-weight:700':''}" onclick="YARZ.closeModal();YARZ.ord.updateWebStatus('${esc(orderId)}','${s}', document.getElementById('status-courier-input').value)">
             ${o.status===s?'<i class=\"fas fa-check\"></i> ':''}${s}
           </button>
         `).join('')}
@@ -4549,13 +4555,18 @@ Team YARZ`;
     $('modal-overlay').classList.add('show');
   },
 
-  async updateWebStatus(orderId, newStatus){
+  async updateWebStatus(orderId, newStatus, courier = null){
     showLoader('স্ট্যাটাস আপডেট হচ্ছে...');
     try {
-      const res = await appsPost('updateWebsiteOrderStatus', { orderId, status:newStatus });
+      const payload = { orderId, status:newStatus };
+      if (courier !== null) payload.courier = courier;
+      const res = await appsPost('updateWebsiteOrderStatus', payload);
       if(res && res.success===false) throw new Error(res.error||'Failed');
       const o = state.data.websiteOrders.find(x=>x.orderId===orderId);
-      if(o) o.status = newStatus;
+      if(o) {
+        o.status = newStatus;
+        if(courier !== null) o.courier = courier;
+      }
       this.updateCounts();
       this.renderWebsite();
       YARZ.updateBadges();
@@ -4720,9 +4731,15 @@ Team YARZ`;
         <button class="modal-close" onclick="YARZ.closeModal()"><i class="ri-close-line"></i></button>
       </div>
       <p style="font-size:12.5px;color:var(--ink-3);margin-bottom:14px">Current: <span class="chip ${STATUS_COLORS[o.status]||'chip-gray'}">${esc(o.status||'Pending')}</span></p>
+      
+      <div class="field" style="margin-bottom:16px;">
+        <label style="font-size:11px;color:var(--ink-2)">Courier / Tracking Code (Optional)</label>
+        <input id="status-courier-input" class="input" style="font-size:13px;" placeholder="e.g. Steadfast - 12345" value="${esc(o.courier || '')}">
+      </div>
+
       <div style="display:grid;gap:8px">
         ${statuses.map(s=>`
-          <button class="btn btn-ghost" style="justify-content:flex-start;${o.status===s?'border-color:var(--ink);font-weight:700':''}" onclick="YARZ.closeModal();YARZ.ord.updateManualStatus('${esc(orderId)}','${s}')">
+          <button class="btn btn-ghost" style="justify-content:flex-start;${o.status===s?'border-color:var(--ink);font-weight:700':''}" onclick="YARZ.closeModal();YARZ.ord.updateManualStatus('${esc(orderId)}','${s}', document.getElementById('status-courier-input').value)">
             ${o.status===s?'<i class=\"ri-check-line\"></i> ':''}${s}
           </button>
         `).join('')}
@@ -4732,14 +4749,19 @@ Team YARZ`;
     $('modal-overlay').classList.add('show');
   },
 
-  async updateManualStatus(orderId, newStatus){
+  async updateManualStatus(orderId, newStatus, courier = null){
     showLoader('স্ট্যাটাস আপডেট হচ্ছে...');
     try {
-      const res = await appsPost('updateManualOrderStatus', { orderId, status:newStatus });
+      const payload = { orderId, status:newStatus };
+      if(courier !== null) payload.courier = courier;
+      const res = await appsPost('updateManualOrderStatus', payload);
       if(res && res.success===false && res.error && !/Unknown action/i.test(res.error)) throw new Error(res.error||'Failed');
       // Update locally regardless (Apps Script add-on must support action)
       const o = state.data.orders.find(x=>x.orderId===orderId);
-      if(o) o.status = newStatus;
+      if(o) {
+        o.status = newStatus;
+        if(courier !== null) o.courier = courier;
+      }
       this.renderManual();
       YARZ.updateBadges();
       toast(`#${orderId} → ${newStatus}`,'success');
