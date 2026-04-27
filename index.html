@@ -3246,7 +3246,11 @@ async function appsPost(action, payload){
     YARZ.goPage('settings');
     throw new Error('No Apps Script URL');
   }
-  const body = Object.assign({ action, key: state.apiKey }, payload||{});
+  
+  // Ensure the action string matches backend routing (lowercase)
+  const normalizedAction = (action || '').toString().trim().toLowerCase();
+  const body = Object.assign({ action: normalizedAction, key: state.apiKey }, payload||{});
+  
   try {
     const res = await fetch(targetUrl, {
       method:'POST',
