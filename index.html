@@ -2827,7 +2827,13 @@ body.dark select.select option{
               <div class="field"><label>TikTok Pixel ID</label><input type="text" id="wc-tt-pixel" class="input" placeholder="Tiktok Event ID"></div>
               <div class="field"><label>Pinterest Tag ID</label><input type="text" id="wc-pin-pixel" class="input" placeholder="e.g. 26123456789"></div>
               <div class="field"><label>Snapchat Pixel ID</label><input type="text" id="wc-snap-pixel" class="input" placeholder="e.g. xxxxxxxx-xxxx"></div>
-              <div class="field" style="grid-column:1/-1"><label>Social Sharing Image URL (Open Graph)</label><input type="text" id="wc-og-img" class="input" placeholder="e.g. imgur.com/share-image.jpg"></div>
+              <div class="field" style="grid-column:1/-1">
+                <label>Social Sharing Image URL (Open Graph)</label>
+                <input type="text" id="wc-og-img" class="input" placeholder="e.g. imgur.com/share-image.jpg" oninput="YARZ.webControl._previewImg(this, 'wc-og-preview')">
+                <div id="wc-og-preview" style="height:120px;width:240px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);margin-top:10px;overflow:hidden">
+                  <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3"><i class="ri-image-line"></i></div>
+                </div>
+              </div>
               <div class="field" style="grid-column:1/-1"><label>Google Search Console Verification Tag</label><input type="text" id="wc-gsc-tag" class="input" placeholder="e.g. <meta name='google-site-verification' content='...' />"></div>
             </div>
 
@@ -3526,7 +3532,7 @@ async function loadExpenses(){
 
 async function loadSettings(){
   try {
-    const rows = await sheetReadFormatted('SETTINGS!A2:B40');
+    const rows = await sheetReadFormatted('SETTINGS!A2:B2000');
     const map = {};
     rows.forEach(r=>{ if(r[0]) map[String(r[0]).trim()] = r[1]; });
     state.data.settings = map;
@@ -5679,7 +5685,7 @@ YARZ.webControl = {
     const ttpx = $('wc-tt-pixel'); if(ttpx) ttpx.value = s['TT Pixel'] || '';
     const pinpx = $('wc-pin-pixel'); if(pinpx) pinpx.value = s['Pinterest Pixel'] || '';
     const snappx = $('wc-snap-pixel'); if(snappx) snappx.value = s['Snapchat Pixel'] || '';
-    const ogimg = $('wc-og-img'); if(ogimg) ogimg.value = s['OG Image'] || '';
+    const ogimg = $('wc-og-img'); if(ogimg) { ogimg.value = s['OG Image'] || ''; this._previewImg(ogimg, 'wc-og-preview'); }
     const gsct = $('wc-gsc-tag'); if(gsct) gsct.value = s['GSC Tag'] || '';
   },
 
@@ -5710,7 +5716,12 @@ YARZ.webControl = {
             <div style="display:flex; gap:12px; flex-wrap:wrap">
               <div class="field" style="margin:0;flex:1;min-width:150px">
                 <label style="font-size:11px">Section Banner Image URL (Optional)</label>
-                <input type="text" class="input wc-sec-img" placeholder="e.g. imgur.com/banner.jpg" value="${esc(imgUrl)}">
+                <div style="display:flex; gap:8px; align-items:center;">
+                  <div style="width:36px;height:36px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line);flex-shrink:0;overflow:hidden">
+                    ${imgUrl ? `<img src="${esc(typeof getImgSrc === 'function' ? getImgSrc(imgUrl) : imgUrl)}" style="width:100%;height:100%;object-fit:cover">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3;font-size:16px"><i class="ri-image-line"></i></div>'}
+                  </div>
+                  <input type="text" class="input wc-sec-img" style="flex:1" placeholder="e.g. imgur.com/banner.jpg" value="${esc(imgUrl)}" oninput="YARZ.webControl._previewImg(this, this.previousElementSibling)">
+                </div>
               </div>
               <div class="field" style="margin:0;flex:1;min-width:150px">
                 <label style="font-size:11px">Target Link (Optional)</label>
@@ -5733,7 +5744,7 @@ YARZ.webControl = {
 
   _previewImg(inputEl, previewId) {
     const val = (typeof inputEl === 'string' ? inputEl : inputEl.value).trim();
-    const container = $(previewId);
+    const container = typeof previewId === 'string' ? $(previewId) : previewId;
     if(!container) return;
     if(val) {
       const src = (typeof getImgSrc === 'function') ? getImgSrc(val) : val;
