@@ -1587,8 +1587,8 @@ body.dark .subtab.active{ background: rgba(255,255,255,0.1) !important; }
   font-size:10px; padding: 2px 8px;
 }
 .subtab.active .sub-count{
-  background: linear-gradient(135deg,#3FBFA5,#2DA68C) !important;
-  color:#FFFFFF !important;
+  background: var(--ink) !important;
+  color: var(--surface) !important;
 }
 
 /* ==== Order Cards — Pinterest Pretty ==== */
@@ -2706,6 +2706,10 @@ body.dark select.select option{
                 <label class="ios-toggle"><input type="checkbox" id="wc-order-notes"><span class="slider"></span></label>
                 <div><div style="font-weight:600">Enable Order Notes</div><div style="font-size:11px;color:var(--ink-3)">Let customers add gift messages</div></div>
               </div>
+              <div class="flex-gap" style="grid-column: 1 / -1; padding-top: 8px; border-top: 1px solid var(--border-light);">
+                <label class="ios-toggle"><input type="checkbox" id="wc-enable-cod" checked><span class="slider"></span></label>
+                <div><div style="font-weight:600">Enable Cash on Delivery (COD)</div><div style="font-size:11px;color:var(--ink-3)">Turn off to force bKash/Nagad only on website</div></div>
+              </div>
             </div>
 
             <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
@@ -2719,6 +2723,24 @@ body.dark select.select option{
               <div class="field">
                 <label>Custom Checkout Field (Optional)</label>
                 <input type="text" id="wc-custom-field" class="input" placeholder="e.g. Company Name or Bin No">
+              </div>
+            </div>
+            <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
+              <div class="field">
+                <label>Zone 1 Name (e.g. Inside Dhaka)</label>
+                <input type="text" id="wc-zone-1-name" class="input" placeholder="e.g. Inside Sonargaon">
+              </div>
+              <div class="field">
+                <label>Zone 1 Charge (৳)</label>
+                <input type="number" id="wc-zone-1-charge" class="input" placeholder="e.g. 60">
+              </div>
+              <div class="field">
+                <label>Zone 2 Name (e.g. Outside Dhaka)</label>
+                <input type="text" id="wc-zone-2-name" class="input" placeholder="e.g. Outside Sonargaon">
+              </div>
+              <div class="field">
+                <label>Zone 2 Charge (৳)</label>
+                <input type="number" id="wc-zone-2-charge" class="input" placeholder="e.g. 120">
               </div>
               <div class="field">
                 <label>Free Shipping Target Amount (৳)</label>
@@ -3151,6 +3173,19 @@ const DEFAULT_BADGES = ["","New Arrival","Hot Sale","Best Seller","Limited Editi
 const DISC_TYPES = ["Normal","Serious","Special","Clearance","Seasonal"];
 const PAYMENT_METHODS = ["COD","bKash","Nagad","Rocket","Bank","Paid"];
 const COURIERS = ["SteadFast","Pathao","Redex","PaperFly","ParcelDex","CarryBee","Self Delivery","Other"];
+
+// ===== IMAGE URL CONVERTER (same as website) =====
+function getImgSrc(url) {
+  if (!url) return '';
+  url = url.trim();
+  // ibb.co share page → direct image
+  const ibbMatch = url.match(/https?:\/\/(?:www\.)?ibb\.co(?:\.com)?\/(\w+)(?:\/[\w-]+)?/);
+  if (ibbMatch) {
+    return 'https://i.ibb.co/' + ibbMatch[1] + '/' + ibbMatch[1] + '.jpg';
+  }
+  // Already a direct image link
+  return url;
+}
 
 const STATUS_FLOW = ["Pending","Picked Up","Ready for Delivery","Handed to Courier","Delivered"];
 const STATUS_COLORS = {
@@ -5667,10 +5702,15 @@ YARZ.webControl = {
     const ed = $('wc-exp-delivery'); if(ed) ed.value = s['Exp Delivery'] || '';
 
     // --- Cart & Checkout ---
+    const cod = $('wc-enable-cod'); if(cod) cod.checked = (s['Enable COD'] !== 'false'); // Defaults to true
     const cd = $('wc-cart-drawer'); if(cd) cd.checked = (s['Cart Drawer'] === 'true');
     const on = $('wc-order-notes'); if(on) on.checked = (s['Order Notes'] === 'true');
     const cm = $('wc-checkout-mode'); if(cm) cm.value = s['Checkout Mode'] || 'website';
     const cf = $('wc-custom-field'); if(cf) cf.value = s['Custom Field'] || '';
+    const z1 = $('wc-zone-1-name'); if(z1) z1.value = s['Zone 1 Name'] || '';
+    const z1c = $('wc-zone-1-charge'); if(z1c) z1c.value = s['Zone 1 Charge'] || '';
+    const z2 = $('wc-zone-2-name'); if(z2) z2.value = s['Zone 2 Name'] || '';
+    const z2c = $('wc-zone-2-charge'); if(z2c) z2c.value = s['Zone 2 Charge'] || '';
     const fs = $('wc-free-ship-amt'); if(fs) fs.value = s['Free Ship Amt'] || '';
     const mo = $('wc-min-order'); if(mo) mo.value = s['Min Order'] || '';
 
@@ -5681,12 +5721,17 @@ YARZ.webControl = {
     const am = $('wc-abandon-msg'); if(am) am.value = s['Abandon Msg'] || '';
 
     // --- SEO Tracking Fields ---
+    const mt = $('wc-meta-title'); if(mt) mt.value = s['Meta Title'] || '';
+    const mde = $('wc-meta-desc'); if(mde) mde.value = s['Meta Desc'] || '';
+    const fbpx = $('wc-fb-pixel'); if(fbpx) fbpx.value = s['FB Pixel'] || '';
+    const ga4v = $('wc-ga4'); if(ga4v) ga4v.value = s['GA4'] || '';
     const igpx = $('wc-ig-pixel'); if(igpx) igpx.value = s['IG Pixel'] || '';
     const ttpx = $('wc-tt-pixel'); if(ttpx) ttpx.value = s['TT Pixel'] || '';
     const pinpx = $('wc-pin-pixel'); if(pinpx) pinpx.value = s['Pinterest Pixel'] || '';
     const snappx = $('wc-snap-pixel'); if(snappx) snappx.value = s['Snapchat Pixel'] || '';
     const ogimg = $('wc-og-img'); if(ogimg) { ogimg.value = s['OG Image'] || ''; this._previewImg(ogimg, 'wc-og-preview'); }
     const gsct = $('wc-gsc-tag'); if(gsct) gsct.value = s['GSC Tag'] || '';
+    const ccss = $('wc-custom-css'); if(ccss) ccss.value = s['Custom CSS'] || '';
   },
 
   _buildSectionHTML(title, category, isActive, imgUrl='', linkUrl='') {
@@ -5784,10 +5829,15 @@ YARZ.webControl = {
       'Exp Delivery': $('wc-exp-delivery')?.value.trim() || '',
 
       // Checkout
+      'Enable COD': $('wc-enable-cod')?.checked ? 'true' : 'false',
       'Cart Drawer': $('wc-cart-drawer')?.checked ? 'true' : 'false',
       'Order Notes': $('wc-order-notes')?.checked ? 'true' : 'false',
       'Checkout Mode': $('wc-checkout-mode')?.value,
       'Custom Field': $('wc-custom-field')?.value.trim(),
+      'Zone 1 Name': $('wc-zone-1-name')?.value.trim() || '',
+      'Zone 1 Charge': $('wc-zone-1-charge')?.value.trim() || '',
+      'Zone 2 Name': $('wc-zone-2-name')?.value.trim() || '',
+      'Zone 2 Charge': $('wc-zone-2-charge')?.value.trim() || '',
       'Free Ship Amt': $('wc-free-ship-amt')?.value.trim(),
       'Min Order': $('wc-min-order')?.value.trim(),
 
@@ -6141,6 +6191,9 @@ const modalBuilders = {
   },
 
   'add-product': ()=>{
+    const s = state.data?.settings || {};
+    const z1 = s['Zone 1 Name'] || 'Dhaka';
+    const z2 = s['Zone 2 Name'] || 'Outside';
     const cats = DEFAULT_CATEGORIES;
     const fabs = DEFAULT_FABRICS;
     const bads = DEFAULT_BADGES;
@@ -6170,6 +6223,11 @@ const modalBuilders = {
         <div class="field"><label>Image 2</label><input id="f-img2" class="input"></div>
         <div class="field"><label>Image 3</label><input id="f-img3" class="input"></div>
       </div>
+      <div class="row">
+        <div class="field"><label>Image 4</label><input id="f-img4" class="input"></div>
+        <div class="field"><label>Image 5</label><input id="f-img5" class="input"></div>
+      </div>
+      <div class="field"><label>Image 6</label><input id="f-img6" class="input"></div>
       <div class="field"><label>Video URL</label><input id="f-vid" class="input"></div>
 
       <div class="modal-section-title">📝 বিবরণ</div>
@@ -6185,8 +6243,8 @@ const modalBuilders = {
 
       <div class="modal-section-title">🚚 ডেলিভারি</div>
       <div class="row">
-        <div class="field"><label>Dhaka ৳</label><input id="f-din" type="number" class="input" value="60"></div>
-        <div class="field"><label>Outside ৳</label><input id="f-dout" type="number" class="input" value="120"></div>
+        <div class="field"><label>${esc(z1)} ৳</label><input id="f-din" type="number" class="input" value="60"></div>
+        <div class="field"><label>${esc(z2)} ৳</label><input id="f-dout" type="number" class="input" value="120"></div>
       </div>
 
       <div class="modal-section-title">📊 স্টক</div>
@@ -6236,6 +6294,11 @@ const modalBuilders = {
         <div class="field"><label>Image 2</label><input id="f-img2" class="input" value="${esc(p.img2)}"></div>
         <div class="field"><label>Image 3</label><input id="f-img3" class="input" value="${esc(p.img3)}"></div>
       </div>
+      <div class="row">
+        <div class="field"><label>Image 4</label><input id="f-img4" class="input" value="${esc(p.image4||'')}"></div>
+        <div class="field"><label>Image 5</label><input id="f-img5" class="input" value="${esc(p.image5||'')}"></div>
+      </div>
+      <div class="field"><label>Image 6</label><input id="f-img6" class="input" value="${esc(p.image6||'')}"></div>
       <div class="field"><label>Video URL</label><input id="f-vid" class="input" value="${esc(p.video)}"></div>
       <div class="modal-section-title">📝 বিবরণ</div>
       <div class="field"><label>Description</label><textarea id="f-desc" class="textarea">${esc(p.desc)}</textarea></div>
@@ -6248,8 +6311,8 @@ const modalBuilders = {
       </div>
       <div class="modal-section-title">🚚 ডেলিভারি</div>
       <div class="row">
-        <div class="field"><label>Dhaka</label><input id="f-din" type="number" class="input" value="${p.deliveryDhaka}"></div>
-        <div class="field"><label>Outside</label><input id="f-dout" type="number" class="input" value="${p.deliveryOutside}"></div>
+        <div class="field"><label>${esc(z1)}</label><input id="f-din" type="number" class="input" value="${p.deliveryDhaka}"></div>
+        <div class="field"><label>${esc(z2)}</label><input id="f-dout" type="number" class="input" value="${p.deliveryOutside}"></div>
       </div>
       <div class="modal-section-title">📊 স্টক</div>
       <div class="row">
@@ -6312,7 +6375,7 @@ const modalBuilders = {
       <div class="field"><label>Customer Name <span class="req">*</span></label><input id="o-name" class="input"></div>
       <div class="row">
         <div class="field"><label>Phone <span class="req">*</span></label><input id="o-phone" class="input"></div>
-        <div class="field"><label>Location</label><select id="o-loc" class="select" onchange="YARZ._calcOrder()"><option>Dhaka</option><option>Outside</option></select></div>
+        <div class="field"><label>Location</label><select id="o-loc" class="select" onchange="YARZ._calcOrder()"><option value="Dhaka">${esc(z1)}</option><option value="Outside">${esc(z2)}</option></select></div>
       </div>
       <div class="field"><label>Address <span class="req">*</span></label><textarea id="o-addr" class="textarea" style="min-height:60px"></textarea></div>
       <div class="field"><label>Product <span class="req">*</span></label>
@@ -6444,6 +6507,7 @@ YARZ._saveNewProduct = async function(){
     bad: readComboValue('f-bad'),
     status:$('f-status').value, dt:$('f-dt').value, ddays:$('f-ddays').value,
     img1:$('f-img1').value.trim(), img2:$('f-img2').value.trim(), img3:$('f-img3').value.trim(),
+    img4:$('f-img4')?$('f-img4').value.trim():'', img5:$('f-img5')?$('f-img5').value.trim():'', img6:$('f-img6')?$('f-img6').value.trim():'',
     vid:$('f-vid').value.trim(), desc:$('f-desc').value, sc:$('f-sc').value,
     cost, reg, sale, discPct:num($('f-disc').value),
     din:num($('f-din').value)||60, dout:num($('f-dout').value)||120,
@@ -6472,6 +6536,7 @@ YARZ._saveEditProduct = async function(){
     bad: readComboValue('f-bad'),
     status:$('f-status').value, dt:$('f-dt').value, ddays:$('f-ddays').value,
     img1:$('f-img1').value.trim(), img2:$('f-img2').value.trim(), img3:$('f-img3').value.trim(),
+    img4:$('f-img4')?$('f-img4').value.trim():'', img5:$('f-img5')?$('f-img5').value.trim():'', img6:$('f-img6')?$('f-img6').value.trim():'',
     vid:$('f-vid').value.trim(), desc:$('f-desc').value, sc:$('f-sc').value,
     cost:num($('f-cost').value), reg:num($('f-reg').value), sale:num($('f-sale').value),
     discPct:num($('f-disc').value),
