@@ -3478,8 +3478,8 @@ async function appsPost(action, payload){
 
 // ============ DATA LOADERS ============
 async function loadInventory(){
-  // INVENTORY is large (39 cols). Read A2:AM1000
-  const rows = await sheetRead('INVENTORY!A2:AM1000');
+  // INVENTORY is large. Read A2:AS1000
+  const rows = await sheetRead('INVENTORY!A2:AS1000');
   const items = [];
   for(const r of rows){
     if(!r[0]) continue;
@@ -3498,7 +3498,9 @@ async function loadInventory(){
       totalSold: num(r[26]), returns: num(r[27]), remaining: num(r[28]), totalStock: num(r[29]),
       invest: num(r[30]), revenue: num(r[31]), toRecover: num(r[32]),
       gross: num(r[33]), fbAd: num(r[34]), net: num(r[35]), discImpact: num(r[36]),
-      updated: r[37], status: safeStr(r[38])||'Draft'
+      updated: r[37], status: safeStr(r[38])||'Draft',
+      img4: safeStr(r[39]), img5: safeStr(r[40]), img6: safeStr(r[41]),
+      couponActive: safeStr(r[42])||'No', couponCode: safeStr(r[43]), couponDisc: num(r[44])
     });
   }
   state.data.inventory = items;
@@ -4892,7 +4894,7 @@ Team YARZ`;
             <i class="ri-phone-line" style="font-size:11px;opacity:0.6"></i> <span class="bn-num">${esc(o.phone||'—')}</span>
             ${o.date ? ` · ${timeHtml}` : ''}
             <br>
-            <i class="ri-shopping-bag-3-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.product||'—')} ${o.size?`<span class="muted-kbd">${esc(o.size)}</span>`:''} × <span class="bn-num">${toBn(o.qty||1)}</span>
+            <span style="cursor:pointer;color:var(--brand);font-weight:700;text-decoration:underline;font-size:13.5px;" onclick="YARZ.inv.showDetails('${esc(o.product)}')"><i class="ri-shopping-bag-3-line" style="font-size:12px;"></i> ${esc(o.product||'—')}</span> ${o.size?`<span class="muted-kbd">${esc(o.size)}</span>`:''} × <span class="bn-num">${toBn(o.qty||1)}</span>
             ${o.payment?` · <i class="ri-wallet-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.payment)}`:''}
             ${o.address?`<br><i class="ri-map-pin-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.address)}`:''}
           </div>
@@ -5178,7 +5180,7 @@ Team YARZ`;
         <div class="thumb"><i class="ri-shopping-bag-3-line"></i></div>
         <div class="li-body" style="min-width:0;flex:1">
           <div class="li-title">#${esc(o.orderId)} — ${esc(o.customer)}</div>
-          <div class="li-sub"><i class="ri-phone-line"></i> <span class="bn-num">${esc(o.phone)}</span> · <i class="ri-shopping-bag-line"></i> ${esc(o.product)} (${esc(o.size)}×<span class="bn-num">${toBn(o.qty)}</span>)</div>
+          <div class="li-sub"><i class="ri-phone-line"></i> <span class="bn-num">${esc(o.phone)}</span> · <span style="cursor:pointer;color:var(--brand);font-weight:700;text-decoration:underline;font-size:13.5px;" onclick="YARZ.inv.showDetails('${esc(o.product)}')"><i class="ri-shopping-bag-line"></i> ${esc(o.product)}</span> (${esc(o.size)}×<span class="bn-num">${toBn(o.qty)}</span>)</div>
           <div class="li-sub bn-num">${fmtDateTime(o.date)} · ${esc(o.payment)}</div>
           ${trackingHtml}
           <div class="li-actions" style="margin-top:8px;flex-wrap:wrap;gap:6px">
@@ -6217,6 +6219,13 @@ const modalBuilders = {
         <div class="field"><label>Delivery Days</label><input id="f-ddays" class="input" value="2-3 days"></div>
       </div>
 
+      <div class="modal-section-title">🎁 Coupon Code</div>
+      <div class="row">
+        <div class="field"><label>Coupon Active</label><select id="f-cAct" class="select"><option value="No">No</option><option value="Yes">Yes</option></select></div>
+        <div class="field"><label>Coupon Code</label><input id="f-cCode" class="input" placeholder="e.g. WINTER10"></div>
+        <div class="field"><label>Coupon Disc %</label><input id="f-cDisc" type="number" class="input" placeholder="0"></div>
+      </div>
+
       <div class="modal-section-title">🖼️ মিডিয়া</div>
       <div class="field"><label>Image 1 URL</label><input id="f-img1" class="input"></div>
       <div class="row">
@@ -6263,56 +6272,65 @@ const modalBuilders = {
   },
 
   'edit-product': (p)=>{
+    const s = state.data?.settings || {};
+    const z1 = s['Zone 1 Name'] || 'Dhaka';
+    const z2 = s['Zone 2 Name'] || 'Outside';
     const cats = DEFAULT_CATEGORIES;
     const fabs = DEFAULT_FABRICS;
     const bads = DEFAULT_BADGES;
     return `
       <div class="modal-header">
-        <h3><i class="fas fa-pen"></i> Edit: ${esc(p.name)}</h3>
+        <h3><i class="fas fa-pen"></i> Edit: ${esc(p.name||'')}</h3>
         <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
       </div>
-      <input type="hidden" id="f-origname" value="${esc(p.name)}">
-      <div class="field"><label>প্রোডাক্ট নাম <span class="req">*</span></label><input id="f-name" class="input" value="${esc(p.name)}"></div>
+      <input type="hidden" id="f-origname" value="${esc(p.name||'')}">
+      <div class="field"><label>প্রোডাক্ট নাম <span class="req">*</span></label><input id="f-name" class="input" value="${esc(p.name||'')}"></div>
       <div class="row">
-        <div class="field"><label>Category</label>${buildComboSelect('f-cat', cats, p.category)}</div>
-        <div class="field"><label>Fabric</label>${buildComboSelect('f-fab', fabs, p.fabric)}</div>
+        <div class="field"><label>Category</label>${buildComboSelect('f-cat', cats, p.category||'')}</div>
+        <div class="field"><label>Fabric</label>${buildComboSelect('f-fab', fabs, p.fabric||'')}</div>
       </div>
       <div class="row">
-        <div class="field"><label>Badge</label>${buildComboSelect('f-bad', bads, p.badge)}</div>
+        <div class="field"><label>Badge</label>${buildComboSelect('f-bad', bads, p.badge||'')}</div>
         <div class="field"><label>Status</label><select id="f-status" class="select">
-          ${['Active','Draft','Archived'].map(s=>`<option ${s===p.status?'selected':''}>${s}</option>`).join('')}
+          ${['Active','Draft','Archived'].map(s=>`<option ${s===(p.status||'Active')?'selected':''}>${s}</option>`).join('')}
         </select></div>
       </div>
       <div class="row">
-        <div class="field"><label>Discount Type</label><select id="f-dt" class="select">${DISC_TYPES.map(c=>`<option ${c===p.discType?'selected':''}>${c}</option>`).join('')}</select></div>
+        <div class="field"><label>Discount Type</label><select id="f-dt" class="select">${DISC_TYPES.map(c=>`<option ${c===(p.discType||'Normal')?'selected':''}>${c}</option>`).join('')}</select></div>
         <div class="field"><label>Discount %</label><input id="f-disc" type="number" class="input" value="${p.discPct||0}"></div>
-        <div class="field"><label>Delivery Days</label><input id="f-ddays" class="input" value="${esc(p.deliveryDays)}"></div>
+        <div class="field"><label>Delivery Days</label><input id="f-ddays" class="input" value="${esc(p.deliveryDays||'')}"></div>
+      </div>
+      <div class="modal-section-title">🎁 Coupon Code</div>
+      <div class="row">
+        <div class="field"><label>Coupon Active</label><select id="f-cAct" class="select"><option value="No" ${(p.couponActive||'No')!=='Yes'?'selected':''}>No</option><option value="Yes" ${(p.couponActive||'No')==='Yes'?'selected':''}>Yes</option></select></div>
+        <div class="field"><label>Coupon Code</label><input id="f-cCode" class="input" value="${esc(p.couponCode||'')}"></div>
+        <div class="field"><label>Coupon Disc %</label><input id="f-cDisc" type="number" class="input" value="${p.couponDisc||0}"></div>
       </div>
       <div class="modal-section-title">🖼️ মিডিয়া</div>
-      <div class="field"><label>Image 1 URL</label><input id="f-img1" class="input" value="${esc(p.img1)}"></div>
+      <div class="field"><label>Image 1 URL</label><input id="f-img1" class="input" value="${esc(p.img1||'')}"></div>
       <div class="row">
-        <div class="field"><label>Image 2</label><input id="f-img2" class="input" value="${esc(p.img2)}"></div>
-        <div class="field"><label>Image 3</label><input id="f-img3" class="input" value="${esc(p.img3)}"></div>
+        <div class="field"><label>Image 2</label><input id="f-img2" class="input" value="${esc(p.img2||'')}"></div>
+        <div class="field"><label>Image 3</label><input id="f-img3" class="input" value="${esc(p.img3||'')}"></div>
       </div>
       <div class="row">
         <div class="field"><label>Image 4</label><input id="f-img4" class="input" value="${esc(p.image4||'')}"></div>
         <div class="field"><label>Image 5</label><input id="f-img5" class="input" value="${esc(p.image5||'')}"></div>
       </div>
       <div class="field"><label>Image 6</label><input id="f-img6" class="input" value="${esc(p.image6||'')}"></div>
-      <div class="field"><label>Video URL</label><input id="f-vid" class="input" value="${esc(p.video)}"></div>
+      <div class="field"><label>Video URL</label><input id="f-vid" class="input" value="${esc(p.video||'')}"></div>
       <div class="modal-section-title">📝 বিবরণ</div>
-      <div class="field"><label>Description</label><textarea id="f-desc" class="textarea">${esc(p.desc)}</textarea></div>
-      <div class="field"><label>Size Chart</label><textarea id="f-sc" class="textarea" style="min-height:60px">${esc(p.sizeChart)}</textarea></div>
+      <div class="field"><label>Description</label><textarea id="f-desc" class="textarea">${esc(p.desc||'')}</textarea></div>
+      <div class="field"><label>Size Chart</label><textarea id="f-sc" class="textarea" style="min-height:60px">${esc(p.sizeChart||'')}</textarea></div>
       <div class="modal-section-title">💰 মূল্য</div>
       <div class="row">
-        <div class="field"><label>Cost</label><input id="f-cost" type="number" class="input" value="${p.cost}" oninput="if(window.calcDisc)window.calcDisc()"></div>
-        <div class="field"><label>Regular</label><input id="f-reg" type="number" class="input" value="${p.regular}" oninput="if(window.calcDisc)window.calcDisc()"></div>
-        <div class="field"><label>Sale</label><input id="f-sale" type="number" class="input" value="${p.sale}" oninput="if(window.calcDisc)window.calcDisc()"></div>
+        <div class="field"><label>Cost</label><input id="f-cost" type="number" class="input" value="${p.cost||0}" oninput="if(window.calcDisc)window.calcDisc()"></div>
+        <div class="field"><label>Regular</label><input id="f-reg" type="number" class="input" value="${p.regular||0}" oninput="if(window.calcDisc)window.calcDisc()"></div>
+        <div class="field"><label>Sale</label><input id="f-sale" type="number" class="input" value="${p.sale||0}" oninput="if(window.calcDisc)window.calcDisc()"></div>
       </div>
       <div class="modal-section-title">🚚 ডেলিভারি</div>
       <div class="row">
-        <div class="field"><label>${esc(z1)}</label><input id="f-din" type="number" class="input" value="${p.deliveryDhaka}"></div>
-        <div class="field"><label>${esc(z2)}</label><input id="f-dout" type="number" class="input" value="${p.deliveryOutside}"></div>
+        <div class="field"><label>${esc(z1)}</label><input id="f-din" type="number" class="input" value="${p.deliveryDhaka||0}"></div>
+        <div class="field"><label>${esc(z2)}</label><input id="f-dout" type="number" class="input" value="${p.deliveryOutside||0}"></div>
       </div>
       <div class="modal-section-title">📊 স্টক</div>
       <div class="row">
@@ -6410,8 +6428,11 @@ const modalBuilders = {
       <div class="field"><label>Status</label>
         <select id="o-status" class="select">
           <option value="Pending" selected>⏳ Pending (নতুন অর্ডার)</option>
-          <option value="Shipped">🚚 Shipped (পাঠিয়ে দিয়েছি)</option>
-          <option value="Delivered">✅ Delivered (কমপ্লিট)</option>
+          <option value="Processing">📦 Processing (প্যাকেজিং হচ্ছে)</option>
+          <option value="Picked Up">🤝 Picked Up (কুরিয়ারে দেওয়া হয়েছে)</option>
+          <option value="Shipped">🚚 Shipped (ডেলিভারির পথে)</option>
+          <option value="Delivered">✅ Delivered (ডেলিভারি সম্পন্ন)</option>
+          <option value="Returned">↩️ Returned (রিটার্ন)</option>
           <option value="Cancelled">❌ Cancelled</option>
         </select>
       </div>
@@ -6508,6 +6529,7 @@ YARZ._saveNewProduct = async function(){
     status:$('f-status').value, dt:$('f-dt').value, ddays:$('f-ddays').value,
     img1:$('f-img1').value.trim(), img2:$('f-img2').value.trim(), img3:$('f-img3').value.trim(),
     img4:$('f-img4')?$('f-img4').value.trim():'', img5:$('f-img5')?$('f-img5').value.trim():'', img6:$('f-img6')?$('f-img6').value.trim():'',
+    cAct:$('f-cAct')?$('f-cAct').value:'No', cCode:$('f-cCode')?$('f-cCode').value.trim():'', cDisc:$('f-cDisc')?num($('f-cDisc').value):0,
     vid:$('f-vid').value.trim(), desc:$('f-desc').value, sc:$('f-sc').value,
     cost, reg, sale, discPct:num($('f-disc').value),
     din:num($('f-din').value)||60, dout:num($('f-dout').value)||120,
@@ -6537,6 +6559,7 @@ YARZ._saveEditProduct = async function(){
     status:$('f-status').value, dt:$('f-dt').value, ddays:$('f-ddays').value,
     img1:$('f-img1').value.trim(), img2:$('f-img2').value.trim(), img3:$('f-img3').value.trim(),
     img4:$('f-img4')?$('f-img4').value.trim():'', img5:$('f-img5')?$('f-img5').value.trim():'', img6:$('f-img6')?$('f-img6').value.trim():'',
+    cAct:$('f-cAct')?$('f-cAct').value:'No', cCode:$('f-cCode')?$('f-cCode').value.trim():'', cDisc:$('f-cDisc')?num($('f-cDisc').value):0,
     vid:$('f-vid').value.trim(), desc:$('f-desc').value, sc:$('f-sc').value,
     cost:num($('f-cost').value), reg:num($('f-reg').value), sale:num($('f-sale').value),
     discPct:num($('f-disc').value),
