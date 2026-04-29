@@ -2879,7 +2879,7 @@ body.dark select.select option{
           <div class="section-title"><h2><i class="ri-plug-line" style="color:var(--accent-2)"></i> কানেকশন সেটআপ</h2></div>
           <div class="field">
             <label>Google Apps Script Web App URL <span class="req">*</span></label>
-            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbyjBlj2Ew_RQSxZ2h1bECGSoaze10lRzPumhQ8cwlDaOF6vIu0Lc_G2-gywlZ3MUx5S/exec">
+            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycby8kuRND7o3PG_DnkP_BkhkG3YVEcOELSA1Unnx6zV4PCvdCslOkX2xFm1OWihStdSq/exec">
             <div style="font-size:11px;opacity:0.6;margin-top:4px">✓ Default URL pre-filled — যদি deployment পরিবর্তন করেন তবে এখানে নতুন URL দিন</div>
           </div>
           <div class="field">
@@ -3131,7 +3131,7 @@ const CREDS_PLAIN = { user: 'maruf_ix', pass: 'Hassan__00' };
 const DEFAULT_SHEET_ID = '1wQz5OQZAtISTD1FdSEs_j9-p0e-BHwYjmjN7PR9hA-Q';
 const DEFAULT_API_KEY  = 'AIzaSyC2WUoTmJ_nwxZ0gV8BkE0UGgZoEfwyQ5k';
 // ★ হার্ডকোডেড Apps Script URL — এর ফলে Settings-এ URL না দিলেও Write operations কাজ করবে
-const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbyjBlj2Ew_RQSxZ2h1bECGSoaze10lRzPumhQ8cwlDaOF6vIu0Lc_G2-gywlZ3MUx5S/exec';
+const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycby8kuRND7o3PG_DnkP_BkhkG3YVEcOELSA1Unnx6zV4PCvdCslOkX2xFm1OWihStdSq/exec';
 const TZ = 'Asia/Dhaka';
 
 // ============ CRYPTO UTIL ============
@@ -6313,10 +6313,10 @@ const modalBuilders = {
         <div class="field"><label>Image 3</label><input id="f-img3" class="input" value="${esc(p.img3||'')}"></div>
       </div>
       <div class="row">
-        <div class="field"><label>Image 4</label><input id="f-img4" class="input" value="${esc(p.image4||'')}"></div>
-        <div class="field"><label>Image 5</label><input id="f-img5" class="input" value="${esc(p.image5||'')}"></div>
+        <div class="field"><label>Image 4</label><input id="f-img4" class="input" value="${esc(p.img4||'')}"></div>
+        <div class="field"><label>Image 5</label><input id="f-img5" class="input" value="${esc(p.img5||'')}"></div>
       </div>
-      <div class="field"><label>Image 6</label><input id="f-img6" class="input" value="${esc(p.image6||'')}"></div>
+      <div class="field"><label>Image 6</label><input id="f-img6" class="input" value="${esc(p.img6||'')}"></div>
       <div class="field"><label>Video URL</label><input id="f-vid" class="input" value="${esc(p.video||'')}"></div>
       <div class="modal-section-title">📝 বিবরণ</div>
       <div class="field"><label>Description</label><textarea id="f-desc" class="textarea">${esc(p.desc||'')}</textarea></div>
