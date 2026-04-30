@@ -2888,7 +2888,7 @@ body.dark select.select option{
           </div>
           <div class="field">
             <label>API Key</label>
-            <input id="set-api-key" class="input" value="AIzaSyC2WUoTmJ_nwxZ0gV8BkE0UGgZoEfwyQ5k">
+            <input id="set-api-key" class="input" value="AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k">
           </div>
           <button class="btn btn-primary" onclick="YARZ.settings.saveConn()"><i class="ri-check-line"></i> Save Connection</button>
         </div>
@@ -3129,7 +3129,7 @@ const AUTH_HASHES = {
 const CREDS_PLAIN = { user: 'maruf_ix', pass: 'Hassan__00' };
 // Keep fallback direct-compare for environments without SubtleCrypto
 const DEFAULT_SHEET_ID = '1wQz5OQZAtISTD1FdSEs_j9-p0e-BHwYjmjN7PR9hA-Q';
-const DEFAULT_API_KEY  = 'AIzaSyC2WUoTmJ_nwxZ0gV8BkE0UGgZoEfwyQ5k';
+const DEFAULT_API_KEY  = 'AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k';
 // ★ হার্ডকোডেড Apps Script URL — এর ফলে Settings-এ URL না দিলেও Write operations কাজ করবে
 const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycby8kuRND7o3PG_DnkP_BkhkG3YVEcOELSA1Unnx6zV4PCvdCslOkX2xFm1OWihStdSq/exec';
 const TZ = 'Asia/Dhaka';
@@ -3174,15 +3174,31 @@ const DISC_TYPES = ["Normal","Serious","Special","Clearance","Seasonal"];
 const PAYMENT_METHODS = ["COD","bKash","Nagad","Rocket","Bank","Paid"];
 const COURIERS = ["SteadFast","Pathao","Redex","PaperFly","ParcelDex","CarryBee","Self Delivery","Other"];
 
-// ===== IMAGE URL CONVERTER (same as website) =====
+// ===== IMAGE URL CONVERTER v3.1 (same as website, works for ALL 6 image fields) =====
+// Supports: imgbb (ibb.co share + i.ibb.co direct), Google Drive, postimg, imgur,
+// direct image links (jpg/png/webp/avif/etc), URLs without protocol
 function getImgSrc(url) {
   if (!url) return '';
-  url = url.trim();
-  // ibb.co share page → direct image
-  const ibbMatch = url.match(/https?:\/\/(?:www\.)?ibb\.co(?:\.com)?\/(\w+)(?:\/[\w-]+)?/);
+  url = String(url).trim();
+  if (!url) return '';
+  // Add protocol if missing
+  if (!url.startsWith('http') && !url.startsWith('data:')) url = 'https://' + url;
+  // Google Drive share/view → direct image
+  if (url.indexOf('drive.google.com') !== -1) {
+    var m = url.match(/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+    if (m) return 'https://lh3.googleusercontent.com/d/' + m[1];
+  }
+  // ibb.co share page → direct i.ibb.co image
+  var ibbMatch = url.match(/^https?:\/\/(?:www\.)?ibb\.co(?:\.com)?\/([a-zA-Z0-9]+)(?:\/[\w\-\.]+)?\/?$/i);
   if (ibbMatch) {
     return 'https://i.ibb.co/' + ibbMatch[1] + '/' + ibbMatch[1] + '.jpg';
   }
+  // postimg.cc share → direct
+  var postimgMatch = url.match(/^https?:\/\/postimg\.cc\/([a-zA-Z0-9]+)\/?$/i);
+  if (postimgMatch) return 'https://i.postimg.cc/' + postimgMatch[1] + '/image.jpg';
+  // imgur share → direct
+  var imgurMatch = url.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)\/?$/i);
+  if (imgurMatch) return 'https://i.imgur.com/' + imgurMatch[1] + '.jpg';
   // Already a direct image link
   return url;
 }
@@ -3295,29 +3311,88 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;
 function safeStr(s){ return String(s==null?'':s); }
 function fmtBDT(n){ return '৳'+Math.round(num(n)).toLocaleString('en-IN'); }
 function getImgSrc(url){
+  // ✅ FIX v3.1: Robust auto-format detection for ALL 6 image fields
+  // Supports: imgbb share/direct, Google Drive, postimg, imgur, direct image links
   if(!url) return '';
-  url = url.trim();
+  url = String(url).trim();
+  if(!url) return '';
   if(!url.startsWith('http') && !url.startsWith('data:')) url = 'https://' + url;
   if(url.includes('drive.google.com')){
     const m = url.match(/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
     if(m) return 'https://lh3.googleusercontent.com/d/' + m[1];
   }
+  // ibb.co share page → direct image
+  const ibbMatch = url.match(/^https?:\/\/(?:www\.)?ibb\.co(?:\.com)?\/([a-zA-Z0-9]+)(?:\/[\w\-\.]+)?\/?$/i);
+  if(ibbMatch){
+    return 'https://i.ibb.co/' + ibbMatch[1] + '/' + ibbMatch[1] + '.jpg';
+  }
+  // postimg share → direct
+  const postimgMatch = url.match(/^https?:\/\/postimg\.cc\/([a-zA-Z0-9]+)\/?$/i);
+  if(postimgMatch) return 'https://i.postimg.cc/' + postimgMatch[1] + '/image.jpg';
+  // imgur share → direct
+  const imgurMatch = url.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)\/?$/i);
+  if(imgurMatch) return 'https://i.imgur.com/' + imgurMatch[1] + '.jpg';
   return url;
 }
 
 async function resolveImageLinks(d) {
-  for (let k of ['img1','img2','img3']) {
+  // ✅ FIX v3.1: Now resolves ALL 6 image fields (img1-img6) with auto-format detection
+  // Supports: imgbb (ibb.co share + i.ibb.co direct), Google Drive, postimg, imgur,
+  // direct image links, and any non-direct URL via microlink fallback
+  for (let k of ['img1','img2','img3','img4','img5','img6']) {
     let url = d[k];
-    if(!url || !url.startsWith('http')) continue;
-    if(/\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?.*)?$/i.test(url)) continue;
-    if(url.includes('drive.google.com')) continue;
+    if(!url || typeof url !== 'string') continue;
+    url = url.trim();
+    if(!url) continue;
+    // Add https:// prefix if missing
+    if(!url.startsWith('http') && !url.startsWith('data:')){
+      url = 'https://' + url;
+      d[k] = url;
+    }
+    if(!url.startsWith('http')) continue;
+
+    // ── Already a direct image link → no resolve needed ──
+    if(/\.(jpg|jpeg|png|gif|webp|svg|bmp|avif|tiff?)(\?.*)?$/i.test(url)) continue;
+    // ── i.ibb.co direct (sometimes no extension) ──
+    if(/^https?:\/\/i\.ibb\.co\//i.test(url)) continue;
+    // ── lh3.googleusercontent.com direct ──
+    if(/^https?:\/\/lh\d\.googleusercontent\.com\//i.test(url)) continue;
+    // ── i.postimg.cc / i.imgur.com direct ──
+    if(/^https?:\/\/i\.(postimg\.cc|imgur\.com)\//i.test(url)) continue;
+
+    // ── Handle ibb.co share page → direct ──
+    const ibbMatch = url.match(/^https?:\/\/(?:www\.)?ibb\.co(?:\.com)?\/([a-zA-Z0-9]+)(?:\/[\w\-\.]+)?\/?$/i);
+    if (ibbMatch) {
+      d[k] = 'https://i.ibb.co/' + ibbMatch[1] + '/' + ibbMatch[1] + '.jpg';
+      continue;
+    }
+    // ── Google Drive ──
+    if(url.includes('drive.google.com')){
+      const m = url.match(/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+      if(m) d[k] = 'https://lh3.googleusercontent.com/d/' + m[1];
+      continue;
+    }
+    // ── postimg share → direct ──
+    const postimgMatch = url.match(/^https?:\/\/postimg\.cc\/([a-zA-Z0-9]+)\/?$/i);
+    if(postimgMatch){
+      d[k] = 'https://i.postimg.cc/' + postimgMatch[1] + '/image.jpg';
+      continue;
+    }
+    // ── imgur share → direct ──
+    const imgurMatch = url.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)\/?$/i);
+    if(imgurMatch){
+      d[k] = 'https://i.imgur.com/' + imgurMatch[1] + '.jpg';
+      continue;
+    }
+
+    // ── Unknown CDN → microlink fallback ──
     try {
       const p = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(url)}`);
       const j = await p.json();
       if(j.data && j.data.image && j.data.image.url) {
         d[k] = j.data.image.url;
       }
-    } catch(e) { console.warn('Img resolve err:', e); }
+    } catch(e) { console.warn('Img resolve err for '+k+':', e); }
   }
 }
 
@@ -3611,14 +3686,36 @@ const YARZ = window.YARZ = {
       this.detectNewOrders();
       if(showMsg) toast('ডেটা রিফ্রেশ হয়েছে', 'success');
 
-      // Async resolve existing legacy links without blocking UI
+      // ✅ FIX v3.1: Async resolve ALL 6 image fields (img1-img6) with auto-format detection
       setTimeout(async () => {
         let changed = false;
         for(let p of state.data.inventory) {
-          if(!p.img1 || /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?.*)?$/i.test(p.img1) || p.img1.includes('drive.google.com')) continue;
-          const old = p.img1;
+          // Check if ANY of the 6 image fields needs resolving
+          let needsResolve = false;
+          for(const k of ['img1','img2','img3','img4','img5','img6']){
+            const u = p[k];
+            if(!u || typeof u !== 'string') continue;
+            const url = u.trim();
+            if(!url) continue;
+            if(!url.startsWith('http')) { needsResolve = true; break; }
+            if(/\.(jpg|jpeg|png|gif|webp|svg|bmp|avif|tiff?)(\?.*)?$/i.test(url)) continue;
+            if(/^https?:\/\/i\.ibb\.co\//i.test(url)) continue;
+            if(/^https?:\/\/lh\d\.googleusercontent\.com\//i.test(url)) continue;
+            if(/^https?:\/\/i\.(postimg\.cc|imgur\.com)\//i.test(url)) continue;
+            // Anything else (share page, drive share, unknown CDN) → resolve
+            needsResolve = true;
+            break;
+          }
+          if(!needsResolve) continue;
+
+          const olds = {
+            img1:p.img1, img2:p.img2, img3:p.img3,
+            img4:p.img4, img5:p.img5, img6:p.img6
+          };
           await resolveImageLinks(p);
-          if(p.img1 !== old) changed = true;
+          for(const k of ['img1','img2','img3','img4','img5','img6']){
+            if(p[k] !== olds[k]) { changed = true; break; }
+          }
         }
         if(changed && state.loaded) this.render();
       }, 500);
