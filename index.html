@@ -2609,12 +2609,15 @@ body.dark select.select option{
           </div>
 
           <div class="card" style="padding:22px;margin-bottom:14px">
-            <div class="section-title">
+            <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
               <h2><i class="ri-slideshow-3-line" style="color:var(--info)"></i> Hero Slider Banners</h2>
-              <span class="hint">Upload high-quality 16:9 images or MP4 Video URLs.</span>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="YARZ.webControl.renderBanners()" style="font-size:11px;padding:4px 10px;border:1px solid var(--line);border-radius:6px"><i class="ri-refresh-line"></i> Reload Banners</button>
             </div>
-            <div id="wc-banners-container" style="display:grid;gap:16px;">
-              <!-- Rendered via JS -->
+            <div style="font-size:12px;color:var(--ink-2);background:rgba(59,130,246,0.08);padding:10px;border-radius:8px;border:1px solid rgba(59,130,246,0.2);margin-bottom:14px;line-height:1.6">
+              <i class="ri-information-line"></i> <b>কীভাবে যুক্ত করবেন:</b> imgbb / Google Drive / Imgur থেকে high-resolution ছবির direct লিংক copy করুন (যেমন <code>https://i.ibb.co/abc/banner.webp</code>), নিচের যেকোনো একটা <b>Banner Image URL</b> ফিল্ডে paste করুন — preview সাথে সাথে দেখাবে। সর্বোচ্চ ৫টি ব্যানার যোগ করতে পারবেন। Save করার <b>~10 সেকেন্ডে</b> মেইন ওয়েবসাইটের slider-এ original full-resolution ছবি দেখাবে (no crop, no blur)।
+            </div>
+            <div id="wc-banners-container" style="display:grid;gap:16px;min-height:120px;">
+              <div id="wc-banners-empty-msg" style="padding:30px;text-align:center;color:var(--ink-3);font-size:13px;border:1px dashed var(--line);border-radius:10px"><i class="ri-loader-4-line" style="font-size:24px;animation:wc-spin 1s linear infinite;display:block;margin-bottom:8px"></i> Banner fields লোড হচ্ছে…</div>
             </div>
           </div>
         </div>
@@ -2725,23 +2728,30 @@ body.dark select.select option{
                 <input type="text" id="wc-custom-field" class="input" placeholder="e.g. Company Name or Bin No">
               </div>
             </div>
+            <div class="card" style="padding:18px;background:var(--surface-1);border:1px solid var(--line);margin-bottom:16px;">
+              <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px;">
+                <div>
+                  <h3 style="margin:0 0 4px;font-size:16px;"><i class="ri-truck-line" style="color:var(--brand)"></i> Delivery Charge Manager</h3>
+                  <p style="margin:0;color:var(--ink-3);font-size:12px;line-height:1.5;">Location names and fees are saved in the separate <b>DELIVERY_CHARGES</b> Google Sheet tab and sync to product pages + checkout within ~10 seconds.</p>
+                </div>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="YARZ.webControl.addDeliveryRow()"><i class="ri-add-line"></i> Add Location</button>
+              </div>
+              <div id="wc-delivery-locations" style="display:flex;flex-direction:column;gap:10px;"></div>
+              <div id="wc-delivery-sync-indicator" style="display:none;margin-top:12px;padding:10px 14px;background:linear-gradient(90deg,#ECFDF5,#D1FAE5);border:1px solid #6EE7B7;border-radius:10px;font-size:12px;color:#047857;align-items:center;gap:10px;">
+                <span class="wc-sync-spinner" style="width:14px;height:14px;border:2px solid #6EE7B7;border-top-color:#047857;border-radius:50%;display:inline-block;animation:wc-spin .8s linear infinite;"></span>
+                <span id="wc-delivery-sync-text">Syncing delivery locations to website… (~10s)</span>
+              </div>
+              <style>@keyframes wc-spin{to{transform:rotate(360deg)}}</style>
+              <div style="font-size:11px;color:var(--ink-3);margin-top:10px;line-height:1.6;">
+                <b>💡 Tips:</b> যেকোনো এরিয়া (যেমন <i>Inside Narayanganj</i>, <i>Outside Narayanganj</i>, <i>Dhaka</i>, <i>Sylhet</i>) এবং তার delivery চার্জ লিখুন — Save করার ১০ সেকেন্ডের মধ্যে product page, checkout, shipping পেজ, এবং cart-এ auto-update হয়ে যাবে।<br>
+                <b>Default:</b> Inside Narayanganj ৳70, Outside Narayanganj ৳140 — প্রয়োজনে ‘Add Location’ দিয়ে যত খুশি যোগ করুন।
+              </div>
+              <input type="hidden" id="wc-zone-1-name">
+              <input type="hidden" id="wc-zone-1-charge">
+              <input type="hidden" id="wc-zone-2-name">
+              <input type="hidden" id="wc-zone-2-charge">
+            </div>
             <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
-              <div class="field">
-                <label>Zone 1 Name (e.g. Inside Dhaka)</label>
-                <input type="text" id="wc-zone-1-name" class="input" placeholder="e.g. Inside Sonargaon">
-              </div>
-              <div class="field">
-                <label>Zone 1 Charge (৳)</label>
-                <input type="number" id="wc-zone-1-charge" class="input" placeholder="e.g. 60">
-              </div>
-              <div class="field">
-                <label>Zone 2 Name (e.g. Outside Dhaka)</label>
-                <input type="text" id="wc-zone-2-name" class="input" placeholder="e.g. Outside Sonargaon">
-              </div>
-              <div class="field">
-                <label>Zone 2 Charge (৳)</label>
-                <input type="number" id="wc-zone-2-charge" class="input" placeholder="e.g. 120">
-              </div>
               <div class="field">
                 <label>Free Shipping Target Amount (৳)</label>
                 <input type="number" id="wc-free-ship-amt" class="input" placeholder="e.g. 5000">
@@ -2833,10 +2843,12 @@ body.dark select.select option{
             </div>
 
             <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
-              <div class="field"><label><i class="ri-facebook-circle-fill" style="color:#1877F2"></i> Facebook Link</label><input type="text" id="wc-link-fb" class="input"></div>
-              <div class="field"><label><i class="ri-instagram-fill" style="color:#E1306C"></i> Instagram Link</label><input type="text" id="wc-link-ig" class="input"></div>
-              <div class="field"><label><i class="ri-whatsapp-fill" style="color:#25D366"></i> WhatsApp Link</label><input type="text" id="wc-link-wa" class="input"></div>
-              <div class="field"><label><i class="ri-tiktok-fill" style="color:#000000"></i> TikTok Link</label><input type="text" id="wc-link-tt" class="input"></div>
+              <div class="field"><label><i class="ri-facebook-circle-fill" style="color:#1877F2"></i> Facebook Link</label><input type="text" id="wc-link-fb" class="input" placeholder="https://facebook.com/yourpage"></div>
+              <div class="field"><label><i class="ri-instagram-fill" style="color:#E1306C"></i> Instagram Link</label><input type="text" id="wc-link-ig" class="input" placeholder="https://instagram.com/yourhandle"></div>
+              <div class="field"><label><i class="ri-whatsapp-fill" style="color:#25D366"></i> WhatsApp Link / Number</label><input type="text" id="wc-link-wa" class="input" placeholder="8801XXXXXXXXX or full link"></div>
+              <div class="field"><label><i class="ri-messenger-fill" style="color:#0099FF"></i> Messenger Link</label><input type="text" id="wc-link-ms" class="input" placeholder="m.me/yourpage or full URL"></div>
+              <div class="field"><label><i class="ri-tiktok-fill" style="color:#000000"></i> TikTok Link</label><input type="text" id="wc-link-tt" class="input" placeholder="https://tiktok.com/@yourhandle"></div>
+              <div class="field"><label><i class="ri-youtube-fill" style="color:#FF0000"></i> YouTube Link</label><input type="text" id="wc-link-yt" class="input" placeholder="https://youtube.com/@yourchannel"></div>
             </div>
             
             <div class="section-title" style="margin-top:24px;"><h2><i class="ri-bar-chart-box-line" style="color:var(--info)"></i> SEO & Analytics</h2></div>
@@ -3174,22 +3186,27 @@ const DISC_TYPES = ["Normal","Serious","Special","Clearance","Seasonal"];
 const PAYMENT_METHODS = ["COD","bKash","Nagad","Rocket","Bank","Paid"];
 const COURIERS = ["SteadFast","Pathao","Redex","PaperFly","ParcelDex","CarryBee","Self Delivery","Other"];
 
-// ===== IMAGE URL CONVERTER v3.1 (same as website, works for ALL 6 image fields) =====
-// Supports: imgbb (ibb.co share + i.ibb.co direct), Google Drive, postimg, imgur,
-// direct image links (jpg/png/webp/avif/etc), URLs without protocol
+// ===== IMAGE URL CONVERTER v3.7 — HIGH-QUALITY (Original-Resolution) =====
+// ✅ Returns the ORIGINAL high-resolution image (no scaling, no compression).
+// ✅ FIX v3.7: When user pastes an i.ibb.co direct link with extension
+//    (.webp / .png / .gif / .avif), we KEEP it untouched. Previously the
+//    share-page regex over-matched and rewrote every imgbb URL to ".jpg",
+//    which broke webp uploads — that was the blur/quality issue.
+// ✅ FIX v3.7: Google Drive uses =s0 → original-resolution (no thumbnail).
 function getImgSrc(url) {
   if (!url) return '';
   url = String(url).trim();
   if (!url) return '';
-  // Add protocol if missing
   if (!url.startsWith('http') && !url.startsWith('data:')) url = 'https://' + url;
-  // Google Drive share/view → direct image
+  // ── Direct image link with extension → return UNTOUCHED (full quality) ──
+  if (/\.(jpe?g|png|webp|avif|gif|bmp|svg)(\?.*)?$/i.test(url)) return url;
+  // Google Drive share/view → original-size direct image
   if (url.indexOf('drive.google.com') !== -1) {
     var m = url.match(/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-    if (m) return 'https://lh3.googleusercontent.com/d/' + m[1];
+    if (m) return 'https://lh3.googleusercontent.com/d/' + m[1] + '=s0';
   }
-  // ibb.co share page → direct i.ibb.co image
-  var ibbMatch = url.match(/^https?:\/\/(?:www\.)?ibb\.co(?:\.com)?\/([a-zA-Z0-9]+)(?:\/[\w\-\.]+)?\/?$/i);
+  // ibb.co SHARE page (no extension) → direct i.ibb.co image
+  var ibbMatch = url.match(/^https?:\/\/(?:www\.)?ibb\.co\/([a-zA-Z0-9]+)\/?$/i);
   if (ibbMatch) {
     return 'https://i.ibb.co/' + ibbMatch[1] + '/' + ibbMatch[1] + '.jpg';
   }
@@ -3199,7 +3216,6 @@ function getImgSrc(url) {
   // imgur share → direct
   var imgurMatch = url.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)\/?$/i);
   if (imgurMatch) return 'https://i.imgur.com/' + imgurMatch[1] + '.jpg';
-  // Already a direct image link
   return url;
 }
 
@@ -3295,6 +3311,7 @@ const state = {
     transactions: [],
     adTracker: [],
     expenses: [],
+    deliveryCharges: [],
     settings: {}
   },
   loaded: false,
@@ -3311,18 +3328,21 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;
 function safeStr(s){ return String(s==null?'':s); }
 function fmtBDT(n){ return '৳'+Math.round(num(n)).toLocaleString('en-IN'); }
 function getImgSrc(url){
-  // ✅ FIX v3.1: Robust auto-format detection for ALL 6 image fields
-  // Supports: imgbb share/direct, Google Drive, postimg, imgur, direct image links
+  // ✅ v3.7 HIGH-QUALITY (Original-Resolution) — same logic as website
+  // Direct image links with extensions are returned UNTOUCHED so webp/png/gif
+  // keep their original format and resolution (this was the blur fix).
   if(!url) return '';
   url = String(url).trim();
   if(!url) return '';
   if(!url.startsWith('http') && !url.startsWith('data:')) url = 'https://' + url;
+  // Direct image link with extension → return UNTOUCHED (full quality)
+  if(/\.(jpe?g|png|webp|avif|gif|bmp|svg)(\?.*)?$/i.test(url)) return url;
   if(url.includes('drive.google.com')){
     const m = url.match(/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-    if(m) return 'https://lh3.googleusercontent.com/d/' + m[1];
+    if(m) return 'https://lh3.googleusercontent.com/d/' + m[1] + '=s0';
   }
-  // ibb.co share page → direct image
-  const ibbMatch = url.match(/^https?:\/\/(?:www\.)?ibb\.co(?:\.com)?\/([a-zA-Z0-9]+)(?:\/[\w\-\.]+)?\/?$/i);
+  // ibb.co SHARE page (no extension) → direct image
+  const ibbMatch = url.match(/^https?:\/\/(?:www\.)?ibb\.co\/([a-zA-Z0-9]+)\/?$/i);
   if(ibbMatch){
     return 'https://i.ibb.co/' + ibbMatch[1] + '/' + ibbMatch[1] + '.jpg';
   }
@@ -3651,6 +3671,24 @@ async function loadSettings(){
   } catch(e){ state.data.settings = {}; }
 }
 
+async function loadDeliveryCharges(){
+  try {
+    const rows = await sheetReadFormatted('DELIVERY_CHARGES!A2:D200');
+    state.data.deliveryCharges = rows.filter(r=>r[0] || r[1]).map((r, idx)=>({
+      id: safeStr(r[0] || ('zone_' + (idx + 1))),
+      name: safeStr(r[1]),
+      charge: num(r[2]),
+      active: String(r[3] || 'TRUE').toLowerCase() !== 'false'
+    })).filter(x=>x.name);
+  } catch(e){
+    const s = state.data.settings || {};
+    state.data.deliveryCharges = [
+      { id:'Dhaka', name:s['Zone 1 Name'] || 'Dhaka (Inside)', charge:num(s['Zone 1 Charge'] || 60), active:true },
+      { id:'Outside', name:s['Zone 2 Name'] || 'Outside Dhaka', charge:num(s['Zone 2 Charge'] || 120), active:true }
+    ];
+  }
+}
+
 window.slideImg = function(elId, dir) {
   const el = document.getElementById(elId);
   if(!el) return;
@@ -3680,6 +3718,7 @@ const YARZ = window.YARZ = {
         loadExpenses(),
         loadSettings()
       ]);
+      await loadDeliveryCharges();
       state.loaded = true;
       this.render();
       // Detect new orders (for notification)
@@ -5692,6 +5731,18 @@ YARZ.webControl = {
     const content = $(`wc-tab-${tab}`);
     if(btn) btn.classList.add('active');
     if(content) content.classList.remove('hidden');
+    // ✅ v3.7 SAFETY: When user opens "Banners & Flash" or "Cart & Checkout"
+    // tab, make sure their dynamic sections are rendered even if the main
+    // render() never ran (e.g. settings still loading from Apps Script).
+    try {
+      if(tab === 'banners') {
+        const bc = $('wc-banners-container');
+        if(bc && (!bc.children.length || bc.querySelector('#wc-banners-empty-msg'))) this.renderBanners();
+      } else if(tab === 'checkout') {
+        const dc = $('wc-delivery-locations');
+        if(dc && !dc.children.length) this.renderDeliveryRows();
+      }
+    } catch(e) { /* silent */ }
   },
 
   render() {
@@ -5730,41 +5781,13 @@ YARZ.webControl = {
     const fbEl = $('wc-link-fb'); if(fbEl) fbEl.value = s['Link Facebook']||'';
     const igEl = $('wc-link-ig'); if(igEl) igEl.value = s['Link Instagram']||'';
     const waEl = $('wc-link-wa'); if(waEl) waEl.value = s['Link WhatsApp']||'';
+    const msEl = $('wc-link-ms'); if(msEl) msEl.value = s['Link Messenger']||'';
     const ttEl = $('wc-link-tt'); if(ttEl) ttEl.value = s['Link TikTok']||'';
+    const ytEl = $('wc-link-yt'); if(ytEl) ytEl.value = s['Link YouTube']||'';
 
-    // --- Hero Banners ---
-    let bannersHtml = '';
-    for(let i=1; i<=5; i++){
-      const img = s[`Hero Banner ${i}`] || '';
-      const link = s[`Banner Link ${i}`] || '';
-      const title = s[`Banner Title ${i}`] || '';
-      const imgSrc = img ? (typeof getImgSrc === 'function' ? getImgSrc(img) : img) : '';
-      bannersHtml += `
-        <div style="display:flex;gap:16px;align-items:flex-start;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1);margin-bottom:12px">
-          <div id="wc-bprev-${i}" style="width:160px;height:90px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);flex-shrink:0;overflow:hidden">
-            ${imgSrc ? `<img src="${esc(imgSrc)}" style="width:100%;height:100%;object-fit:cover">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3"><i class="ri-image-line" style="font-size:24px"></i></div>'}
-          </div>
-          <div style="flex:1;display:flex;flex-direction:column;gap:12px">
-            <div class="field" style="margin:0">
-              <label style="font-size:12px">Banner Title (Overlay Text)</label>
-              <input id="wc-btitle-${i}" class="input" style="padding:8px 12px" placeholder="e.g. New Summer Collection" value="${esc(title)}">
-            </div>
-            <div class="grid grid-2" style="gap:12px">
-              <div class="field" style="margin:0">
-                <label style="font-size:12px">Banner Image URL ${i}</label>
-                <input id="wc-bimg-${i}" class="input" style="padding:8px 12px" placeholder="e.g. imgur.com/xyz.jpg" value="${esc(img)}" oninput="YARZ.webControl._previewImg(this, 'wc-bprev-${i}')">
-              </div>
-              <div class="field" style="margin:0">
-                <label style="font-size:12px">Banner Target Link</label>
-                <input id="wc-blink-${i}" class="input" style="padding:8px 12px" placeholder="e.g. /category/shirts" value="${esc(link)}">
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    const bContainer = $('wc-banners-container');
-    if(bContainer) bContainer.innerHTML = bannersHtml;
+    // --- Hero Banners --- (delegated to renderBanners() so it runs even
+    // before settings load, and can be re-triggered by the "Reload Banners" button)
+    this.renderBanners();
 
     // --- Homepage Builder Sections ---
     const cats = [...new Set(state.data.inventory.map(p=>p.category).filter(Boolean))];
@@ -5812,6 +5835,7 @@ YARZ.webControl = {
     const z2c = $('wc-zone-2-charge'); if(z2c) z2c.value = s['Zone 2 Charge'] || '';
     const fs = $('wc-free-ship-amt'); if(fs) fs.value = s['Free Ship Amt'] || '';
     const mo = $('wc-min-order'); if(mo) mo.value = s['Min Order'] || '';
+    this.renderDeliveryRows();
 
     // --- Marketing ---
     const ep = $('wc-exit-popup'); if(ep) ep.checked = (s['Exit Popup'] === 'true');
@@ -5831,6 +5855,53 @@ YARZ.webControl = {
     const ogimg = $('wc-og-img'); if(ogimg) { ogimg.value = s['OG Image'] || ''; this._previewImg(ogimg, 'wc-og-preview'); }
     const gsct = $('wc-gsc-tag'); if(gsct) gsct.value = s['GSC Tag'] || '';
     const ccss = $('wc-custom-css'); if(ccss) ccss.value = s['Custom CSS'] || '';
+  },
+
+  // ✅ v3.7 FIX: Hero Slider Banners now have a dedicated render function so
+  // they ALWAYS show 5 input rows — even if Apps Script settings haven't
+  // loaded yet (which was the "blank banner section" bug). Called from:
+  //   1. _renderControls()      — populates with saved values when settings arrive
+  //   2. init()                 — runs immediately on page load (empty rows)
+  //   3. "Reload Banners" btn   — manual refresh
+  renderBanners() {
+    const bContainer = $('wc-banners-container');
+    if(!bContainer) return;
+    const s = (state && state.data && state.data.settings) ? state.data.settings : {};
+    let bannersHtml = '';
+    for(let i=1; i<=5; i++){
+      const img = s[`Hero Banner ${i}`] || '';
+      const link = s[`Banner Link ${i}`] || '';
+      const title = s[`Banner Title ${i}`] || '';
+      const imgSrc = img ? (typeof getImgSrc === 'function' ? getImgSrc(img) : img) : '';
+      bannersHtml += `
+        <div style="display:flex;gap:16px;align-items:flex-start;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1);margin-bottom:0">
+          <div id="wc-bprev-${i}" style="width:160px;height:90px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center">
+            ${imgSrc ? `<img src="${esc(imgSrc)}" style="width:100%;height:100%;object-fit:contain;image-rendering:-webkit-optimize-contrast" onerror="this.outerHTML='<div style=\\'opacity:0.3;color:var(--danger);font-size:11px;text-align:center;padding:4px\\'><i class=\\'ri-error-warning-line\\' style=\\'font-size:20px;display:block;margin-bottom:2px\\'></i>Invalid URL</div>'">` : `<div style="opacity:0.4;font-size:11px;text-align:center;color:var(--ink-3)"><i class="ri-image-add-line" style="font-size:24px;display:block;margin-bottom:4px"></i>Banner ${i}</div>`}
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.5px">Banner Slot ${i}</span>
+              ${img ? `<button type="button" onclick="(function(){const a=document.getElementById('wc-bimg-${i}');const b=document.getElementById('wc-btitle-${i}');const c=document.getElementById('wc-blink-${i}');if(a)a.value='';if(b)b.value='';if(c)c.value='';YARZ.webControl._previewImg('','wc-bprev-${i}');})()" style="font-size:10px;color:var(--danger);background:none;border:1px solid var(--line);border-radius:6px;padding:2px 8px;cursor:pointer"><i class="ri-delete-bin-line"></i> Clear</button>` : ''}
+            </div>
+            <div class="field" style="margin:0">
+              <label style="font-size:12px">Banner Title (Overlay Text — optional)</label>
+              <input id="wc-btitle-${i}" class="input" style="padding:8px 12px" placeholder="e.g. New Summer Collection" value="${esc(title)}">
+            </div>
+            <div class="grid grid-2" style="gap:12px">
+              <div class="field" style="margin:0">
+                <label style="font-size:12px">Banner Image URL ${i} <span style="color:var(--danger)">*</span></label>
+                <input id="wc-bimg-${i}" class="input" style="padding:8px 12px" placeholder="https://i.ibb.co/abc/banner.webp" value="${esc(img)}" oninput="YARZ.webControl._previewImg(this, 'wc-bprev-${i}')">
+              </div>
+              <div class="field" style="margin:0">
+                <label style="font-size:12px">Banner Target Link (optional)</label>
+                <input id="wc-blink-${i}" class="input" style="padding:8px 12px" placeholder="e.g. /category/shirts" value="${esc(link)}">
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    bContainer.innerHTML = bannersHtml;
   },
 
   _buildSectionHTML(title, category, isActive, imgUrl='', linkUrl='') {
@@ -5886,19 +5957,70 @@ YARZ.webControl = {
     container.appendChild(div.firstElementChild);
   },
 
+  _buildDeliveryRowHTML(loc = {}) {
+    const id = esc(loc.id || ('zone_' + Date.now().toString(36)));
+    return `
+      <div class="wc-delivery-row" style="display:grid;grid-template-columns:1fr 1.4fr 110px 44px;gap:10px;align-items:end;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;">
+        <div class="field" style="margin:0"><label style="font-size:11px">Location ID</label><input class="input wc-delivery-id" value="${id}" placeholder="dhaka"></div>
+        <div class="field" style="margin:0"><label style="font-size:11px">Location Name</label><input class="input wc-delivery-name" value="${esc(loc.name || '')}" placeholder="e.g. Sonargaon / Dhaka / Outside Dhaka"></div>
+        <div class="field" style="margin:0"><label style="font-size:11px">Fee (৳)</label><input type="number" min="0" class="input wc-delivery-charge" value="${esc(loc.charge || 0)}" placeholder="60"></div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.wc-delivery-row').remove()" title="Remove" style="height:38px;color:var(--danger);"><i class="ri-delete-bin-line"></i></button>
+      </div>`;
+  },
+
+  renderDeliveryRows() {
+    const container = $('wc-delivery-locations');
+    if(!container) return;
+    let rows = Array.isArray(state.data.deliveryCharges) && state.data.deliveryCharges.length ? state.data.deliveryCharges : [];
+    if(!rows.length) {
+      const s = state.data.settings || {};
+      // ✅ v3.6: Narayanganj defaults (rename from UI anytime — saves to DELIVERY_CHARGES tab)
+      rows = [
+        { id:'inside_narayanganj',  name:s['Zone 1 Name'] || 'Inside Narayanganj',  charge:num(s['Zone 1 Charge'] || 70),  active:true },
+        { id:'outside_narayanganj', name:s['Zone 2 Name'] || 'Outside Narayanganj', charge:num(s['Zone 2 Charge'] || 140), active:true }
+      ];
+    }
+    container.innerHTML = rows.filter(r=>r.active !== false).map(r=>this._buildDeliveryRowHTML(r)).join('');
+  },
+
+  addDeliveryRow() {
+    const container = $('wc-delivery-locations');
+    if(!container) return;
+    const div = document.createElement('div');
+    div.innerHTML = this._buildDeliveryRowHTML({ id:'area_' + (container.children.length + 1), name:'', charge:0, active:true });
+    container.appendChild(div.firstElementChild);
+  },
+
+  _collectDeliveryLocations() {
+    return qsa('.wc-delivery-row').map((row, idx)=>({
+      id: (row.querySelector('.wc-delivery-id')?.value || ('zone_' + (idx + 1))).trim().replace(/\s+/g, '_'),
+      name: (row.querySelector('.wc-delivery-name')?.value || '').trim(),
+      charge: num(row.querySelector('.wc-delivery-charge')?.value || 0),
+      active: true
+    })).filter(loc=>loc.name);
+  },
+
   _previewImg(inputEl, previewId) {
+    // ✅ v3.7: Preview uses object-fit:contain so admin can see the FULL
+    // uploaded image (no crop), exactly the way customers will see it on
+    // the live site. High-quality rendering hint added too.
     const val = (typeof inputEl === 'string' ? inputEl : inputEl.value).trim();
     const container = typeof previewId === 'string' ? $(previewId) : previewId;
     if(!container) return;
     if(val) {
       const src = (typeof getImgSrc === 'function') ? getImgSrc(val) : val;
-      container.innerHTML = `<img src="${esc(src)}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3;color:var(--danger)\\'><i class=\\'ri-error-warning-line\\' style=\\'font-size:24px\\'></i></div>'">`;
+      container.innerHTML = `<img src="${esc(src)}" style="width:100%;height:100%;object-fit:contain;image-rendering:-webkit-optimize-contrast" onerror="this.outerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3;color:var(--danger)\\'><i class=\\'ri-error-warning-line\\' style=\\'font-size:24px\\'></i></div>'">`;
     } else {
       container.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3"><i class="ri-image-line" style="font-size:24px"></i></div>';
     }
   },
 
   async save() {
+    const deliveryLocations = this._collectDeliveryLocations();
+    // ✅ v3.6: Narayanganj defaults (used for legacy Zone 1/2 settings backward-compat)
+    const firstDelivery  = deliveryLocations[0] || { id:'inside_narayanganj',  name:'Inside Narayanganj',  charge:70  };
+    const secondDelivery = deliveryLocations[1] || { id:'outside_narayanganj', name:'Outside Narayanganj', charge:140 };
+
     const updates = {
       // General
       'Store Status': $('wc-store-status')?.checked ? 'Maintenance' : 'Live',
@@ -5933,10 +6055,11 @@ YARZ.webControl = {
       'Order Notes': $('wc-order-notes')?.checked ? 'true' : 'false',
       'Checkout Mode': $('wc-checkout-mode')?.value,
       'Custom Field': $('wc-custom-field')?.value.trim(),
-      'Zone 1 Name': $('wc-zone-1-name')?.value.trim() || '',
-      'Zone 1 Charge': $('wc-zone-1-charge')?.value.trim() || '',
-      'Zone 2 Name': $('wc-zone-2-name')?.value.trim() || '',
-      'Zone 2 Charge': $('wc-zone-2-charge')?.value.trim() || '',
+      'Zone 1 Name': firstDelivery.name || '',
+      'Zone 1 Charge': firstDelivery.charge || 0,
+      'Zone 2 Name': secondDelivery.name || '',
+      'Zone 2 Charge': secondDelivery.charge || 0,
+      'Delivery Locations': JSON.stringify(deliveryLocations),
       'Free Ship Amt': $('wc-free-ship-amt')?.value.trim(),
       'Min Order': $('wc-min-order')?.value.trim(),
 
@@ -5955,7 +6078,9 @@ YARZ.webControl = {
       'Link Facebook': $('wc-link-fb')?.value.trim() || '',
       'Link Instagram': $('wc-link-ig')?.value.trim() || '',
       'Link WhatsApp': $('wc-link-wa')?.value.trim() || '',
+      'Link Messenger': $('wc-link-ms')?.value.trim() || '',
       'Link TikTok': $('wc-link-tt')?.value.trim() || '',
+      'Link YouTube': $('wc-link-yt')?.value.trim() || '',
       'Meta Title': $('wc-meta-title')?.value.trim() || '',
       'Meta Desc': $('wc-meta-desc')?.value.trim() || '',
       'FB Pixel': $('wc-fb-pixel')?.value.trim() || '',
@@ -6009,13 +6134,29 @@ YARZ.webControl = {
     try {
       const res = await appsPost('updateSettings', { settings: updates });
       if(res && res.success===false) throw new Error(res.msg||'Failed');
+      const delRes = await appsPost('updateDeliveryCharges', { locations: deliveryLocations });
+      if(delRes && delRes.success===false) throw new Error(delRes.msg||delRes.error||'Delivery charge save failed');
       
       // Update local state
       state.data.settings = state.data.settings || {};
       Object.assign(state.data.settings, updates);
+      state.data.deliveryCharges = deliveryLocations;
       
-      toast('ওয়েবসাইট 체ঞ্জ সেভ হয়েছে! (Website updated successfully)','success');
-    } catch(e){ toast(e.message,'error'); }
+      toast('ওয়েবসাইট চেঞ্জ সেভ হয়েছে! Delivery charges will sync to site within ~10 seconds.','success');
+      // v3.6: Show success in delivery sync indicator, then auto-hide after 10s
+      const _syncBoxOk = $('wc-delivery-sync-indicator');
+      const _syncTxtOk = $('wc-delivery-sync-text');
+      if(_syncBoxOk){ _syncBoxOk.style.display = 'flex'; }
+      if(_syncTxtOk){ _syncTxtOk.textContent = 'Saved! Website will reflect new delivery locations within 10 seconds.'; }
+      setTimeout(()=>{ if(_syncBoxOk) _syncBoxOk.style.display = 'none'; }, 10000);
+    } catch(e){
+      toast(e.message,'error');
+      const _syncBoxErr = $('wc-delivery-sync-indicator');
+      const _syncTxtErr = $('wc-delivery-sync-text');
+      if(_syncBoxErr){ _syncBoxErr.style.display = 'flex'; _syncBoxErr.style.background = 'linear-gradient(90deg,#FEF2F2,#FEE2E2)'; _syncBoxErr.style.borderColor = '#FCA5A5'; _syncBoxErr.style.color = '#B91C1C'; }
+      if(_syncTxtErr){ _syncTxtErr.textContent = 'Sync failed: ' + e.message; }
+      setTimeout(()=>{ if(_syncBoxErr){ _syncBoxErr.style.display = 'none'; _syncBoxErr.style.background = ''; _syncBoxErr.style.borderColor = ''; _syncBoxErr.style.color = ''; } }, 5000);
+    }
     finally { hideLoader(); }
   }
 };
