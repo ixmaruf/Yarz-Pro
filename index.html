@@ -1470,6 +1470,7 @@ body.dark .list-item{
   border-radius:14px !important;
   background-color: rgba(27,37,48,0.04);
   border: none !important;
+  flex-shrink: 0;
 }
 body.dark .thumb{ background-color: rgba(255,255,255,0.05); }
 .li-title{ font-size:14px !important; font-weight:600 !important; color: var(--ink) !important; }
@@ -2891,7 +2892,7 @@ body.dark select.select option{
           <div class="section-title"><h2><i class="ri-plug-line" style="color:var(--accent-2)"></i> কানেকশন সেটআপ</h2></div>
           <div class="field">
             <label>Google Apps Script Web App URL <span class="req">*</span></label>
-            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbw0QD3B9FIC_4eI6g6HdBXv1_BQHpXOQKEsF-ykVr0JbJ8jDUkVgrz0Kk6vLF_FvTdC/exec" data-default-url="https://script.google.com/macros/s/AKfycby8kuRND7o3PG_DnkP_BkhkG3YVEcOELSA1Unnx6zV4PCvdCslOkX2xFm1OWihStdSq/exec">
+            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycby8kuRND7o3PG_DnkP_BkhkG3YVEcOELSA1Unnx6zV4PCvdCslOkX2xFm1OWihStdSq/exec" data-default-url="https://script.google.com/macros/s/AKfycby8kuRND7o3PG_DnkP_BkhkG3YVEcOELSA1Unnx6zV4PCvdCslOkX2xFm1OWihStdSq/exec">
             <div style="font-size:11px;opacity:0.6;margin-top:4px">✓ Default URL pre-filled — যদি deployment পরিবর্তন করেন তবে এখানে নতুন URL দিন</div>
           </div>
           <div class="field">
@@ -3149,8 +3150,8 @@ const CREDS_PLAIN = { user: 'maruf_ix', pass: 'Hassan__00' };
 // Keep fallback direct-compare for environments without SubtleCrypto
 const DEFAULT_SHEET_ID = '1wQz5OQZAtISTD1FdSEs_j9-p0e-BHwYjmjN7PR9hA-Q';
 const DEFAULT_API_KEY  = 'AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k';
-// 🔑 v3.8: Settings version bumped — auto-resets stale localStorage values
-const SETTINGS_VERSION = 'v3.8-2026-05-02';
+// 🔑 v3.9: Settings version bumped — auto-resets stale localStorage values (forces new URL)
+const SETTINGS_VERSION = 'v3.9-2026-05-03';
 // ★ হার্ডকোডেড Apps Script URL — এর ফলে Settings-এ URL না দিলেও Write operations কাজ করবে
 const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbw0QD3B9FIC_4eI6g6HdBXv1_BQHpXOQKEsF-ykVr0JbJ8jDUkVgrz0Kk6vLF_FvTdC/exec';
 const TZ = 'Asia/Dhaka';
@@ -3212,12 +3213,15 @@ function getImgSrc(url) {
   // Google Drive share/view → original-size direct image
   if (url.indexOf('drive.google.com') !== -1) {
     var m = url.match(/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-    if (m) return 'https://lh3.googleusercontent.com/d/' + m[1] + '=s0';
+    if (m) return 'https://lh3.googleusercontent.com/d/' + m[1];
   }
   // ibb.co SHARE page (no extension) → direct i.ibb.co image
-  var ibbMatch = url.match(/^https?:\/\/(?:www\.)?ibb\.co\/([a-zA-Z0-9]+)\/?$/i);
+  // ✅ FIX v4.2: Preserve filename and extension if provided, otherwise default to .webp instead of .jpg
+  var ibbMatch = url.match(/^https?:\/\/(?:www\.)?ibb\.co(?:\.com)?\/([a-zA-Z0-9]+)(?:\/([\w\-\.]+\.(?:jpe?g|png|webp|avif|gif|bmp|svg)))?\/?$/i);
   if (ibbMatch) {
-    return 'https://i.ibb.co/' + ibbMatch[1] + '/' + ibbMatch[1] + '.jpg';
+    var id = ibbMatch[1];
+    var filename = ibbMatch[2] || (id + '.webp');
+    return 'https://i.ibb.co/' + id + '/' + filename;
   }
   // postimg.cc share → direct
   var postimgMatch = url.match(/^https?:\/\/postimg\.cc\/([a-zA-Z0-9]+)\/?$/i);
@@ -3348,7 +3352,7 @@ function getImgSrc(url){
   if(/\.(jpe?g|png|webp|avif|gif|bmp|svg)(\?.*)?$/i.test(url)) return url;
   if(url.includes('drive.google.com')){
     const m = url.match(/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-    if(m) return 'https://lh3.googleusercontent.com/d/' + m[1] + '=s0';
+    if(m) return 'https://lh3.googleusercontent.com/d/' + m[1];
   }
   // ibb.co SHARE page (no extension) → direct image
   const ibbMatch = url.match(/^https?:\/\/(?:www\.)?ibb\.co\/([a-zA-Z0-9]+)\/?$/i);
@@ -3390,9 +3394,12 @@ async function resolveImageLinks(d) {
     if(/^https?:\/\/i\.(postimg\.cc|imgur\.com)\//i.test(url)) continue;
 
     // ── Handle ibb.co share page → direct ──
-    const ibbMatch = url.match(/^https?:\/\/(?:www\.)?ibb\.co(?:\.com)?\/([a-zA-Z0-9]+)(?:\/[\w\-\.]+)?\/?$/i);
+    // ✅ FIX v4.2: Preserve original filename if present, default to .webp instead of .jpg
+    const ibbMatch = url.match(/^https?:\/\/(?:www\.)?ibb\.co(?:\.com)?\/([a-zA-Z0-9]+)(?:\/([\w\-\.]+\.(?:jpe?g|png|webp|avif|gif|bmp|svg)))?\/?$/i);
     if (ibbMatch) {
-      d[k] = 'https://i.ibb.co/' + ibbMatch[1] + '/' + ibbMatch[1] + '.jpg';
+      const id = ibbMatch[1];
+      const filename = ibbMatch[2] || (id + '.webp');
+      d[k] = 'https://i.ibb.co/' + id + '/' + filename;
       continue;
     }
     // ── Google Drive ──
@@ -5894,7 +5901,7 @@ YARZ.webControl = {
       bannersHtml += `
         <div style="display:flex;gap:16px;align-items:flex-start;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1);margin-bottom:0">
           <div id="wc-bprev-${i}" style="width:160px;height:90px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center">
-            ${imgSrc ? `<img src="${esc(imgSrc)}" style="width:100%;height:100%;object-fit:contain;image-rendering:-webkit-optimize-contrast" onerror="this.outerHTML='<div style=\\'opacity:0.3;color:var(--danger);font-size:11px;text-align:center;padding:4px\\'><i class=\\'ri-error-warning-line\\' style=\\'font-size:20px;display:block;margin-bottom:2px\\'></i>Invalid URL</div>'">` : `<div style="opacity:0.4;font-size:11px;text-align:center;color:var(--ink-3)"><i class="ri-image-add-line" style="font-size:24px;display:block;margin-bottom:4px"></i>Banner ${i}</div>`}
+            ${imgSrc ? `<img src="${esc(imgSrc)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML='<div style=\\'opacity:0.3;color:var(--danger);font-size:11px;text-align:center;padding:4px\\'><i class=\\'ri-error-warning-line\\' style=\\'font-size:20px;display:block;margin-bottom:2px\\'></i>Invalid URL</div>'">` : `<div style="opacity:0.4;font-size:11px;text-align:center;color:var(--ink-3)"><i class="ri-image-add-line" style="font-size:24px;display:block;margin-bottom:4px"></i>Banner ${i}</div>`}
           </div>
           <div style="flex:1;display:flex;flex-direction:column;gap:12px">
             <div style="display:flex;justify-content:space-between;align-items:center">
@@ -5951,7 +5958,7 @@ YARZ.webControl = {
                 <label style="font-size:11px">Section Banner Image URL (Optional)</label>
                 <div style="display:flex; gap:8px; align-items:center;">
                   <div style="width:36px;height:36px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line);flex-shrink:0;overflow:hidden">
-                    ${imgUrl ? `<img src="${esc(typeof getImgSrc === 'function' ? getImgSrc(imgUrl) : imgUrl)}" style="width:100%;height:100%;object-fit:cover">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3;font-size:16px"><i class="ri-image-line"></i></div>'}
+                    ${imgUrl ? `<img src="${esc(typeof getImgSrc === 'function' ? getImgSrc(imgUrl) : imgUrl)}" style="width:100%;height:100%;object-fit:cover;">` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3;font-size:16px"><i class="ri-image-line"></i></div>'}
                   </div>
                   <input type="text" class="input wc-sec-img" style="flex:1" placeholder="e.g. imgur.com/banner.jpg" value="${esc(imgUrl)}" oninput="YARZ.webControl._previewImg(this, this.previousElementSibling)">
                 </div>
@@ -6027,7 +6034,7 @@ YARZ.webControl = {
     if(!container) return;
     if(val) {
       const src = (typeof getImgSrc === 'function') ? getImgSrc(val) : val;
-      container.innerHTML = `<img src="${esc(src)}" style="width:100%;height:100%;object-fit:contain;image-rendering:-webkit-optimize-contrast" onerror="this.outerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3;color:var(--danger)\\'><i class=\\'ri-error-warning-line\\' style=\\'font-size:24px\\'></i></div>'">`;
+      container.innerHTML = `<img src="${esc(src)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3;color:var(--danger)\\'><i class=\\'ri-error-warning-line\\' style=\\'font-size:24px\\'></i></div>'">`;
     } else {
       container.innerHTML = '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3"><i class="ri-image-line" style="font-size:24px"></i></div>';
     }
