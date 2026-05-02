@@ -2891,7 +2891,7 @@ body.dark select.select option{
           <div class="section-title"><h2><i class="ri-plug-line" style="color:var(--accent-2)"></i> কানেকশন সেটআপ</h2></div>
           <div class="field">
             <label>Google Apps Script Web App URL <span class="req">*</span></label>
-            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycby8kuRND7o3PG_DnkP_BkhkG3YVEcOELSA1Unnx6zV4PCvdCslOkX2xFm1OWihStdSq/exec">
+            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycby8kuRND7o3PG_DnkP_BkhkG3YVEcOELSA1Unnx6zV4PCvdCslOkX2xFm1OWihStdSq/exec" data-default-url="https://script.google.com/macros/s/AKfycby8kuRND7o3PG_DnkP_BkhkG3YVEcOELSA1Unnx6zV4PCvdCslOkX2xFm1OWihStdSq/exec">
             <div style="font-size:11px;opacity:0.6;margin-top:4px">✓ Default URL pre-filled — যদি deployment পরিবর্তন করেন তবে এখানে নতুন URL দিন</div>
           </div>
           <div class="field">
@@ -2902,7 +2902,14 @@ body.dark select.select option{
             <label>API Key</label>
             <input id="set-api-key" class="input" value="AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k">
           </div>
-          <button class="btn btn-primary" onclick="YARZ.settings.saveConn()"><i class="ri-check-line"></i> Save Connection</button>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="YARZ.settings.saveConn()"><i class="ri-check-line"></i> Save Connection</button>
+            <button class="btn btn-ghost" onclick="YARZ.settings.resetConn()" title="Reset to new defaults (clears old localStorage)"><i class="ri-refresh-line"></i> Reset to Defaults</button>
+            <button class="btn btn-ghost" onclick="YARZ.settings.testConn()" title="Test connection — backend এর সাথে API key সঠিক কিনা যাচাই"><i class="ri-pulse-line"></i> Test Connection</button>
+          </div>
+          <div style="font-size:11.5px;opacity:0.7;margin-top:10px;line-height:1.6">
+            ⚠️ <b>"Invalid API Key" error?</b> "Reset to Defaults" এ ক্লিক করুন → তারপর "Save Connection" → তারপর "Test Connection"। এতে localStorage এর পুরাতন credential auto-clear হবে।
+          </div>
         </div>
 
         <!-- DATA CLEANUP SECTION -->
@@ -3142,6 +3149,8 @@ const CREDS_PLAIN = { user: 'maruf_ix', pass: 'Hassan__00' };
 // Keep fallback direct-compare for environments without SubtleCrypto
 const DEFAULT_SHEET_ID = '1wQz5OQZAtISTD1FdSEs_j9-p0e-BHwYjmjN7PR9hA-Q';
 const DEFAULT_API_KEY  = 'AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k';
+// 🔑 v3.8: Settings version bumped — auto-resets stale localStorage values
+const SETTINGS_VERSION = 'v3.8-2026-05-02';
 // ★ হার্ডকোডেড Apps Script URL — এর ফলে Settings-এ URL না দিলেও Write operations কাজ করবে
 const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycby8kuRND7o3PG_DnkP_BkhkG3YVEcOELSA1Unnx6zV4PCvdCslOkX2xFm1OWihStdSq/exec';
 const TZ = 'Asia/Dhaka';
@@ -3682,9 +3691,10 @@ async function loadDeliveryCharges(){
     })).filter(x=>x.name);
   } catch(e){
     const s = state.data.settings || {};
+    // ✅ v3.8: Default → Narayanganj (Inside ৳70 / Outside ৳140)
     state.data.deliveryCharges = [
-      { id:'Dhaka', name:s['Zone 1 Name'] || 'Dhaka (Inside)', charge:num(s['Zone 1 Charge'] || 60), active:true },
-      { id:'Outside', name:s['Zone 2 Name'] || 'Outside Dhaka', charge:num(s['Zone 2 Charge'] || 120), active:true }
+      { id:'inside_narayanganj',  name:s['Zone 1 Name'] || 'Inside Narayanganj',  charge:num(s['Zone 1 Charge'] || 70),  active:true },
+      { id:'outside_narayanganj', name:s['Zone 2 Name'] || 'Outside Narayanganj', charge:num(s['Zone 2 Charge'] || 140), active:true }
     ];
   }
 }
@@ -4054,7 +4064,15 @@ function showApp(){
   }
 
   // Load settings from localStorage
-  const sav = JSON.parse(localStorage.getItem('yarz_settings')||'{}');
+  // ✅ v3.8: SETTINGS_VERSION check — যদি version mismatch করে, পুরাতন credentials
+  // (পুরাতন API key/URL/Sheet ID) অটো-রিসেট হবে নতুন DEFAULTS এ। এটা "Invalid API Key"
+  // সমস্যার সমাধান করে যখন backend এর key পরিবর্তিত হয়।
+  let sav = JSON.parse(localStorage.getItem('yarz_settings')||'{}');
+  if(sav.__v !== SETTINGS_VERSION){
+    console.log('[YARZ] Settings version mismatch — auto-resetting to new defaults');
+    sav = { appsUrl: DEFAULT_APPS_URL, sheetId: DEFAULT_SHEET_ID, apiKey: DEFAULT_API_KEY, __v: SETTINGS_VERSION };
+    localStorage.setItem('yarz_settings', JSON.stringify(sav));
+  }
   state.sheetId = sav.sheetId || DEFAULT_SHEET_ID;
   state.apiKey = sav.apiKey || DEFAULT_API_KEY;
   // ★ যদি localStorage-এ URL না থাকে, হার্ডকোডেড URL ব্যবহার হবে
@@ -4333,9 +4351,9 @@ YARZ.inv = {
       ${p.sizeChart?`<div class="glass mt-3" style="padding:10px"><div class="modal-section-title">Size Chart</div><div style="font-size:13px">${esc(p.sizeChart).replace(/\n/g,'<br>')}</div></div>`:''}
       <div class="modal-section-title">🚚 ডেলিভারি</div>
       <div class="flex-gap" style="font-size:12px;opacity:0.85">
-        <span>ঢাকা: ${fmtBDT(p.deliveryDhaka)}</span>
+        <span>Inside Narayanganj: ${fmtBDT(p.deliveryDhaka)}</span>
         <span>•</span>
-        <span>ঢাকার বাইরে: ${fmtBDT(p.deliveryOutside)}</span>
+        <span>Outside Narayanganj: ${fmtBDT(p.deliveryOutside)}</span>
         <span>•</span>
         <span>${esc(p.deliveryDays||'—')}</span>
       </div>
@@ -6181,8 +6199,8 @@ YARZ.settings = {
       ['Instagram','Instagram'],
       ['WhatsApp','WhatsApp'],
       ['Business Address','ঠিকানা'],
-      ['Default Delivery (Dhaka)','ঢাকা ডেলিভারি ৳'],
-      ['Default Delivery (Outside)','বাইরে ডেলিভারি ৳'],
+      ['Default Delivery (Dhaka)','Inside Narayanganj ডেলিভারি ৳'],
+      ['Default Delivery (Outside)','Outside Narayanganj ডেলিভারি ৳'],
       ['Return Policy Days','Return Policy (দিন)'],
       ['Low Stock Threshold','Low Stock Alert (≤)'],
       ['Payment Methods','Payment Methods']
@@ -6215,9 +6233,53 @@ YARZ.settings = {
     state.appsUrl = appsUrl;
     state.sheetId = sheetId;
     state.apiKey = apiKey;
-    localStorage.setItem('yarz_settings', JSON.stringify({ appsUrl, sheetId, apiKey }));
+    // ✅ v3.8: SETTINGS_VERSION track করি যাতে future আপডেটে auto-reset হয়
+    localStorage.setItem('yarz_settings', JSON.stringify({ appsUrl, sheetId, apiKey, __v: SETTINGS_VERSION }));
     toast('Connection সেভ হয়েছে','success');
     YARZ.loadAll(true);
+  },
+
+  // ✅ v3.8: ম্যানুয়াল রিসেট বাটন — পুরাতন setting clear করে DEFAULTS এ ফিরে যায়
+  resetConn(){
+    if(!confirm('Connection settings reset হবে DEFAULTS এ। নিশ্চিত?')) return;
+    localStorage.removeItem('yarz_settings');
+    state.appsUrl = DEFAULT_APPS_URL;
+    state.sheetId = DEFAULT_SHEET_ID;
+    state.apiKey  = DEFAULT_API_KEY;
+    $('set-apps-url').value = DEFAULT_APPS_URL;
+    $('set-sheet-id').value = DEFAULT_SHEET_ID;
+    $('set-api-key').value  = DEFAULT_API_KEY;
+    localStorage.setItem('yarz_settings', JSON.stringify({ appsUrl: DEFAULT_APPS_URL, sheetId: DEFAULT_SHEET_ID, apiKey: DEFAULT_API_KEY, __v: SETTINGS_VERSION }));
+    toast('Defaults এ reset হয়েছে — এখন Save Connection দিন','success');
+  },
+
+  // ✅ v3.8: Test Connection — backend এর সাথে API key যাচাই করে।
+  // এটা GET request পাঠায় health endpoint এ এবং দেখে key valid কিনা।
+  async testConn(){
+    showLoader('Connection test হচ্ছে...');
+    try {
+      const url = (state.appsUrl || DEFAULT_APPS_URL) + '?action=health&key=' + encodeURIComponent(state.apiKey || DEFAULT_API_KEY);
+      const res = await fetch(url, { method:'GET', redirect:'follow' });
+      const txt = await res.text();
+      let parsed;
+      try { parsed = JSON.parse(txt); } catch(e){
+        if(txt.indexOf('<!DOCTYPE')!==-1 || txt.indexOf('<html')!==-1){
+          throw new Error('Apps Script HTML return করেছে — Deploy → Manage deployments → Who has access: "Anyone" করুন');
+        }
+        throw new Error('Apps Script থেকে JSON না — response: ' + txt.slice(0,120));
+      }
+      if(parsed && parsed.success){
+        toast('✅ Connection সফল! Backend version: ' + (parsed.version || 'unknown'), 'success');
+      } else if(parsed && (parsed.error||parsed.msg||'').toLowerCase().indexOf('invalid api key')!==-1){
+        toast('❌ Invalid API Key — Apps Script এর API_KEY constant এর সাথে মিলছে না। google-apps-script.txt কপি করে Apps Script এডিটরে paste করুন এবং নতুন deployment publish করুন।','error');
+      } else {
+        toast('⚠️ Backend response: ' + (parsed.error || parsed.msg || JSON.stringify(parsed)).slice(0,180), 'error');
+      }
+    } catch(e){
+      toast('Connection error: ' + e.message, 'error');
+    } finally {
+      hideLoader();
+    }
   },
 
   async saveStore(){
@@ -6432,8 +6494,9 @@ const modalBuilders = {
 
   'add-product': ()=>{
     const s = state.data?.settings || {};
-    const z1 = s['Zone 1 Name'] || 'Dhaka';
-    const z2 = s['Zone 2 Name'] || 'Outside';
+    // ✅ v3.8: Default zones → Narayanganj (Inside / Outside)
+    const z1 = s['Zone 1 Name'] || 'Inside Narayanganj';
+    const z2 = s['Zone 2 Name'] || 'Outside Narayanganj';
     const cats = DEFAULT_CATEGORIES;
     const fabs = DEFAULT_FABRICS;
     const bads = DEFAULT_BADGES;
@@ -6511,8 +6574,9 @@ const modalBuilders = {
 
   'edit-product': (p)=>{
     const s = state.data?.settings || {};
-    const z1 = s['Zone 1 Name'] || 'Dhaka';
-    const z2 = s['Zone 2 Name'] || 'Outside';
+    // ✅ v3.8: Default zones → Narayanganj (Inside / Outside)
+    const z1 = s['Zone 1 Name'] || 'Inside Narayanganj';
+    const z2 = s['Zone 2 Name'] || 'Outside Narayanganj';
     const cats = DEFAULT_CATEGORIES;
     const fabs = DEFAULT_FABRICS;
     const bads = DEFAULT_BADGES;
