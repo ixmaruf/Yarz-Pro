@@ -856,33 +856,164 @@ body.light .load-overlay p{color:var(--ink)}
 }
 .subtab.active .sub-count{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 
-/* Order card — Website Orders redesigned */
+/* Order card — Website Orders redesigned (v4.2 — clear, scannable layout) */
 .order-card{
   background:var(--surface);
   border:1px solid var(--line);
   border-radius:var(--radius);
   padding:14px 16px;
-  margin-bottom:10px;
+  margin-bottom:12px;
   transition:all .18s;
 }
-.order-card:hover{border-color:var(--ink-4)}
-.order-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+.order-card:hover{border-color:var(--ink-4); box-shadow:0 4px 16px rgba(0,0,0,0.06)}
+.order-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
 .order-id{
   font-size:11px;color:var(--ink-3);font-weight:600;letter-spacing:0.04em;
   font-family:'Inter',monospace;
+  display:inline-flex;align-items:center;gap:4px;
+  background:var(--surface-1, rgba(0,0,0,0.04));
+  padding:2px 8px;border-radius:6px;
 }
-.order-name{font-size:14.5px;font-weight:600;color:var(--ink);margin-top:2px}
+.order-name{font-size:15px;font-weight:700;color:var(--ink);margin-top:6px;display:flex;align-items:center;gap:6px}
+.order-name i{color:var(--brand);font-size:14px}
 .order-meta{font-size:11.5px;color:var(--ink-3);margin-top:4px;line-height:1.6}
 .order-total{
-  font-size:17px;font-weight:700;color:var(--ink);
+  font-size:20px;font-weight:800;color:var(--ink);
   font-family:'Instrument Serif',serif;font-style:italic;letter-spacing:-0.01em;
-  text-align:right;
+  text-align:right;line-height:1;
 }
+.order-total small{display:block;font-size:10px;font-style:normal;font-family:inherit;font-weight:500;color:var(--ink-3);margin-top:4px;letter-spacing:0.04em;text-transform:uppercase}
 .order-actions{
   display:flex;gap:6px;flex-wrap:wrap;
   margin-top:10px;padding-top:10px;
   border-top:1px dashed var(--line);
   align-items:center;
+}
+
+/* === v4.2: New Order Card Body — clean info rows === */
+.oc-product-row{
+  display:flex;gap:12px;align-items:center;
+  padding:10px 12px;margin:8px 0;
+  background:linear-gradient(135deg, rgba(99,74,142,0.06), rgba(99,74,142,0.02));
+  border:1px solid rgba(99,74,142,0.18);
+  border-radius:10px;
+  cursor:pointer;
+  transition:all .18s;
+}
+.oc-product-row:hover{
+  background:linear-gradient(135deg, rgba(99,74,142,0.12), rgba(99,74,142,0.04));
+  border-color:rgba(99,74,142,0.35);
+  transform:translateX(2px);
+}
+.oc-product-thumb{
+  width:56px;height:56px;border-radius:8px;
+  background-size:cover;background-position:center;
+  background-color:var(--surface-1, #f3f3f3);
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--ink-3);font-size:20px;
+  border:1px solid var(--line);
+}
+.oc-product-info{flex:1;min-width:0}
+.oc-product-name{
+  font-size:14px;font-weight:700;color:var(--brand);
+  text-decoration:none;
+  display:block;line-height:1.3;
+  margin-bottom:3px;
+  word-break:break-word;
+}
+.oc-product-name:hover{text-decoration:underline}
+.oc-product-attrs{
+  font-size:11.5px;color:var(--ink-2);
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+}
+.oc-product-attrs .attr{
+  display:inline-flex;align-items:center;gap:3px;
+  background:var(--surface);border:1px solid var(--line);
+  padding:2px 7px;border-radius:6px;font-weight:600;
+}
+.oc-product-attrs .attr i{font-size:11px;opacity:0.7}
+.oc-view-icon{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--brand);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;
+  box-shadow:0 2px 6px rgba(99,74,142,0.3);
+}
+
+/* Customer info grid */
+.oc-info-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+  gap:8px;
+  margin:8px 0;
+  font-size:12px;
+}
+.oc-info-cell{
+  background:var(--surface-1, rgba(0,0,0,0.025));
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:8px 10px;
+  display:flex;align-items:flex-start;gap:8px;
+  min-width:0;
+}
+.oc-info-cell i{
+  font-size:14px;color:var(--brand);flex-shrink:0;margin-top:1px;
+  width:20px;text-align:center;
+}
+.oc-info-cell .lbl{
+  font-size:10px;color:var(--ink-3);font-weight:600;
+  text-transform:uppercase;letter-spacing:0.05em;
+  margin-bottom:2px;
+}
+.oc-info-cell .val{
+  font-size:13px;color:var(--ink);font-weight:600;
+  word-break:break-word;line-height:1.35;
+}
+.oc-info-cell .val.bn-num{font-family:'Inter',sans-serif}
+.oc-info-cell.full{grid-column:1/-1}
+.oc-info-cell.copyable{cursor:pointer;transition:all .15s}
+.oc-info-cell.copyable:hover{background:rgba(99,74,142,0.06);border-color:var(--brand)}
+
+/* Price breakdown box */
+.oc-price-box{
+  background:linear-gradient(135deg, rgba(34,197,94,0.06), rgba(34,197,94,0.02));
+  border:1px solid rgba(34,197,94,0.25);
+  border-radius:10px;
+  padding:10px 12px;
+  margin:8px 0;
+  font-size:12.5px;
+}
+.oc-price-line{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:3px 0;color:var(--ink-2);
+}
+.oc-price-line.coupon{color:#16a34a}
+.oc-price-line.total{
+  border-top:1px dashed rgba(34,197,94,0.4);
+  margin-top:6px;padding-top:8px;
+  font-size:14.5px;font-weight:800;color:var(--ink);
+}
+.oc-price-line .lbl{display:flex;align-items:center;gap:6px}
+.oc-price-line .lbl i{font-size:12px;opacity:0.7}
+
+/* Notes box */
+.oc-notes{
+  background:rgba(251,191,36,0.08);
+  border-left:3px solid #fbbf24;
+  border-radius:6px;
+  padding:8px 10px;
+  margin:8px 0;
+  font-size:12px;color:var(--ink-2);
+  line-height:1.5;
+}
+.oc-notes i{color:#d97706;margin-right:4px}
+
+@media (max-width:480px){
+  .oc-info-grid{grid-template-columns:1fr}
+  .oc-product-thumb{width:48px;height:48px}
+  .oc-product-name{font-size:13px}
+  .order-total{font-size:18px}
 }
 
 /* ============ RESPONSIVE ============ */
@@ -2892,7 +3023,7 @@ body.dark select.select option{
           <div class="section-title"><h2><i class="ri-plug-line" style="color:var(--accent-2)"></i> কানেকশন সেটআপ</h2></div>
           <div class="field">
             <label>Google Apps Script Web App URL <span class="req">*</span></label>
-            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycby8kuRND7o3PG_DnkP_BkhkG3YVEcOELSA1Unnx6zV4PCvdCslOkX2xFm1OWihStdSq/exec" data-default-url="https://script.google.com/macros/s/AKfycby8kuRND7o3PG_DnkP_BkhkG3YVEcOELSA1Unnx6zV4PCvdCslOkX2xFm1OWihStdSq/exec">
+            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbwdJZdAdH7COFBrUMjGLbfYq7t8FAw5A2oFo1u4NYRiblEbs5Vu1Y_oHVKenywy1HCX/exec" data-default-url="https://script.google.com/macros/s/AKfycbwdJZdAdH7COFBrUMjGLbfYq7t8FAw5A2oFo1u4NYRiblEbs5Vu1Y_oHVKenywy1HCX/exec">
             <div style="font-size:11px;opacity:0.6;margin-top:4px">✓ Default URL pre-filled — যদি deployment পরিবর্তন করেন তবে এখানে নতুন URL দিন</div>
           </div>
           <div class="field">
@@ -3153,7 +3284,7 @@ const DEFAULT_API_KEY  = 'AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k';
 // 🔑 v3.9: Settings version bumped — auto-resets stale localStorage values (forces new URL)
 const SETTINGS_VERSION = 'v3.9-2026-05-03';
 // ★ হার্ডকোডেড Apps Script URL — এর ফলে Settings-এ URL না দিলেও Write operations কাজ করবে
-const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbw0QD3B9FIC_4eI6g6HdBXv1_BQHpXOQKEsF-ykVr0JbJ8jDUkVgrz0Kk6vLF_FvTdC/exec';
+const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbwdJZdAdH7COFBrUMjGLbfYq7t8FAw5A2oFo1u4NYRiblEbs5Vu1Y_oHVKenywy1HCX/exec';
 const TZ = 'Asia/Dhaka';
 
 // ============ CRYPTO UTIL ============
@@ -4675,6 +4806,18 @@ YARZ.inv = {
           </select>
         </div>
       </div>
+      <div class="modal-section-title" style="margin-top:12px">🚚 ডেলিভারি চার্জ (Bulk Update)</div>
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;margin-bottom:14px">
+        <div style="font-size:11px;opacity:0.65;margin-bottom:8px">ফাঁকা রাখলে আগের চার্জ থাকবে। নতুন মান দিলে সিলেক্ট করা সব প্রোডাক্টে একসাথে আপডেট হবে।</div>
+        <div class="row">
+          <div class="field"><label>🏠 Inside Narayanganj (৳)</label>
+            <input id="bulk-del-inside" type="number" class="input" placeholder="যেমন: 70" min="0" step="5">
+          </div>
+          <div class="field"><label>🚛 Outside Narayanganj (৳)</label>
+            <input id="bulk-del-outside" type="number" class="input" placeholder="যেমন: 140" min="0" step="5">
+          </div>
+        </div>
+      </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
         <button class="btn btn-primary" onclick="YARZ.inv._bulkApply()"><i class="fas fa-check"></i> Apply</button>
@@ -4720,10 +4863,35 @@ YARZ.inv = {
     const st = $('bulk-status').value;
     const disc = parseFloat($('bulk-disc').value)||0;
     const bd = $('bulk-badge').value;
+    // v4.3: Delivery charge bulk update
+    const delInsideEl = $('bulk-del-inside');
+    const delOutsideEl = $('bulk-del-outside');
+    const delInside = delInsideEl && delInsideEl.value !== '' ? parseFloat(delInsideEl.value) : null;
+    const delOutside = delOutsideEl && delOutsideEl.value !== '' ? parseFloat(delOutsideEl.value) : null;
+    
+    // Validate: at least one field should have a value
+    if(!st && !disc && !bd && delInside === null && delOutside === null){
+      toast('কমপক্ষে একটি ফিল্ড পূরণ করুন','warning');
+      return;
+    }
+    
     showLoader('Bulk আপডেট হচ্ছে...');
     try {
-      const res = await appsPost('applyBulkEdit', { names, st, disc, bd });
+      const payload = { names, st, disc, bd };
+      if(delInside !== null) payload.delInside = delInside;
+      if(delOutside !== null) payload.delOutside = delOutside;
+      const res = await appsPost('applyBulkEdit', payload);
       if(res && res.ok===false) throw new Error(res.msg||'Failed');
+      // Optimistic local update for delivery charges
+      if(delInside !== null || delOutside !== null){
+        names.forEach(name => {
+          const p = state.data.inventory.find(x=>x.name===name);
+          if(p){
+            if(delInside !== null) p.deliveryDhaka = delInside;
+            if(delOutside !== null) p.deliveryOutside = delOutside;
+          }
+        });
+      }
       toast(`${toBn(names.length)} টি আপডেট হয়েছে`,'success');
       YARZ.closeModal();
       await YARZ.loadAll();
@@ -5038,43 +5206,147 @@ Team YARZ`;
     const searchQ = ($('wo-search')?.value||'').trim();
     const trackingHtml = renderTrackingBlock(o.courier, o.orderId, searchQ);
 
-    // Time display — full date-time with relative hint
-    const timeHtml = o.date ? `
-      <span style="display:inline-flex;align-items:center;gap:4px;color:var(--ink-3)" class="bn-num">
-        <i class="ri-time-line" style="font-size:11px"></i>
-        ${esc(fmtTimeBn(o.date))} · ${esc(fmtDateBn(o.date))}
-      </span>
-    ` : '';
+    // ✅ v4.2: Find product image from inventory (for thumbnail in order card)
+    const prodObj = (state.data.inventory || []).find(p => p.name === o.product);
+    const prodImg = prodObj && prodObj.img1 ? getImgSrc(prodObj.img1) : '';
+    const prodImgStyle = prodImg ? `background-image:url('${esc(prodImg)}')` : '';
 
+    // ✅ v4.2: Calculate price breakdown
+    const qty = parseInt(o.qty)||1;
+    const unitPrice = parseFloat(o.price)||0;
+    const delivery = parseFloat(o.delivery)||0;
+    const subtotal = unitPrice * qty;
+    const total = parseFloat(o.total) || (subtotal + delivery);
+    // Coupon detection — if total < (subtotal + delivery), there's an implicit discount
+    const expectedTotal = subtotal + delivery;
+    const couponDiscount = expectedTotal > total ? (expectedTotal - total) : 0;
+    const hasCoupon = couponDiscount > 0;
+
+    // ✅ v4.2: Time display — clean format
+    const timeStr = o.date ? `${fmtTimeBn(o.date)} · ${fmtDateBn(o.date)}` : '—';
+    const relTime = o.date ? relativeTime(o.date) : '';
+
+    // ✅ v4.2: Build the redesigned card
     return `<div class="order-card ${isNewBadge?'is-new':''}" id="ord-${esc(o.orderId)}">
+      <!-- Header: Order ID + Customer Name + Total -->
       <div class="order-head">
         <div style="min-width:0;flex:1">
-          <div class="order-id">#${esc(o.orderId)}</div>
-          <div class="order-name">${esc(o.customer||'—')}</div>
-          <div class="order-meta">
-            <i class="ri-phone-line" style="font-size:11px;opacity:0.6"></i> <span class="bn-num">${esc(o.phone||'—')}</span>
-            ${o.date ? ` · ${timeHtml}` : ''}
-            <br>
-            <span style="cursor:pointer;color:var(--brand);font-weight:700;text-decoration:underline;font-size:13.5px;" onclick="YARZ.inv.showDetails('${esc(o.product)}')"><i class="ri-shopping-bag-3-line" style="font-size:12px;"></i> ${esc(o.product||'—')}</span> ${o.size?`<span class="muted-kbd">${esc(o.size)}</span>`:''} × <span class="bn-num">${toBn(o.qty||1)}</span>
-            ${o.payment?` · <i class="ri-wallet-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.payment)}`:''}
-            ${o.address?`<br><i class="ri-map-pin-line" style="font-size:11px;opacity:0.6"></i> ${esc(o.address)}`:''}
+          <div class="order-id"><i class="ri-hashtag" style="font-size:10px"></i>${esc(o.orderId)}</div>
+          <div class="order-name"><i class="ri-user-3-line"></i>${esc(o.customer||'Customer')}</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span><i class="ri-time-line" style="font-size:11px"></i> <span class="bn-num">${esc(timeStr)}</span></span>
+            ${relTime ? `<span style="opacity:0.7">· ${esc(relTime)}</span>` : ''}
           </div>
         </div>
-        <div style="text-align:right">
-          <div class="order-total bn-num">${fmtBDT(o.total)}</div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="order-total bn-num">${fmtBDT(total)}<small>মোট পেমেন্ট</small></div>
           ${stage!=='delivered' && o.status ? `<div style="margin-top:6px"><span class="chip ${sc}">${esc(o.status)}</span></div>`:''}
         </div>
       </div>
+
+      <!-- Product Row (clickable -> opens product details with image) -->
+      <div class="oc-product-row" onclick="YARZ.inv.showDetails('${esc(o.product||'')}')" title="ক্লিক করে প্রোডাক্ট ডিটেইল দেখুন">
+        <div class="oc-product-thumb" style="${prodImgStyle}">
+          ${prodImg ? '' : '<i class="ri-shopping-bag-3-line"></i>'}
+        </div>
+        <div class="oc-product-info">
+          <a class="oc-product-name" onclick="event.stopPropagation();YARZ.inv.showDetails('${esc(o.product||'')}')">${esc(o.product||'প্রোডাক্ট নাম নেই')}</a>
+          <div class="oc-product-attrs">
+            ${o.size ? `<span class="attr"><i class="ri-shirt-line"></i>সাইজ: <b>${esc(o.size)}</b></span>` : ''}
+            <span class="attr"><i class="ri-stack-line"></i>পরিমাণ: <b class="bn-num">${toBn(qty)}</b></span>
+            <span class="attr"><i class="ri-price-tag-3-line"></i>প্রতি পিস: <b class="bn-num">${fmtBDT(unitPrice)}</b></span>
+          </div>
+        </div>
+        <div class="oc-view-icon" title="View Product"><i class="ri-eye-line"></i></div>
+      </div>
+
+      <!-- Customer Info Grid -->
+      <div class="oc-info-grid">
+        <div class="oc-info-cell copyable" onclick="navigator.clipboard.writeText('${esc(o.phone||'')}');YARZ.toast?.('ফোন কপি হয়েছে','success')||toast('ফোন কপি হয়েছে','success')" title="ক্লিক করে কপি করুন">
+          <i class="ri-phone-line"></i>
+          <div style="min-width:0;flex:1">
+            <div class="lbl">ফোন নাম্বার</div>
+            <div class="val bn-num">${esc(o.phone||'—')}</div>
+          </div>
+        </div>
+        <div class="oc-info-cell">
+          <i class="ri-map-pin-2-line"></i>
+          <div style="min-width:0;flex:1">
+            <div class="lbl">লোকেশন</div>
+            <div class="val">${esc(o.location||o.city||'—')}</div>
+          </div>
+        </div>
+        <div class="oc-info-cell">
+          <i class="ri-wallet-3-line"></i>
+          <div style="min-width:0;flex:1">
+            <div class="lbl">পেমেন্ট মেথড</div>
+            <div class="val">${esc(o.payment||'COD')}</div>
+          </div>
+        </div>
+        ${o.email ? `
+        <div class="oc-info-cell">
+          <i class="ri-mail-line"></i>
+          <div style="min-width:0;flex:1">
+            <div class="lbl">ইমেইল</div>
+            <div class="val" style="font-size:11.5px;word-break:break-all">${esc(o.email)}</div>
+          </div>
+        </div>` : ''}
+        ${o.address ? `
+        <div class="oc-info-cell full">
+          <i class="ri-home-4-line"></i>
+          <div style="min-width:0;flex:1">
+            <div class="lbl">সম্পূর্ণ ঠিকানা</div>
+            <div class="val" style="font-size:12.5px;line-height:1.5">${esc(o.address)}</div>
+          </div>
+        </div>` : ''}
+      </div>
+
+      <!-- Price Breakdown -->
+      <div class="oc-price-box">
+        <div class="oc-price-line">
+          <span class="lbl"><i class="ri-shopping-cart-2-line"></i>প্রোডাক্ট প্রাইস <span style="opacity:0.7">(<span class="bn-num">${toBn(qty)}</span> × <span class="bn-num">${fmtBDT(unitPrice)}</span>)</span></span>
+          <span class="bn-num"><b>${fmtBDT(subtotal)}</b></span>
+        </div>
+        <div class="oc-price-line">
+          <span class="lbl"><i class="ri-truck-line"></i>ডেলিভারি চার্জ</span>
+          <span class="bn-num"><b>${fmtBDT(delivery)}</b></span>
+        </div>
+        ${hasCoupon ? `
+        <div class="oc-price-line coupon">
+          <span class="lbl"><i class="ri-coupon-3-line"></i>কুপন ডিসকাউন্ট</span>
+          <span class="bn-num"><b>− ${fmtBDT(couponDiscount)}</b></span>
+        </div>` : ''}
+        <div class="oc-price-line total">
+          <span class="lbl"><i class="ri-money-dollar-circle-line"></i>সর্বমোট দিতে হবে</span>
+          <span class="bn-num">${fmtBDT(total)}</span>
+        </div>
+      </div>
+
+      ${o.notes ? `
+      <div class="oc-notes">
+        <i class="ri-sticky-note-line"></i><b>নোট:</b> ${esc(o.notes)}
+      </div>` : ''}
+
       ${trackingHtml}
-      <div class="order-actions" style="flex-wrap:wrap;gap:6px;margin-top:${trackingHtml?'8px':'0'}">
+
+      <div class="order-actions" style="flex-wrap:wrap;gap:6px">
         ${actionBtn}
         ${courierSel}
         ${stage!=='delivered' ? addTrackBtn : ''}
         <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WhatsApp</button>
+        <button class="btn btn-ghost btn-xs" onclick="YARZ.ord.callCustomer('${esc(o.phone||'')}')" title="ফোন করুন"><i class="ri-phone-fill" style="color:#0ea5e9"></i></button>
         ${stage!=='delivered' ? `<button class="btn btn-ghost btn-xs" onclick="YARZ.ord.showStatusMenu('${esc(o.orderId)}')" title="Change Status"><i class="ri-more-2-line"></i></button>` : ''}
         <button class="btn btn-ghost btn-xs" style="margin-left:auto;color:var(--danger)" onclick="YARZ.ord.deleteWebOrder('${esc(o.orderId)}')" title="ডিলিট"><i class="ri-delete-bin-6-line"></i></button>
       </div>
     </div>`;
+  },
+
+  // ✅ v4.2: Quick call button — opens phone dialer on mobile
+  callCustomer(phone){
+    if(!phone){ toast('ফোন নাম্বার নেই','warning'); return; }
+    const cleaned = String(phone).replace(/\D/g,'');
+    if(cleaned.length < 10){ toast('ভুল ফোন নাম্বার','error'); return; }
+    window.location.href = 'tel:' + cleaned;
   },
 
   showStatusMenu(orderId){
