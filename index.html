@@ -7125,8 +7125,20 @@ YARZ._saveNewProduct = async function(){
     if(res && res.ok===false) throw new Error(res.msg||'Failed');
     toast('প্রোডাক্ট সেভ হয়েছে','success');
     YARZ.closeModal();
-    await loadInventory();
+    // ✅ Optimistic UI: Insert directly into state so it shows up instantly without waiting
+    state.data.inventory.unshift({
+      name: d.name, img1: d.img1, img2: d.img2, img3: d.img3,
+      img4: d.img4, img5: d.img5, img6: d.img6, video: d.vid,
+      cost: d.cost, regular: d.reg, sale: d.sale, discPct: d.discPct,
+      status: d.status, category: d.cat, fabric: d.fab, badge: d.bad,
+      stkM: d.sM, stkL: d.sL, stkXL: d.sXL, stkXXL: d.sXXL,
+      soldM: 0, soldL: 0, soldXL: 0, soldXXL: 0,
+      deliveryDhaka: d.din, deliveryOutside: d.dout,
+      couponActive: d.cAct, couponCode: d.cCode, couponDisc: d.cDisc
+    });
     YARZ.render();
+    // Background sync
+    loadInventory();
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-floppy-disk"></i> সেভ করুন'; }
 };
 
@@ -7157,8 +7169,21 @@ YARZ._saveEditProduct = async function(){
     if(res && res.ok===false) throw new Error(res.msg||'Failed');
     toast('Updated','success');
     YARZ.closeModal();
-    await loadInventory();
+    // ✅ Optimistic UI: Update state directly for instant reflection
+    const p = state.data.inventory.find(x => x.name === d.origName);
+    if(p) {
+      p.name = d.name;
+      p.category = d.cat; p.fabric = d.fab; p.status = d.status; p.badge = d.bad;
+      p.img1 = d.img1; p.img2 = d.img2; p.img3 = d.img3;
+      p.img4 = d.img4; p.img5 = d.img5; p.img6 = d.img6; p.video = d.vid;
+      p.cost = d.cost; p.regular = d.reg; p.sale = d.sale; p.discPct = d.discPct;
+      p.stkM = d.sM; p.stkL = d.sL; p.stkXL = d.sXL; p.stkXXL = d.sXXL;
+      p.deliveryDhaka = d.din; p.deliveryOutside = d.dout;
+      p.couponActive = d.cAct; p.couponCode = d.cCode; p.couponDisc = d.cDisc;
+    }
     YARZ.render();
+    // Background sync
+    loadInventory();
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-floppy-disk"></i> Update'; }
 };
 
