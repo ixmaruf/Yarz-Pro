@@ -4894,7 +4894,8 @@ YARZ.inv = {
       }
       toast(`${toBn(names.length)} টি আপডেট হয়েছে`,'success');
       YARZ.closeModal();
-      await YARZ.loadAll();
+      await loadInventory();
+      YARZ.render();
     } catch(e){ toast(e.message,'error'); }
     finally { hideLoader(); }
   },
@@ -7124,7 +7125,8 @@ YARZ._saveNewProduct = async function(){
     if(res && res.ok===false) throw new Error(res.msg||'Failed');
     toast('প্রোডাক্ট সেভ হয়েছে','success');
     YARZ.closeModal();
-    await YARZ.loadAll();
+    await loadInventory();
+    YARZ.render();
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-floppy-disk"></i> সেভ করুন'; }
 };
 
@@ -7155,7 +7157,8 @@ YARZ._saveEditProduct = async function(){
     if(res && res.ok===false) throw new Error(res.msg||'Failed');
     toast('Updated','success');
     YARZ.closeModal();
-    await YARZ.loadAll();
+    await loadInventory();
+    YARZ.render();
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-floppy-disk"></i> Update'; }
 };
 
@@ -7178,7 +7181,9 @@ YARZ._saveSale = async function(){
     if(res && res.ok===false) throw new Error(res.msg||'Failed');
     toast('বিক্রয় রেকর্ড হয়েছে','success');
     YARZ.closeModal();
-    await YARZ.loadAll();
+    await loadInventory();
+    await loadTransactions();
+    YARZ.render();
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> বিক্রয় কনফার্ম'; }
 };
 
@@ -7252,7 +7257,9 @@ YARZ._saveOrder = async function(){
     if(res && res.ok===false) throw new Error(res.msg||'Failed');
     toast('Order সেভ হয়েছে','success');
     YARZ.closeModal();
-    await YARZ.loadAll();
+    await loadOrders();
+    await loadInventory();
+    YARZ.render();
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> অর্ডার সেভ'; }
 };
 
@@ -7266,7 +7273,8 @@ YARZ._saveAd = async function(){
     if(res && res.ok===false) throw new Error(res.msg||'Failed');
     toast('Ad সেভ হয়েছে','success');
     YARZ.closeModal();
-    await YARZ.loadAll();
+    await loadAdTracker();
+    YARZ.render();
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> সেভ'; }
 };
 
@@ -7280,7 +7288,8 @@ YARZ._saveExp = async function(){
     if(res && res.ok===false) throw new Error(res.msg||'Failed');
     toast('Expense সেভ হয়েছে','success');
     YARZ.closeModal();
-    await YARZ.loadAll();
+    await loadExpenses();
+    YARZ.render();
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> সেভ'; }
 };
 
@@ -7292,7 +7301,9 @@ YARZ._saveRet = async function(){
     if(res && res.ok===false) throw new Error(res.msg||'Failed');
     toast('Return সেভ হয়েছে','success');
     YARZ.closeModal();
-    await YARZ.loadAll();
+    await loadInventory();
+    await loadTransactions();
+    YARZ.render();
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-rotate-left"></i> Return'; }
 };
 
