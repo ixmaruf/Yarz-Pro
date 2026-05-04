@@ -7029,6 +7029,10 @@ const modalBuilders = {
     const dateStr = today.getFullYear().toString().slice(-2)+String(today.getMonth()+1).padStart(2,'0')+String(today.getDate()).padStart(2,'0');
     const rnd = Math.floor(1000+Math.random()*9000);
     const oid = `YARZ-${dateStr}-${rnd}`;
+    // Fix: z1/z2 must be defined inside this scope
+    const _s = state.data.settings || {};
+    const z1 = _s['Zone 1 Name'] || 'Inside Dhaka';
+    const z2 = _s['Zone 2 Name'] || 'Outside Dhaka';
     return `
       <div class="modal-header">
         <h3><i class="fas fa-bag-shopping"></i> নতুন অর্ডার</h3>
@@ -7120,7 +7124,11 @@ const modalBuilders = {
     const cats = ["Courier","Packaging","Office","Electricity","Internet","Rent","Salary","Transport","Marketing","Supplier","Other"];
     return `
       <div class="modal-header"><h3><i class="fas fa-receipt"></i> Expense</h3><button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button></div>
-      <div class="field"><label>Category <span class="req">*</span></label><select id="ex-cat" class="select">${cats.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="field">
+        <label>Category <span class="req">*</span></label>
+        <input id="ex-cat" class="input" list="ex-cat-list" placeholder="Select or type category...">
+        <datalist id="ex-cat-list">${cats.map(c=>`<option value="${c}">`).join('')}</datalist>
+      </div>
       <div class="field"><label>Amount <span class="req">*</span></label><input id="ex-amt" type="number" class="input"></div>
       <div class="field"><label>Description</label><textarea id="ex-desc" class="textarea"></textarea></div>
       <div class="field"><label>Paid To</label><input id="ex-paid" class="input"></div>
@@ -7318,27 +7326,28 @@ YARZ._calcOrder = function(){
 
 YARZ._saveOrder = async function(){
   const oid = $('o-oid').value.trim();
-  const cn = $('o-name').value.trim();
+  const cust = $('o-name').value.trim();
   const ph = $('o-phone').value.trim();
-  const ad = $('o-addr').value.trim();
-  const product = $('o-product').value;
-  if(!oid||!cn||!ph||!ad||!product){ toast('সব field পূরণ করুন','error'); return; }
+  const addr = $('o-addr').value.trim();
+  const prod = $('o-product').value;
+  if(!oid||!cust||!ph||!addr||!prod){ toast('সব field পূরণ করুন','error'); return; }
   const opt = $('o-product').options[$('o-product').selectedIndex];
   const price = num(opt.dataset.sale);
   const loc = $('o-loc').value;
-  const del = loc==='Dhaka' ? num(opt.dataset.din) : num(opt.dataset.dout);
+  const dlv = loc==='Dhaka' ? num(opt.dataset.din) : num(opt.dataset.dout);
+  // Fix: Apps Script saveOrderFromForm expects {cust, ph, addr, loc, prod, sz, qty, price, dlv, pay, notes}
   const d = {
-    oid, cn, ph, ad, lo:loc, product,
-    size:$('o-size').value, qty:int($('o-qty').value)||1,
-    price, delivery:del,
-    pm:$('o-pay').value, courier:$('o-courier').value, tracking:$('o-tracking')?$('o-tracking').value:'', source:$('o-source')?$('o-source').value:'Manual', notes:$('o-notes').value,
+    oid, cust, ph, addr, loc, prod,
+    sz:$('o-size').value, qty:int($('o-qty').value)||1,
+    price, dlv,
+    pay:$('o-pay').value, courier:$('o-courier').value, tracking:$('o-tracking')?$('o-tracking').value:'', source:$('o-source')?$('o-source').value:'Manual', notes:$('o-notes').value,
     status: $('o-status') ? $('o-status').value : 'Pending'
   };
-  const pData = state.data.inventory.find(x=>x.name === product);
+  const pData = state.data.inventory.find(x=>x.name === prod);
   if(pData) {
-    const left = pData['stk'+d.size] - pData['sold'+d.size];
+    const left = pData['stk'+d.sz] - pData['sold'+d.sz];
     if(left < d.qty) {
-      if(left <= 0) { toast(`স্টক নেই! (${d.size} সাইজ শেষ)`, 'error'); return; }
+      if(left <= 0) { toast(`স্টক নেই! (${d.sz} সাইজ শেষ)`, 'error'); return; }
       else if(!confirm(`Warning: স্টকে মাত্র ${left} পিস আছে! আপনি ${d.qty} পিস অর্ডার নিতে চান?`)) return;
     }
   }
@@ -7355,9 +7364,10 @@ YARZ._saveOrder = async function(){
 };
 
 YARZ._saveAd = async function(){
-  const amt = num($('ad-amt').value);
-  if(!amt){ toast('Amount দরকার','error'); return; }
-  const d = { p:$('ad-p').value, amt, cp:$('ad-camp').value, nt:$('ad-notes').value };
+  const spend = num($('ad-amt').value);
+  if(!spend){ toast('Amount দরকার','error'); return; }
+  // Fix: Apps Script saveAdFromForm expects {prod, spend, reach, imp, cl, nt}
+  const d = { prod:$('ad-p').value, spend, reach:0, imp:0, cl:0, nt:$('ad-notes').value };
   const btn = $('save-ad'); btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
   try {
     const res = await appsPost('saveAdFromForm', d);
@@ -7370,9 +7380,10 @@ YARZ._saveAd = async function(){
 };
 
 YARZ._saveExp = async function(){
-  const a = num($('ex-amt').value);
-  if(!a){ toast('Amount দরকার','error'); return; }
-  const d = { c:$('ex-cat').value, a, d:$('ex-desc').value, p:$('ex-paid').value };
+  const amt = num($('ex-amt').value);
+  if(!amt){ toast('Amount দরকার','error'); return; }
+  // Fix: Apps Script saveExpenseFromForm expects {cat, desc, amt, nt}
+  const d = { cat:$('ex-cat').value, amt, desc:$('ex-desc').value, nt:$('ex-paid').value };
   const btn = $('save-exp'); btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
   try {
     const res = await appsPost('saveExpenseFromForm', d);
@@ -7385,7 +7396,8 @@ YARZ._saveExp = async function(){
 };
 
 YARZ._saveRet = async function(){
-  const d = { p:$('rt-p').value, s:$('rt-s').value, q:int($('rt-q').value)||1, r:$('rt-r').value };
+  // Fix: Apps Script saveReturnFromForm expects {prod, sz, qty, nt}
+  const d = { prod:$('rt-p').value, sz:$('rt-s').value, qty:int($('rt-q').value)||1, nt:$('rt-r').value };
   const btn = $('save-ret'); btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
   try {
     const res = await appsPost('saveReturnFromForm', d);
