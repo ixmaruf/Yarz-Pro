@@ -2449,6 +2449,7 @@ body.dark select.select option{
           <div class="flex-gap" style="flex-wrap:wrap;gap:8px">
             <button class="btn btn-primary btn-sm" onclick="YARZ.openModal('add-product')"><i class="ri-add-line"></i> Quick Add</button>
             <button class="btn btn-blue btn-sm" onclick="YARZ.openModal('sale-entry')"><i class="ri-cash-line"></i> বিক্রয় এন্ট্রি</button>
+            <button class="btn btn-amber btn-sm" onclick="YARZ.openModal('return')"><i class="ri-arrow-go-back-line"></i> রিটার্ন</button>
             <button class="btn btn-purple btn-sm" onclick="YARZ.inv.showStockManager()"><i class="ri-stack-line"></i> Stock Manager</button>
             <button class="btn btn-amber btn-sm" onclick="YARZ.inv.showLowStock()"><i class="ri-alert-line"></i> Low Stock</button>
             <button class="btn btn-ghost btn-sm" onclick="YARZ.inv.showBulkEdit()"><i class="ri-list-check-2"></i> Bulk Edit</button>
@@ -2841,7 +2842,7 @@ body.dark select.select option{
                 <label class="ios-toggle"><input type="checkbox" id="wc-order-notes"><span class="slider"></span></label>
                 <div><div style="font-weight:600">Enable Order Notes</div><div style="font-size:11px;color:var(--ink-3)">Let customers add gift messages</div></div>
               </div>
-              <div class="flex-gap" style="grid-column: 1 / -1; padding-top: 8px; border-top: 1px solid var(--border-light);">
+              <div class="flex-gap">
                 <label class="ios-toggle"><input type="checkbox" id="wc-enable-cod" checked><span class="slider"></span></label>
                 <div><div style="font-weight:600">Enable Cash on Delivery (COD)</div><div style="font-size:11px;color:var(--ink-3)">Turn off to force bKash/Nagad only on website</div></div>
               </div>
@@ -3023,7 +3024,7 @@ body.dark select.select option{
           <div class="section-title"><h2><i class="ri-plug-line" style="color:var(--accent-2)"></i> কানেকশন সেটআপ</h2></div>
           <div class="field">
             <label>Google Apps Script Web App URL <span class="req">*</span></label>
-            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbyjBa0Aq8ejcnmIYbbKyGL0a5A5DeKZmBnq0uCqdejMWgPGFJG7AwAg8fEUpIUZ42ZS/exec" data-default-url="https://script.google.com/macros/s/AKfycbyjBa0Aq8ejcnmIYbbKyGL0a5A5DeKZmBnq0uCqdejMWgPGFJG7AwAg8fEUpIUZ42ZS/exec">
+            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbwh8QTyQmsd5yE4Ejv5eRDQRgs3fMOC3NZJ6R5y1sYJ-DeqIs6YQQJR-p_R8Qccvy_S/exec" data-default-url="https://script.google.com/macros/s/AKfycbwh8QTyQmsd5yE4Ejv5eRDQRgs3fMOC3NZJ6R5y1sYJ-DeqIs6YQQJR-p_R8Qccvy_S/exec">
             <div style="font-size:11px;opacity:0.6;margin-top:4px">✓ Default URL pre-filled — যদি deployment পরিবর্তন করেন তবে এখানে নতুন URL দিন</div>
           </div>
           <div class="field">
@@ -3282,9 +3283,9 @@ const CREDS_PLAIN = { user: 'maruf_ix', pass: 'Hassan__00' };
 const DEFAULT_SHEET_ID = '1wQz5OQZAtISTD1FdSEs_j9-p0e-BHwYjmjN7PR9hA-Q';
 const DEFAULT_API_KEY  = 'AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k';
 // 🔑 v3.9: Settings version bumped — auto-resets stale localStorage values (forces new URL)
-const SETTINGS_VERSION = 'v3.9-2026-05-03';
+const SETTINGS_VERSION = 'v4.0-2026-05-14';
 // ★ হার্ডকোডেড Apps Script URL — এর ফলে Settings-এ URL না দিলেও Write operations কাজ করবে
-const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbyjBa0Aq8ejcnmIYbbKyGL0a5A5DeKZmBnq0uCqdejMWgPGFJG7AwAg8fEUpIUZ42ZS/exec';
+const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbwh8QTyQmsd5yE4Ejv5eRDQRgs3fMOC3NZJ6R5y1sYJ-DeqIs6YQQJR-p_R8Qccvy_S/exec';
 const TZ = 'Asia/Dhaka';
 
 // ============ CRYPTO UTIL ============
@@ -6159,18 +6160,20 @@ YARZ.webControl = {
     
     let sectionsHtml = datalistHtml;
     let count = 0;
-    for(let i=1; i<=25; i++){
+    for(let i=1; i<=50; i++){
       const secTitle = s[`Section ${i} Title`];
       const secCat = s[`Section ${i} Category`];
-      if (!secTitle && !secCat && i > 1) continue; // Only render existing ones, but ensure at least 1 is shown
+      const secImg = s[`Section ${i} Image`];
+      const secLink = s[`Section ${i} Link`];
+      if (!secTitle && !secCat && !secImg && !secLink && i > 1) continue; // Only render existing ones, but ensure at least 1 is shown
       
       count++;
       const secActive = s[`Section ${i} Active`] !== 'false';
-      sectionsHtml += this._buildSectionHTML(secTitle||'', secCat||'', secActive);
+      sectionsHtml += this._buildSectionHTML(secTitle||'', secCat||'', secActive, secImg||'', secLink||'');
     }
     if(count === 0) {
       count = 1;
-      sectionsHtml += this._buildSectionHTML('', '', true);
+      sectionsHtml += this._buildSectionHTML('', '', true, '', '');
     }
     this._secCount = count;
     
@@ -6269,6 +6272,22 @@ YARZ.webControl = {
   },
 
   _buildSectionHTML(title, category, isActive, imgUrl='', linkUrl='') {
+    let links = [];
+    try {
+      links = JSON.parse(linkUrl);
+      if(!Array.isArray(links)) links = linkUrl ? [linkUrl] : [];
+    } catch(e) {
+      links = linkUrl ? [linkUrl] : [];
+    }
+    if(links.length === 0) links.push('');
+
+    const linksHtml = links.map(lnk => `
+      <div class="wc-sec-link-row" style="display:flex;gap:8px;margin-bottom:8px">
+        <input type="text" class="input wc-sec-link-input" placeholder="e.g. /product/shirt" value="${esc(lnk)}" style="flex:1">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()" style="color:var(--danger);padding:0 8px" title="Remove Link"><i class="ri-close-line"></i></button>
+      </div>
+    `).join('');
+
     return `
         <div class="wc-section-block" style="display:flex;align-items:flex-start;gap:16px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1);margin-bottom:12px;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.02)">
           <button onclick="YARZ.ui.confirmDeleteSection(this.parentElement)" style="position:absolute;top:-8px;right:-8px;background:var(--danger);color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.2);z-index:2" title="Delete Section"><i class="ri-close-line"></i></button>
@@ -6292,7 +6311,7 @@ YARZ.webControl = {
                 <input type="text" class="input wc-sec-cat" list="wc-cat-list" placeholder="Select category..." value="${esc(category)}">
               </div>
             </div>
-            <div style="display:flex; gap:12px; flex-wrap:wrap">
+            <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start">
               <div class="field" style="margin:0;flex:1;min-width:150px">
                 <label style="font-size:11px">Section Banner Image URL (Optional)</label>
                 <div style="display:flex; gap:8px; align-items:center;">
@@ -6302,14 +6321,30 @@ YARZ.webControl = {
                   <input type="text" class="input wc-sec-img" style="flex:1" placeholder="e.g. imgur.com/banner.jpg" value="${esc(imgUrl)}" oninput="YARZ.webControl._previewImg(this, this.previousElementSibling)">
                 </div>
               </div>
-              <div class="field" style="margin:0;flex:1;min-width:150px">
-                <label style="font-size:11px">Target Link (Optional)</label>
-                <input type="text" class="input wc-sec-link" placeholder="e.g. /category/shoes" value="${esc(linkUrl)}">
+              <div class="field wc-sec-links-container" style="margin:0;flex:1;min-width:150px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                  <label style="font-size:11px;margin:0">Target Links (Products)</label>
+                  <button type="button" class="btn btn-ghost btn-sm" onclick="YARZ.webControl.addLinkToSection(this)" style="font-size:10px;padding:2px 6px;border:1px solid var(--brand);color:var(--brand);border-radius:4px"><i class="ri-add-line"></i> Add Link</button>
+                </div>
+                <div class="wc-sec-links-list">
+                  ${linksHtml}
+                </div>
               </div>
             </div>
           </div>
         </div>
     `;
+  },
+
+  addLinkToSection(btn) {
+    const list = btn.parentElement.nextElementSibling;
+    if(list.children.length >= 50) { toast('Maximum 50 links allowed','error'); return; }
+    const div = document.createElement('div');
+    div.className = 'wc-sec-link-row';
+    div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
+    div.innerHTML = `<input type="text" class="input wc-sec-link-input" placeholder="e.g. /product/shirt" style="flex:1">
+                     <button type="button" class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()" style="color:var(--danger);padding:0 8px" title="Remove Link"><i class="ri-close-line"></i></button>`;
+    list.appendChild(div);
   },
 
   addSection() {
@@ -6473,9 +6508,11 @@ YARZ.webControl = {
       const title = block.querySelector('.wc-sec-title').value.trim();
       const cat = block.querySelector('.wc-sec-cat').value.trim();
       const img = block.querySelector('.wc-sec-img')?.value.trim() || '';
-      const link = block.querySelector('.wc-sec-link')?.value.trim() || '';
+      const linkInputs = block.querySelectorAll('.wc-sec-link-input');
+      const links = Array.from(linkInputs).map(inp => inp.value.trim()).filter(v => v);
+      const link = links.length ? JSON.stringify(links) : '';
       
-      if(title || cat || img) {
+      if(title || cat || img || link) {
         updates[`Section ${secIdx} Active`] = active;
         updates[`Section ${secIdx} Title`] = title;
         updates[`Section ${secIdx} Category`] = cat;
@@ -7149,6 +7186,7 @@ const modalBuilders = {
         <div class="field"><label>Size</label><select id="rt-s" class="select"><option>M</option><option>L</option><option>XL</option><option>XXL</option></select></div>
         <div class="field"><label>Quantity</label><input id="rt-q" type="number" class="input" value="1" min="1"></div>
       </div>
+      <div class="field"><label>Delivery Loss (৳) <span style="font-size:10px;opacity:0.6">(Optional)</span></label><input id="rt-dlv-loss" type="number" class="input" placeholder="e.g. 120" min="0"></div>
       <div class="field"><label>Reason</label><input id="rt-r" class="input"></div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
@@ -7396,8 +7434,7 @@ YARZ._saveExp = async function(){
 };
 
 YARZ._saveRet = async function(){
-  // Fix: Apps Script saveReturnFromForm expects {prod, sz, qty, nt}
-  const d = { prod:$('rt-p').value, sz:$('rt-s').value, qty:int($('rt-q').value)||1, nt:$('rt-r').value };
+  const d = { prod:$('rt-p').value, sz:$('rt-s').value, qty:parseInt($('rt-q').value)||1, nt:$('rt-r').value, delLoss:parseFloat($('rt-dlv-loss')?.value)||0 };
   const btn = $('save-ret'); btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
   try {
     const res = await appsPost('saveReturnFromForm', d);
