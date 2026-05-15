@@ -6181,19 +6181,19 @@ YARZ.webControl = {
     if(sContainer) sContainer.innerHTML = sectionsHtml;
 
     // --- Product Page ---
-    const qv = $('wc-quick-view'); if(qv) qv.checked = (s['Quick View'] === 'true');
-    const sb = $('wc-stock-bar'); if(sb) sb.checked = (s['Stock Bar'] === 'true');
-    const rp = $('wc-related-prod'); if(rp) rp.checked = (s['Related Prod'] === 'true');
-    const ls = $('wc-live-search'); if(ls) ls.checked = (s['Live Search'] === 'true');
+    const qv = $('wc-quick-view'); if(qv) qv.checked = (String(s['Quick View']) === 'true');
+    const sb = $('wc-stock-bar'); if(sb) sb.checked = (String(s['Stock Bar']) === 'true');
+    const rp = $('wc-related-prod'); if(rp) rp.checked = (String(s['Related Prod']) === 'true');
+    const ls = $('wc-live-search'); if(ls) ls.checked = (String(s['Live Search']) === 'true');
     const he = $('wc-hover-effect'); if(he) he.value = s['Hover Effect'] || 'zoom';
     const ac = $('wc-add-cart-text'); if(ac) ac.value = s['Add Cart Text'] || '';
     const mq = $('wc-max-qty'); if(mq) mq.value = s['Max Qty'] || '';
     const ed = $('wc-exp-delivery'); if(ed) ed.value = s['Exp Delivery'] || '';
 
     // --- Cart & Checkout ---
-    const cod = $('wc-enable-cod'); if(cod) cod.checked = (s['Enable COD'] !== 'false'); // Defaults to true
-    const cd = $('wc-cart-drawer'); if(cd) cd.checked = (s['Cart Drawer'] === 'true');
-    const on = $('wc-order-notes'); if(on) on.checked = (s['Order Notes'] === 'true');
+    const cod = $('wc-enable-cod'); if(cod) cod.checked = (String(s['Enable COD']).toLowerCase() !== 'false'); // Defaults to true
+    const cd = $('wc-cart-drawer'); if(cd) cd.checked = (String(s['Cart Drawer']) === 'true');
+    const on = $('wc-order-notes'); if(on) on.checked = (String(s['Order Notes']) === 'true');
     const cm = $('wc-checkout-mode'); if(cm) cm.value = s['Checkout Mode'] || 'website';
     const cf = $('wc-custom-field'); if(cf) cf.value = s['Custom Field'] || '';
     const z1 = $('wc-zone-1-name'); if(z1) z1.value = s['Zone 1 Name'] || '';
@@ -6205,9 +6205,9 @@ YARZ.webControl = {
     this.renderDeliveryRows();
 
     // --- Marketing ---
-    const ep = $('wc-exit-popup'); if(ep) ep.checked = (s['Exit Popup'] === 'true');
-    const ly = $('wc-loyalty'); if(ly) ly.checked = (s['Loyalty System'] === 'true');
-    const tb = $('wc-trust-badges'); if(tb) tb.checked = (s['Trust Badges'] === 'true');
+    const ep = $('wc-exit-popup'); if(ep) ep.checked = (String(s['Exit Popup']) === 'true');
+    const ly = $('wc-loyalty'); if(ly) ly.checked = (String(s['Loyalty System']) === 'true');
+    const tb = $('wc-trust-badges'); if(tb) tb.checked = (String(s['Trust Badges']) === 'true');
     const am = $('wc-abandon-msg'); if(am) am.value = s['Abandon Msg'] || '';
 
     // --- SEO Tracking Fields ---
