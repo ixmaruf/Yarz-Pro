@@ -2507,6 +2507,7 @@ body.dark select.select option{
             <button class="subtab wo-stage" data-stage="picked" onclick="YARZ.ord.setStage('picked')"><i class="ri-hand-coin-line"></i> পিকআপ করেছি<span class="sub-count" id="cnt-picked">0</span></button>
             <button class="subtab wo-stage" data-stage="shipped" onclick="YARZ.ord.setStage('shipped')"><i class="ri-truck-line"></i> ডেলিভারিতে<span class="sub-count" id="cnt-shipped">0</span></button>
             <button class="subtab wo-stage" data-stage="delivered" onclick="YARZ.ord.setStage('delivered')"><i class="ri-checkbox-circle-line"></i> কমপ্লিট<span class="sub-count" id="cnt-delivered">0</span></button>
+            <button class="btn btn-amber btn-sm" onclick="YARZ.ord.archiveCompleted()" style="margin-left:auto; border-radius:8px;"><i class="ri-archive-line"></i> ক্লিন কমপ্লিট অর্ডার</button>
           </div>
 
           <div class="card" style="padding:16px">
@@ -2989,11 +2990,22 @@ body.dark select.select option{
               <div class="field"><label>Global Meta Title</label><input type="text" id="wc-meta-title" class="input" placeholder="Best Online Store in BD"></div>
               <div class="field"><label>Global Meta Description</label><input type="text" id="wc-meta-desc" class="input" placeholder="Shop the latest trends..."></div>
               <div class="field"><label>Facebook Pixel ID</label><input type="text" id="wc-fb-pixel" class="input" placeholder="123456789"></div>
+              <div class="field"><label>FB CAPI Access Token <span style="font-size:10px;opacity:0.6">(Server-Side)</span></label><input type="text" id="wc-fb-capi-token" class="input" placeholder="EAAxxxxxxx..."></div>
               <div class="field"><label>Google Analytics 4 ID</label><input type="text" id="wc-ga4" class="input" placeholder="G-XXXXXX"></div>
               <div class="field"><label>Instagram Pixel ID</label><input type="text" id="wc-ig-pixel" class="input" placeholder="Meta Conversion ID / Pixel"></div>
               <div class="field"><label>TikTok Pixel ID</label><input type="text" id="wc-tt-pixel" class="input" placeholder="Tiktok Event ID"></div>
               <div class="field"><label>Pinterest Tag ID</label><input type="text" id="wc-pin-pixel" class="input" placeholder="e.g. 26123456789"></div>
               <div class="field"><label>Snapchat Pixel ID</label><input type="text" id="wc-snap-pixel" class="input" placeholder="e.g. xxxxxxxx-xxxx"></div>
+            </div>
+            <div style="margin:16px 0 8px;padding:12px;border-radius:10px;background:rgba(0,136,204,0.08);border:1px solid rgba(0,136,204,0.2)">
+              <h4 style="margin:0 0 10px;font-size:13px;color:#0088cc"><i class="fab fa-telegram" style="margin-right:6px"></i>Telegram Order Notification</h4>
+              <div class="grid grid-2" style="gap:12px">
+                <div class="field"><label>Telegram Bot Token</label><input type="text" id="wc-tg-token" class="input" placeholder="7123456789:AAF..."></div>
+                <div class="field"><label>Telegram Chat ID</label><input type="text" id="wc-tg-chat" class="input" placeholder="123456789"></div>
+              </div>
+              <div style="font-size:11px;opacity:0.6;margin-top:6px"><i class="fas fa-info-circle"></i> অর্ডার আসলে Telegram Bot এ নোটিফিকেশন পাবেন। @BotFather দিয়ে Bot তৈরি করুন।</div>
+            </div>
+            <div class="grid grid-2" style="gap:16px;margin-top:16px">
               <div class="field" style="grid-column:1/-1">
                 <label>Social Sharing Image URL (Open Graph)</label>
                 <input type="text" id="wc-og-img" class="input" placeholder="e.g. imgur.com/share-image.jpg" oninput="YARZ.webControl._previewImg(this, 'wc-og-preview')">
@@ -3024,7 +3036,7 @@ body.dark select.select option{
           <div class="section-title"><h2><i class="ri-plug-line" style="color:var(--accent-2)"></i> কানেকশন সেটআপ</h2></div>
           <div class="field">
             <label>Google Apps Script Web App URL <span class="req">*</span></label>
-            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbwh8QTyQmsd5yE4Ejv5eRDQRgs3fMOC3NZJ6R5y1sYJ-DeqIs6YQQJR-p_R8Qccvy_S/exec" data-default-url="https://script.google.com/macros/s/AKfycbwh8QTyQmsd5yE4Ejv5eRDQRgs3fMOC3NZJ6R5y1sYJ-DeqIs6YQQJR-p_R8Qccvy_S/exec">
+            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbwacS-JJdnzGGzXIor_79GmZbRW0_Xy8jSXKmS-6NZrKU6PeqcfNXtUcZWsp7ZoijT5/exec" data-default-url="https://script.google.com/macros/s/AKfycbwacS-JJdnzGGzXIor_79GmZbRW0_Xy8jSXKmS-6NZrKU6PeqcfNXtUcZWsp7ZoijT5/exec">
             <div style="font-size:11px;opacity:0.6;margin-top:4px">✓ Default URL pre-filled — যদি deployment পরিবর্তন করেন তবে এখানে নতুন URL দিন</div>
           </div>
           <div class="field">
@@ -3268,24 +3280,20 @@ body.dark select.select option{
 
 // ============ CONFIG ============
 // Credentials stored as SHA-256 hashes (NOT plaintext) — harder to read even if source leaks.
-// Original: user='maruf_ix', pass='Hassan__00'
-// SHA-256("maruf_ix") = 34b9c7e0b9c5a6e16cd0a3c62d44bb61a0c7e1c7bc4bcdcff8ed14f55dd8e0a3 (placeholder; computed at runtime)
-// We'll compute live during login and compare to these pre-computed targets:
+// Credentials stored as SHA-256 hashes — never stored as plaintext in source code.
+// To change password: update ADMIN_SECRET in Apps Script AND the hash below.
 const AUTH_HASHES = {
-  // SHA-256 of "maruf_ix"
-  user: '6d4c9c93c4a42f8e5f78a4b7a3e1e6e4e8bff8fbb4e6e2ad6f1c5c8e5f4a8d2c', // will be replaced below
-  // SHA-256 of "Hassan__00"
-  pass: 'a8c9f7e5b3d4c2a1f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6'
+  // SHA-256 of admin username
+  user: '418f961b144d99b6bb999123a1b575e15c9f9102b444954943f77c9dbdb54a75', 
+  // SHA-256 of admin password (must match ADMIN_SECRET in Apps Script backend)
+  pass: '495a8d6b8674581c1a2278b6f847af1b40d0dd6bd61c7e47ed54db6b0c9c8527'
 };
-// Pre-compute real hashes on first load and store
-const CREDS_PLAIN = { user: 'maruf_ix', pass: 'Hassan__00' };
-// Keep fallback direct-compare for environments without SubtleCrypto
 const DEFAULT_SHEET_ID = '1wQz5OQZAtISTD1FdSEs_j9-p0e-BHwYjmjN7PR9hA-Q';
 const DEFAULT_API_KEY  = 'AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k';
 // 🔑 v3.9: Settings version bumped — auto-resets stale localStorage values (forces new URL)
 const SETTINGS_VERSION = 'v4.0-2026-05-14';
 // ★ হার্ডকোডেড Apps Script URL — এর ফলে Settings-এ URL না দিলেও Write operations কাজ করবে
-const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbwh8QTyQmsd5yE4Ejv5eRDQRgs3fMOC3NZJ6R5y1sYJ-DeqIs6YQQJR-p_R8Qccvy_S/exec';
+const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbwacS-JJdnzGGzXIor_79GmZbRW0_Xy8jSXKmS-6NZrKU6PeqcfNXtUcZWsp7ZoijT5/exec';
 const TZ = 'Asia/Dhaka';
 
 // ============ CRYPTO UTIL ============
@@ -3657,16 +3665,16 @@ function parseSheetDate(v){
 
 // ============ SHEETS API ============
 async function sheetRead(range){
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.sheetId}/values/${encodeURIComponent(range)}?key=${state.apiKey}&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`;
-  const res = await fetch(url);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.sheetId}/values/${encodeURIComponent(range)}?key=${state.apiKey}&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING&_t=${Date.now()}`;
+  const res = await fetch(url, { cache: 'no-store' });
   if(!res.ok) throw new Error('Sheet API error: '+res.status);
   const json = await res.json();
   return json.values || [];
 }
 
 async function sheetReadFormatted(range){
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.sheetId}/values/${encodeURIComponent(range)}?key=${state.apiKey}`;
-  const res = await fetch(url);
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.sheetId}/values/${encodeURIComponent(range)}?key=${state.apiKey}&_t=${Date.now()}`;
+  const res = await fetch(url, { cache: 'no-store' });
   if(!res.ok) throw new Error('Sheet API error: '+res.status);
   const json = await res.json();
   return json.values || [];
@@ -3685,7 +3693,7 @@ async function appsPost(action, payload){
   
   // Ensure the action string matches backend routing (lowercase)
   const normalizedAction = (action || '').toString().trim().toLowerCase();
-  const body = Object.assign({ action: normalizedAction, key: state.apiKey }, payload||{});
+  const body = Object.assign({ action: normalizedAction, key: state.apiKey, adminKey: window._adminPass || '' }, payload||{});
   
   try {
     const res = await fetch(targetUrl, {
@@ -3835,11 +3843,39 @@ async function loadWebsiteOrders(){
 async function loadTransactions(){
   try {
     const rows = await sheetReadFormatted('TRANSACTIONS!A2:H5000');
-    state.data.transactions = rows.filter(r=>r[0]).map(r=>({
+    let txs = rows.filter(r=>r[0]).map(r=>({
       date: parseSheetDate(r[0]), product: safeStr(r[1]),
       type: safeStr(r[2]), size: safeStr(r[3]), qty: int(r[4]),
       revenue: num(r[5]), cost: num(r[6]), profit: num(r[7])
     }));
+    
+    // Process Returns: Erase the matched Sale and neutralize the Return's negative numbers
+    let sales = txs.filter(t => t.type === 'Sale');
+    let returns = txs.filter(t => t.type === 'Return');
+    
+    returns.forEach(ret => {
+      let qToCancel = ret.qty;
+      for (let i = sales.length - 1; i >= 0; i--) {
+        let s = sales[i];
+        if (qToCancel <= 0) break;
+        if (s.product === ret.product && s.size === ret.size && s.qty > 0 && s.date <= ret.date) {
+          let cancelQty = Math.min(qToCancel, s.qty);
+          let ratio = cancelQty / s.qty;
+          s.qty -= cancelQty;
+          s.revenue -= (s.revenue * ratio);
+          s.cost -= (s.cost * ratio);
+          s.profit -= (s.profit * ratio);
+          qToCancel -= cancelQty;
+        }
+      }
+      // Zero out the return so it doesn't show as negative on the Dashboard
+      ret.revenue = 0;
+      ret.cost = 0;
+      ret.profit = 0;
+    });
+    
+    // Remove fully cancelled sales
+    state.data.transactions = txs.filter(t => t.type !== 'Sale' || t.qty > 0);
   } catch(e){ state.data.transactions = []; }
 }
 
@@ -4202,21 +4238,16 @@ function setupLogin(){
     try {
       const uH = await sha256(u);
       const pH = await sha256(p);
-      const uExpect = await sha256(CREDS_PLAIN.user);
-      const pExpect = await sha256(CREDS_PLAIN.pass);
-      if(uH && pH && uH === uExpect && pH === pExpect){
+      if(uH === AUTH_HASHES.user && pH === AUTH_HASHES.pass){
         ok = true;
       }
     } catch(e){}
-    // Fallback (direct compare) if hash failed
-    if(!ok && u === CREDS_PLAIN.user && p === CREDS_PLAIN.pass){
-      ok = true;
-    }
 
     btn.disabled = false;
     btn.innerHTML = '<i class="ri-login-box-line"></i> লগইন করুন';
 
     if(ok){
+      window._adminPass = p;
       LOGIN_LOCK.attempts = 0;
       sessionStorage.setItem('yarz_auth','1');
       sessionStorage.setItem('yarz_auth_time', Date.now().toString());
@@ -5613,6 +5644,19 @@ Team YARZ`;
     finally { hideLoader(); }
   },
 
+  async archiveCompleted() {
+    if(!confirm('আপনি কি নিশ্চিত? Delivered এবং Cancelled হওয়া সব পুরোনো অর্ডার আর্কাইভ ফোল্ডারে মুভ হয়ে যাবে।')) return;
+    showLoader();
+    try {
+      const res = await appsPost('archiveCompletedOrders', {});
+      if(res && res.success===false) throw new Error(res.error||res.msg||'Failed');
+      toast(res.msg || 'অর্ডার আর্কাইভ হয়েছে', 'success');
+      // Hard refresh to sync the sheet
+      setTimeout(() => window.location.reload(), 1500);
+    } catch(e) { toast(e.message, 'error'); }
+    finally { hideLoader(); }
+  },
+
   renderManual(){
     const q = ($('mo-search')?.value||'').toLowerCase().trim();
     // Status sub-filter
@@ -6118,6 +6162,16 @@ YARZ.webControl = {
     const cbStatus = $('wc-store-status');
     if(cbStatus) cbStatus.checked = (storeStatus === 'Maintenance');
 
+    const b2bMode = s['B2B Mode'];
+    const cbB2B = $('wc-b2b-mode');
+    if(cbB2B) cbB2B.checked = (b2bMode === 'true' || b2bMode === true);
+
+    const currency = $('wc-currency');
+    if(currency) currency.value = s['Currency'] || '৳';
+
+    const lang = $('wc-language');
+    if(lang) lang.value = s['Language'] || 'bn';
+
     const active = s['Announcement Active'];
     const checkbox = $('wc-announcement-active');
     if(checkbox) checkbox.checked = (active === 'true' || active === true);
@@ -6142,6 +6196,8 @@ YARZ.webControl = {
     // --- Branding ---
     const logoEl = $('wc-logo'); if(logoEl) { logoEl.value = s['Website Logo URL']||''; this._previewImg(logoEl, 'wc-logo-preview'); }
     const colorEl = $('wc-theme-color'); if(colorEl) { colorEl.value = s['Theme Color']||'#1A202C'; $('wc-color-picker').value = colorEl.value; }
+    const font = $('wc-font'); if(font) font.value = s['Font'] || 'inter';
+    const livechat = $('wc-live-chat'); if(livechat) livechat.value = s['Live Chat'] || '';
     const footEl = $('wc-footer-text'); if(footEl) footEl.value = s['Footer Text']||'';
     const fbEl = $('wc-link-fb'); if(fbEl) fbEl.value = s['Link Facebook']||'';
     const igEl = $('wc-link-ig'); if(igEl) igEl.value = s['Link Instagram']||'';
@@ -6149,6 +6205,10 @@ YARZ.webControl = {
     const msEl = $('wc-link-ms'); if(msEl) msEl.value = s['Link Messenger']||'';
     const ttEl = $('wc-link-tt'); if(ttEl) ttEl.value = s['Link TikTok']||'';
     const ytEl = $('wc-link-yt'); if(ytEl) ytEl.value = s['Link YouTube']||'';
+
+    // --- Banners & Flash ---
+    const fdate = $('wc-flash-date'); if(fdate) fdate.value = s['Flash Date'] || '';
+    const ftitle = $('wc-flash-title'); if(ftitle) ftitle.value = s['Flash Title'] || '';
 
     // --- Hero Banners --- (delegated to renderBanners() so it runs even
     // before settings load, and can be re-triggered by the "Reload Banners" button)
@@ -6214,6 +6274,7 @@ YARZ.webControl = {
     const mt = $('wc-meta-title'); if(mt) mt.value = s['Meta Title'] || '';
     const mde = $('wc-meta-desc'); if(mde) mde.value = s['Meta Desc'] || '';
     const fbpx = $('wc-fb-pixel'); if(fbpx) fbpx.value = s['FB Pixel'] || '';
+    const fbcapi = $('wc-fb-capi-token'); if(fbcapi) fbcapi.value = s['FB CAPI Token'] || '';
     const ga4v = $('wc-ga4'); if(ga4v) ga4v.value = s['GA4'] || '';
     const igpx = $('wc-ig-pixel'); if(igpx) igpx.value = s['IG Pixel'] || '';
     const ttpx = $('wc-tt-pixel'); if(ttpx) ttpx.value = s['TT Pixel'] || '';
@@ -6222,6 +6283,8 @@ YARZ.webControl = {
     const ogimg = $('wc-og-img'); if(ogimg) { ogimg.value = s['OG Image'] || ''; this._previewImg(ogimg, 'wc-og-preview'); }
     const gsct = $('wc-gsc-tag'); if(gsct) gsct.value = s['GSC Tag'] || '';
     const ccss = $('wc-custom-css'); if(ccss) ccss.value = s['Custom CSS'] || '';
+    const tgt = $('wc-tg-token'); if(tgt) tgt.value = s['TG Bot Token'] || '';
+    const tgc = $('wc-tg-chat'); if(tgc) tgc.value = s['TG Chat ID'] || '';
   },
 
   // ✅ v3.7 FIX: Hero Slider Banners now have a dedicated render function so
@@ -6483,6 +6546,7 @@ YARZ.webControl = {
       'Meta Title': $('wc-meta-title')?.value.trim() || '',
       'Meta Desc': $('wc-meta-desc')?.value.trim() || '',
       'FB Pixel': $('wc-fb-pixel')?.value.trim() || '',
+      'FB CAPI Token': $('wc-fb-capi-token')?.value.trim() || '',
       'GA4': $('wc-ga4')?.value.trim() || '',
       'IG Pixel': $('wc-ig-pixel')?.value.trim() || '',
       'TT Pixel': $('wc-tt-pixel')?.value.trim() || '',
@@ -6490,7 +6554,9 @@ YARZ.webControl = {
       'Snapchat Pixel': $('wc-snap-pixel')?.value.trim() || '',
       'OG Image': $('wc-og-img')?.value.trim() || '',
       'GSC Tag': $('wc-gsc-tag')?.value.trim() || '',
-      'Custom CSS': $('wc-custom-css')?.value.trim() || ''
+      'Custom CSS': $('wc-custom-css')?.value.trim() || '',
+      'TG Bot Token': $('wc-tg-token')?.value.trim() || '',
+      'TG Chat ID': $('wc-tg-chat')?.value.trim() || ''
     };
 
     // Hero Banners loop
@@ -6542,6 +6608,9 @@ YARZ.webControl = {
       state.data.settings = state.data.settings || {};
       Object.assign(state.data.settings, updates);
       state.data.deliveryCharges = deliveryLocations;
+      
+      // v3.9: Re-load from sheet to confirm persistence (cache-busted)
+      try { await loadSettings(); await loadDeliveryCharges(); this.render(); } catch(re) {}
       
       toast('ওয়েবসাইট চেঞ্জ সেভ হয়েছে! Delivery charges will sync to site within ~10 seconds.','success');
       // v3.6: Show success in delivery sync indicator, then auto-hide after 10s
@@ -7086,7 +7155,7 @@ const modalBuilders = {
       </div>
       <div class="field"><label>Address <span class="req">*</span></label><textarea id="o-addr" class="textarea" style="min-height:60px"></textarea></div>
       <div class="field"><label>Product <span class="req">*</span></label>
-        <select id="o-product" class="select" onchange="YARZ._calcOrder(); YARZ._updateStkBadge('o'); YARZ._showProductPreview();">
+        <select id="o-product" class="select" onchange="YARZ._calcOrder(); YARZ._updateStkBadge('o'); YARZ._showProductPreview('o');">
           <option value="">— সিলেক্ট করুন —</option>
           ${active.map(p=>`<option value="${esc(p.name)}" data-sale="${p.sale}" data-din="${p.deliveryDhaka}" data-dout="${p.deliveryOutside}">${esc(p.name)} (৳${p.sale})</option>`).join('')}
         </select>
@@ -7180,14 +7249,34 @@ const modalBuilders = {
     return `
       <div class="modal-header"><h3><i class="fas fa-rotate-left"></i> Return Entry</h3><button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button></div>
       <div class="field"><label>Product <span class="req">*</span></label>
-        <select id="rt-p" class="select">${state.data.inventory.map(p=>`<option>${esc(p.name)}</option>`).join('')}</select>
+        <select id="rt-product" class="select" onchange="YARZ._showProductPreview('rt'); YARZ._updateStkBadge('rt');">
+          <option value="">— সিলেক্ট করুন —</option>
+          ${state.data.inventory.map(p=>`<option value="${esc(p.name)}">${esc(p.name)} (৳${p.sale})</option>`).join('')}
+        </select>
+        <!-- Return Product Preview Card -->
+        <div id="rt-product-preview" style="display:none;margin-top:10px;padding:12px;border-radius:14px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.22)">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div id="rt-prod-img" style="width:64px;height:64px;border-radius:12px;background:rgba(0,0,0,0.05) center/cover no-repeat;flex-shrink:0;border:1px solid rgba(245,158,11,0.2);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--ink-4)"><i class="ri-shopping-bag-3-line"></i></div>
+            <div style="flex:1;min-width:0">
+              <div id="rt-prod-name" style="font-weight:700;font-size:13.5px;color:var(--ink);margin-bottom:3px"></div>
+              <div id="rt-prod-cat" style="font-size:11px;color:var(--ink-3);margin-bottom:5px"></div>
+              <div id="rt-prod-price" style="font-size:15px;font-weight:800;color:var(--warn);margin-bottom:5px"></div>
+              <div id="rt-prod-stock" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="row">
-        <div class="field"><label>Size</label><select id="rt-s" class="select"><option>M</option><option>L</option><option>XL</option><option>XXL</option></select></div>
+        <div class="field"><label>Size <span id="rt-stk-badge" class="chip chip-gray" style="font-size:10px;padding:2px 4px;margin-left:4px;display:none"></span></label>
+          <select id="rt-size" class="select" onchange="YARZ._updateStkBadge('rt')"><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+        </div>
         <div class="field"><label>Quantity</label><input id="rt-q" type="number" class="input" value="1" min="1"></div>
       </div>
       <div class="field"><label>Delivery Loss (৳) <span style="font-size:10px;opacity:0.6">(Optional)</span></label><input id="rt-dlv-loss" type="number" class="input" placeholder="e.g. 120" min="0"></div>
       <div class="field"><label>Reason</label><input id="rt-r" class="input"></div>
+      <div style="font-size:12px;opacity:0.7;padding:10px;background:rgba(245,158,11,0.1);border-radius:10px;border:1px solid rgba(245,158,11,0.2)">
+        <i class="fas fa-info-circle"></i> রিটার্ন এন্ট্রি দিলে স্টকে প্রোডাক্ট ফেরত আসবে এবং বিক্রয়ের হিসাব মুছে যাবে। ডেলিভারি লস থাকলে সেটা আলাদা Expense হিসেবে থাকবে।
+      </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
         <button id="save-ret" class="btn btn-amber" onclick="YARZ._saveRet()"><i class="fas fa-rotate-left"></i> Return</button>
@@ -7324,16 +7413,18 @@ YARZ._saveSale = async function(){
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> বিক্রয় কনফার্ম'; }
 };
 
-YARZ._showProductPreview = function(){
-  const sel = $('o-product');
-  const preview = $('o-product-preview');
+YARZ._showProductPreview = function(prefix){
+  // Generic: works for both 'o' (order) and 'rt' (return) prefixes
+  const pfx = prefix || 'o';
+  const sel = $(pfx+'-product');
+  const preview = $(pfx+'-product-preview');
   if(!preview || !sel) return;
   const pName = sel.value;
   if(!pName){ preview.style.display='none'; return; }
   const p = state.data.inventory.find(x=>x.name===pName);
   if(!p){ preview.style.display='none'; return; }
   preview.style.display='block';
-  const imgEl = $('o-prod-img');
+  const imgEl = $(pfx+'-prod-img');
   const imgSrc = p.img1 ? getImgSrc(p.img1) : '';
   if(imgSrc){
     imgEl.style.backgroundImage = `url('${imgSrc}')`;
@@ -7342,11 +7433,11 @@ YARZ._showProductPreview = function(){
     imgEl.style.backgroundImage = '';
     imgEl.innerHTML = '<i class="ri-shopping-bag-3-line"></i>';
   }
-  $('o-prod-name').textContent = p.name;
-  $('o-prod-cat').textContent = (p.category||'') + (p.fabric?' · '+p.fabric:'') + (p.badge?' · '+p.badge:'');
-  $('o-prod-price').textContent = fmtBDT(p.sale) + (p.regular>p.sale ? '  (MRP: '+fmtBDT(p.regular)+')' : '');
+  $(pfx+'-prod-name').textContent = p.name;
+  $(pfx+'-prod-cat').textContent = (p.category||'') + (p.fabric?' · '+p.fabric:'') + (p.badge?' · '+p.badge:'');
+  $(pfx+'-prod-price').textContent = fmtBDT(p.sale) + (p.regular>p.sale ? '  (MRP: '+fmtBDT(p.regular)+')' : '');
   const sizes = [['M',p.stkM-p.soldM],['L',p.stkL-p.soldL],['XL',p.stkXL-p.soldXL],['XXL',p.stkXXL-p.soldXXL]];
-  $('o-prod-stock').innerHTML = sizes.map(([sz,qty])=>`<span class="chip ${qty>0?'chip-green':'chip-red'}" style="font-size:10px">${sz}: ${toBn(Math.max(0,qty))}</span>`).join('');
+  $(pfx+'-prod-stock').innerHTML = sizes.map(([sz,qty])=>`<span class="chip ${qty>0?'chip-green':'chip-red'}" style="font-size:10px">${sz}: ${toBn(Math.max(0,qty))}</span>`).join('');
 };
 
 YARZ._calcOrder = function(){
@@ -7434,7 +7525,7 @@ YARZ._saveExp = async function(){
 };
 
 YARZ._saveRet = async function(){
-  const d = { prod:$('rt-p').value, sz:$('rt-s').value, qty:parseInt($('rt-q').value)||1, nt:$('rt-r').value, delLoss:parseFloat($('rt-dlv-loss')?.value)||0 };
+  const d = { prod:$('rt-product').value, sz:$('rt-size').value, qty:parseInt($('rt-q').value)||1, nt:$('rt-r').value, delLoss:parseFloat($('rt-dlv-loss')?.value)||0 };
   const btn = $('save-ret'); btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
   try {
     const res = await appsPost('saveReturnFromForm', d);
