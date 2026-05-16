@@ -3665,7 +3665,7 @@ function parseSheetDate(v){
 
 // ============ SHEETS API ============
 async function sheetRead(range){
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.sheetId}/values/${encodeURIComponent(range)}?key=${state.apiKey}&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING&_t=${Date.now()}`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.sheetId}/values/${encodeURIComponent(range)}?key=${state.apiKey}&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`;
   const res = await fetch(url, { cache: 'no-store' });
   if(!res.ok) {
     let errTxt = '';
@@ -3677,7 +3677,7 @@ async function sheetRead(range){
 }
 
 async function sheetReadFormatted(range){
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.sheetId}/values/${encodeURIComponent(range)}?key=${state.apiKey}&_t=${Date.now()}`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.sheetId}/values/${encodeURIComponent(range)}?key=${state.apiKey}`;
   const res = await fetch(url, { cache: 'no-store' });
   if(!res.ok) {
     let errTxt = '';
