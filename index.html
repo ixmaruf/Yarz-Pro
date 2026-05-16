@@ -4220,6 +4220,8 @@ function setupLogin(){
   const savedTime = parseInt(sessionStorage.getItem('yarz_auth_time')||'0', 10);
   const SESSION_MAX = 8 * 60 * 60 * 1000; // 8 hours
   if(saved === '1' && savedTime && (Date.now() - savedTime) < SESSION_MAX){
+    // ✅ FIX: Restore adminPass from sessionStorage so write operations work after refresh
+    try { window._adminPass = atob(sessionStorage.getItem('yarz_ak')||''); } catch(e){ window._adminPass = ''; }
     showApp();
     return;
   } else if(saved === '1'){
@@ -4265,6 +4267,7 @@ function setupLogin(){
       LOGIN_LOCK.attempts = 0;
       sessionStorage.setItem('yarz_auth','1');
       sessionStorage.setItem('yarz_auth_time', Date.now().toString());
+      try { sessionStorage.setItem('yarz_ak', btoa(p)); } catch(e){} // Store for session restore
       showApp();
     } else {
       LOGIN_LOCK.attempts++;
