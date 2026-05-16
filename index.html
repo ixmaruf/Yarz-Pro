@@ -3667,7 +3667,11 @@ function parseSheetDate(v){
 async function sheetRead(range){
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.sheetId}/values/${encodeURIComponent(range)}?key=${state.apiKey}&valueRenderOption=UNFORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING&_t=${Date.now()}`;
   const res = await fetch(url, { cache: 'no-store' });
-  if(!res.ok) throw new Error('Sheet API error: '+res.status);
+  if(!res.ok) {
+    let errTxt = '';
+    try { const j = await res.json(); errTxt = j.error && j.error.message ? j.error.message : ''; } catch(e){}
+    throw new Error(`Sheet API error: ${res.status}${errTxt ? ' - ' + errTxt : ''}`);
+  }
   const json = await res.json();
   return json.values || [];
 }
@@ -3675,7 +3679,11 @@ async function sheetRead(range){
 async function sheetReadFormatted(range){
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${state.sheetId}/values/${encodeURIComponent(range)}?key=${state.apiKey}&_t=${Date.now()}`;
   const res = await fetch(url, { cache: 'no-store' });
-  if(!res.ok) throw new Error('Sheet API error: '+res.status);
+  if(!res.ok) {
+    let errTxt = '';
+    try { const j = await res.json(); errTxt = j.error && j.error.message ? j.error.message : ''; } catch(e){}
+    throw new Error(`Sheet API error: ${res.status}${errTxt ? ' - ' + errTxt : ''}`);
+  }
   const json = await res.json();
   return json.values || [];
 }
@@ -3729,32 +3737,38 @@ async function appsPost(action, payload){
 
 // ============ DATA LOADERS ============
 async function loadInventory(){
-  // INVENTORY is large. Read A2:AS1000
-  const rows = await sheetRead('INVENTORY!A2:AS1000');
-  const items = [];
-  for(const r of rows){
-    if(!r[0]) continue;
-    items.push({
-      name: safeStr(r[0]),
-      img1: safeStr(r[1]), img2: safeStr(r[2]), img3: safeStr(r[3]),
-      video: safeStr(r[4]),
-      desc: safeStr(r[5]),
-      category: safeStr(r[6]), fabric: safeStr(r[7]), badge: safeStr(r[8]),
-      sizeChart: safeStr(r[9]), deliveryDays: safeStr(r[10]),
-      cost: num(r[11]), regular: num(r[12]), sale: num(r[13]),
-      discPct: num(r[14]), discType: safeStr(r[15])||'Normal',
-      deliveryDhaka: num(r[16])||60, deliveryOutside: num(r[17])||120,
-      stkM: int(r[18]), stkL: int(r[19]), stkXL: int(r[20]), stkXXL: int(r[21]),
-      soldM: int(r[22]), soldL: int(r[23]), soldXL: int(r[24]), soldXXL: int(r[25]),
-      totalSold: num(r[26]), returns: num(r[27]), remaining: num(r[28]), totalStock: num(r[29]),
-      invest: num(r[30]), revenue: num(r[31]), toRecover: num(r[32]),
-      gross: num(r[33]), fbAd: num(r[34]), net: num(r[35]), discImpact: num(r[36]),
-      updated: r[37], status: safeStr(r[38])||'Draft',
-      img4: safeStr(r[39]), img5: safeStr(r[40]), img6: safeStr(r[41]),
-      couponActive: safeStr(r[42])||'No', couponCode: safeStr(r[43]), couponDisc: num(r[44])
-    });
+  try {
+    // INVENTORY is large. Read A2:AS1000
+    const rows = await sheetRead('INVENTORY!A2:AS1000');
+    const items = [];
+    for(const r of rows){
+      if(!r[0]) continue;
+      items.push({
+        name: safeStr(r[0]),
+        img1: safeStr(r[1]), img2: safeStr(r[2]), img3: safeStr(r[3]),
+        video: safeStr(r[4]),
+        desc: safeStr(r[5]),
+        category: safeStr(r[6]), fabric: safeStr(r[7]), badge: safeStr(r[8]),
+        sizeChart: safeStr(r[9]), deliveryDays: safeStr(r[10]),
+        cost: num(r[11]), regular: num(r[12]), sale: num(r[13]),
+        discPct: num(r[14]), discType: safeStr(r[15])||'Normal',
+        deliveryDhaka: num(r[16])||60, deliveryOutside: num(r[17])||120,
+        stkM: int(r[18]), stkL: int(r[19]), stkXL: int(r[20]), stkXXL: int(r[21]),
+        soldM: int(r[22]), soldL: int(r[23]), soldXL: int(r[24]), soldXXL: int(r[25]),
+        totalSold: num(r[26]), returns: num(r[27]), remaining: num(r[28]), totalStock: num(r[29]),
+        invest: num(r[30]), revenue: num(r[31]), toRecover: num(r[32]),
+        gross: num(r[33]), fbAd: num(r[34]), net: num(r[35]), discImpact: num(r[36]),
+        updated: r[37], status: safeStr(r[38])||'Draft',
+        img4: safeStr(r[39]), img5: safeStr(r[40]), img6: safeStr(r[41]),
+        couponActive: safeStr(r[42])||'No', couponCode: safeStr(r[43]), couponDisc: num(r[44])
+      });
+    }
+    state.data.inventory = items;
+  } catch(e) {
+    console.error('loadInventory error:', e);
+    state.data.inventory = [];
+    throw e; // Rethrow to let loadAll catch it, but with better error details now
   }
-  state.data.inventory = items;
 }
 
 async function loadOrders(){
