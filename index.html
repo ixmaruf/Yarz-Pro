@@ -28,207 +28,146 @@
 /* ============ RESET & BASE ============ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow-x:hidden}
-
 :root{
-  --bg: #EEF2FF;
-  --bg-2: #E0E7FF;
-  --surface: rgba(255,255,255,0.45);
-  --surface-2: rgba(255,255,255,0.25);
-  --ink: #0B0F2A;
-  --ink-2: #1E293B;
-  --ink-3: #475569;
-  --ink-4: #94A3B8;
-  --line: rgba(79,70,229,0.18);
-  --line-2: rgba(79,70,229,0.1);
-  --accent: #4338CA;
+  --bg: #F3F2EF; /* Pinterest style soft background */
+  --bg-2: #E8E8E5;
+  --surface: #FFFFFF;
+  --surface-2: #F9FAFB;
+  --ink: #111111;
+  --ink-2: #4A4A4A;
+  --ink-3: #767676;
+  --ink-4: #A1A1A1;
+  --line: #EFEFEF;
+  --line-2: #E1E1E1;
+  --accent: #E60023; /* Pinterest Red */
   --accent-ink: #FFFFFF;
-  --brand: #4F46E5;
-  --success: #047857; /* Deep strong green */
-  --warn: #B45309;
-  --danger: #B91C1C;
-  --info: #1D4ED8;
-  --purple: #6D28D9;
-  --pink: #BE185D;
-  --teal: #0F766E;
-  --chip-bg: rgba(79,70,229,0.1);
-  --radius: 20px;
-  --radius-sm: 14px;
-  --shadow-sm: 0 4px 12px rgba(67,56,202,0.1);
-  --shadow: 0 8px 30px rgba(67,56,202,0.15), 0 0 0 1px rgba(255,255,255,0.8);
-  --shadow-lg: 0 16px 50px rgba(67,56,202,0.2), 0 0 0 1px rgba(255,255,255,1);
-  --glass: rgba(255,255,255,0.3); /* Water-like clear transparent */
-  --glass-border: rgba(255,255,255,0.65);
+  --brand: #E60023;
+  --success: #007A5A;
+  --warn: #D97706;
+  --danger: #E60023;
+  --info: #0060DF;
+  --purple: #7C3AED;
+  --pink: #DB2777;
+  --teal: #0D9488;
+  --chip-bg: #E9E9E9;
+  --radius: 16px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow: 0 4px 12px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 24px rgba(0,0,0,0.08);
+  --glass: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.4);
 }
 body.dark{
-  --bg: #040508;
-  --bg-2: #0B0E1B;
-  --surface: rgba(15,20,45,0.5);
-  --surface-2: rgba(20,25,55,0.4);
-  --ink: #F8FAFC;
-  --ink-2: #E2E8F0;
-  --ink-3: #94A3B8;
-  --ink-4: #64748B;
-  --line: rgba(99,102,241,0.25);
-  --line-2: rgba(99,102,241,0.15);
-  --accent: #818CF8;
-  --accent-ink: #040508;
-  --brand: #A5B4FC;
-  --success: #10B981; /* Brighter green */
-  --warn: #FBBF24;
-  --danger: #F87171;
-  --info: #60A5FA;
-  --purple: #C084FC;
-  --pink: #F472B6;
-  --teal: #2DD4BF;
-  --chip-bg: rgba(129,140,248,0.15);
-  --shadow-sm: 0 4px 12px rgba(0,0,0,0.6);
-  --shadow: 0 8px 30px rgba(0,0,0,0.8), 0 0 0 1px rgba(129,140,248,0.15);
-  --shadow-lg: 0 16px 50px rgba(0,0,0,0.9), 0 0 0 1px rgba(129,140,248,0.25);
-  --glass: rgba(11,14,30,0.4); /* Water-like clear transparent dark */
-  --glass-border: rgba(129,140,248,0.25);
+  --bg: #121212;
+  --bg-2: #1E1E1E;
+  --surface: #1E1E1E;
+  --surface-2: #282828;
+  --ink: #F3F2EF;
+  --ink-2: #E1E1E1;
+  --ink-3: #A1A1A1;
+  --ink-4: #767676;
+  --line: #333333;
+  --line-2: #2A2A2A;
+  --accent: #E60023;
+  --accent-ink: #FFFFFF;
+  --brand: #E60023;
+  --success: #10B981;
+  --warn: #F59E0B;
+  --danger: #EF4444;
+  --info: #3B82F6;
+  --purple: #8B5CF6;
+  --pink: #EC4899;
+  --teal: #14B8A6;
+  --chip-bg: #282828;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
+  --shadow: 0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg: 0 10px 24px rgba(0,0,0,0.6);
+  --glass: rgba(30, 30, 30, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.05);
 }
 
 body{
-  font-family:'Noto Sans Bengali','Hind Siliguri','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  font-family:'Noto Sans Bengali','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
   background:var(--bg);color:var(--ink);
   font-size:14px;line-height:1.6;
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
   overflow-x:hidden;
   letter-spacing:-0.005em;
-  font-feature-settings:'tnum' on, 'lnum' on;
 }
 
 /* ============================================================
    ✅ BANGLA NUMBER FIX — 'Noto Sans Bengali' has very clear ১/১/৪ etc.
-   .bn-num class + auto-applied for any toBn() output via JS where needed
 ============================================================ */
 .bn-num,
 .bn-digits{
-  font-family:'Noto Sans Bengali','Hind Siliguri',sans-serif !important;
+  font-family:'Noto Sans Bengali',sans-serif !important;
   font-feature-settings:'lnum' on, 'tnum' on;
   font-variant-numeric: lining-nums tabular-nums;
   letter-spacing:0.01em;
 }
 
 /* ============================================================
-   ✅ TRACKING ID DEDICATED STYLES — Highly visible, monospaced, copyable
+   ✅ TRACKING ID DEDICATED STYLES
 ============================================================ */
 .tracking-row{
   display:flex; align-items:center; gap:8px; flex-wrap:wrap;
   margin-top:8px; padding:8px 10px;
-  background:linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.04));
-  border:1.5px solid rgba(245,158,11,0.45);
-  border-radius:10px;
-}
-body.dark .tracking-row{
-  background:linear-gradient(135deg, rgba(251,191,36,0.14), rgba(251,191,36,0.05));
-  border-color:rgba(251,191,36,0.4);
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:var(--radius-sm);
 }
 .tracking-label{
   display:inline-flex; align-items:center; gap:4px;
   font-size:10.5px; font-weight:700; letter-spacing:0.04em;
   text-transform:uppercase;
-  color:#B45309;
+  color:var(--ink-2);
   white-space:nowrap;
 }
-body.dark .tracking-label{ color:#FCD34D; }
 .tracking-id{
   font-family:'JetBrains Mono','Roboto Mono','Courier New',monospace;
-  font-size:15px; font-weight:800;
-  color:#92400E;
-  background:#FEF3C7;
-  padding:3px 9px; border-radius:6px;
+  font-size:14px; font-weight:700;
+  color:var(--ink);
+  background:var(--bg);
+  padding:3px 9px; border-radius:4px;
   letter-spacing:0.5px;
   user-select:all; -webkit-user-select:all;
   cursor:pointer;
-  border:1px solid rgba(180,83,9,0.25);
+  border:1px solid var(--line);
   flex:1; min-width:0;
   overflow-wrap:anywhere;
   word-break:break-all;
   line-height:1.3;
 }
-body.dark .tracking-id{
-  background:rgba(251,191,36,0.15);
-  color:#FDE68A;
-  border-color:rgba(251,191,36,0.3);
-}
-.tracking-id:hover{ filter:brightness(0.98); }
+.tracking-id:hover{ background:var(--line-2); }
 .tracking-courier-tag{
   display:inline-flex; align-items:center; gap:3px;
   font-size:11px; font-weight:700;
-  color:#7C3AED;
-  background:rgba(124,58,237,0.10);
+  color:var(--ink);
+  background:var(--line);
   padding:2px 7px; border-radius:999px;
   white-space:nowrap;
 }
-body.dark .tracking-courier-tag{
-  color:#C4B5FD;
-  background:rgba(124,58,237,0.18);
-}
 .tracking-copy-btn{
-  background:transparent; border:none; color:#B45309;
-  cursor:pointer; padding:4px; border-radius:6px;
+  background:transparent; border:none; color:var(--ink-3);
+  cursor:pointer; padding:4px; border-radius:4px;
   display:inline-flex; align-items:center; justify-content:center;
   font-size:13px;
   transition:background 0.15s;
 }
-.tracking-copy-btn:hover{ background:rgba(180,83,9,0.12); }
-body.dark .tracking-copy-btn{ color:#FCD34D; }
-body.dark .tracking-copy-btn:hover{ background:rgba(251,191,36,0.15); }
+.tracking-copy-btn:hover{ background:var(--line); color:var(--ink); }
 
 /* Highlight matched search term inside tracking id */
 .tr-hi{
-  background:#FCD34D;
-  color:#7C2D12;
-  padding:0 2px; border-radius:3px;
-  font-weight:900;
+  background:var(--accent);
+  color:var(--accent-ink);
+  padding:0 2px; border-radius:2px;
+  font-weight:700;
 }
 
-/* Animated gradient mesh background */
-body::after{
-  content:'';
-  position:fixed;inset:0;z-index:0;pointer-events:none;
-  background:
-    radial-gradient(ellipse 80% 60% at 10% 10%, rgba(139,92,246,0.28) 0%, transparent 65%),
-    radial-gradient(ellipse 70% 50% at 90% 20%, rgba(59,130,246,0.25) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 50% 80%, rgba(16,185,129,0.2) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 80% 70%, rgba(236,72,153,0.22) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 35% at 20% 60%, rgba(245,158,11,0.18) 0%, transparent 55%);
-}
-body.dark::after{
-  background:
-    radial-gradient(ellipse 80% 60% at 10% 10%, rgba(139,92,246,0.4) 0%, transparent 65%),
-    radial-gradient(ellipse 70% 50% at 90% 20%, rgba(59,130,246,0.35) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 50% at 50% 80%, rgba(16,185,129,0.25) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 80% 70%, rgba(236,72,153,0.32) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 35% at 20% 60%, rgba(245,158,11,0.22) 0%, transparent 55%);
-}
-
-/* ============ GRAIN/NOISE TEXTURE (Pinterest aesthetic) ============ */
-body::before{
-  content:'';
-  position:fixed;inset:0;
-  z-index:0;pointer-events:none;
-  opacity:0.35;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  mix-blend-mode:multiply;
-}
-body.dark::before{
-  opacity:0.5;
-  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-  mix-blend-mode:screen;
-}
-
-/* Subtle soft decorative shapes (Pinterest look — not heavy) */
-.bg-blobs{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-.blob{position:absolute;border-radius:50%;filter:blur(120px);opacity:0.18}
-.blob.b1{width:480px;height:480px;background:#D4C9B5;top:-120px;left:-120px}
-.blob.b2{width:360px;height:360px;background:#C9D5C9;bottom:-100px;right:-80px}
-.blob.b3{width:300px;height:300px;background:#E8D9C5;top:40%;left:50%}
-body.dark .blob.b1{background:#2A2A24;opacity:0.35}
-body.dark .blob.b2{background:#1F2A23;opacity:0.35}
-body.dark .blob.b3{background:#28231E;opacity:0.3}
+/* ============ BG BLOBS REMOVED ============ */
+.bg-blobs{display:none}
 
 /* ============ CARD / SURFACE UTILITIES ============ */
 .card{
@@ -241,30 +180,6 @@ body.dark .blob.b3{background:#28231E;opacity:0.3}
   background:var(--surface);
   border:1px solid var(--line);
   border-radius:var(--radius);
-}
-/* ============ CARD / SURFACE UTILITIES ============ */
-.card{
-  background:var(--glass);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
-  border:1px solid var(--glass-border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-}
-.card-flat{
-  background:var(--glass);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-  border:1px solid var(--glass-border);
-  border-radius:var(--radius);
-}
-.glass,.glass-strong{
-  background:var(--glass);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-  border:1px solid var(--glass-border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
 }
 
 /* ============ APP STRUCTURE ============ */
@@ -273,19 +188,19 @@ body.dark .blob.b3{background:#28231E;opacity:0.3}
 /* Sidebar (Desktop) */
 .sidebar{
   width:232px;flex-shrink:0;
-  padding:22px 14px;
-  position:sticky;top:0;height:100vh;
-  display:flex;flex-direction:column;gap:2px;
+  padding:24px 16px;
+  position:sticky;top:16px;height:calc(100vh - 32px);
+  margin:16px 0 16px 16px;
+  border-radius:24px;
+  display:flex;flex-direction:column;gap:4px;
   z-index:50;
-  background:rgba(255,255,255,0.55);
-  backdrop-filter:blur(28px);
-  -webkit-backdrop-filter:blur(28px);
-  border-right:1px solid rgba(255,255,255,0.7);
-  box-shadow:2px 0 24px rgba(79,70,229,0.06);
+  background:var(--surface);
+  border:1px solid var(--line);
+  box-shadow:var(--shadow-sm);
 }
 body.dark .sidebar{
-  background:rgba(14,18,44,0.75);
-  border-right:1px solid rgba(129,140,248,0.15);
+  background:var(--surface);
+  border:1px solid var(--line);
 }
 .sidebar .brand{
   display:flex;align-items:center;gap:11px;
@@ -309,19 +224,20 @@ body.dark .sidebar{
 
 .nav-item{
   display:flex;align-items:center;gap:12px;
-  padding:10px 12px;border-radius:10px;
-  cursor:pointer;transition:all .18s ease;
-  color:var(--ink-2);
-  font-weight:500;font-size:13.5px;
+  padding:12px 16px;border-radius:999px;
+  cursor:pointer;transition:all .2s ease;
+  color:var(--ink-3);
+  font-weight:600;font-size:14px;
   border:1px solid transparent;
 }
-.nav-item i{font-size:14px;width:18px;text-align:center;opacity:0.75}
-.nav-item:hover{background:var(--chip-bg);color:var(--ink)}
+.nav-item i{font-size:16px;width:20px;text-align:center;}
+.nav-item:hover{background:var(--surface-2);color:var(--ink)}
 .nav-item.active{
   background:var(--ink);
   color:var(--surface);
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
 }
-.nav-item.active i{opacity:1;color:var(--surface)}
+.nav-item.active i{color:var(--surface)}
 .nav-badge{
   margin-left:auto;background:var(--danger);color:#fff;
   font-size:10px;font-weight:700;
@@ -374,20 +290,24 @@ body.dark .sidebar{
 .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 
-/* Stat card — Colorful Glassmorphism */
+/* Stat card — Premium Glassmorphism */
 .stat-card{
-  padding:18px 18px 16px;
+  padding:24px 20px 20px;
   border-radius:var(--radius);
-  cursor:default;transition:all .2s ease;
+  cursor:default;transition:all .3s cubic-bezier(0.25, 0.8, 0.25, 1);
   position:relative;overflow:hidden;
   background:var(--glass);
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
   border:1px solid var(--glass-border);
-  box-shadow:var(--shadow);
+  box-shadow:var(--shadow-sm);
 }
 .stat-card.clickable{cursor:pointer}
-.stat-card.clickable:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.stat-card.clickable:hover{
+  transform:translateY(-4px);
+  box-shadow:var(--shadow-lg);
+  border-color:var(--line-2);
+}
 .stat-icon{
   width:40px;height:40px;border-radius:12px;
   display:flex;align-items:center;justify-content:center;
@@ -856,38 +776,63 @@ body.light .load-overlay p{color:var(--ink)}
 }
 .subtab.active .sub-count{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 
-/* Order card — Website Orders redesigned (v4.2 — clear, scannable layout) */
+/* Order card — Premium Pinterest-style layout */
 .order-card{
-  background:var(--surface);
-  border:1px solid var(--line);
+  background:var(--glass);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--glass-border);
   border-radius:var(--radius);
-  padding:14px 16px;
-  margin-bottom:12px;
-  transition:all .18s;
+  padding:16px 20px;
+  margin-bottom:16px;
+  transition:all .3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow:var(--shadow-sm);
 }
-.order-card:hover{border-color:var(--ink-4); box-shadow:0 4px 16px rgba(0,0,0,0.06)}
-.order-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px}
+.order-card:hover{
+  border-color:var(--ink-4); 
+  box-shadow:var(--shadow-lg);
+  transform:translateY(-2px);
+}
+.order-head{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:4px 0;
+}
 .order-id{
-  font-size:11px;color:var(--ink-3);font-weight:600;letter-spacing:0.04em;
+  font-size:11px;color:var(--ink-3);font-weight:700;letter-spacing:0.06em;
   font-family:'Inter',monospace;
-  display:inline-flex;align-items:center;gap:4px;
-  background:var(--surface-1, rgba(0,0,0,0.04));
-  padding:2px 8px;border-radius:6px;
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--chip-bg);
+  padding:4px 10px;border-radius:8px;
+  text-transform:uppercase;
 }
-.order-name{font-size:15px;font-weight:700;color:var(--ink);margin-top:6px;display:flex;align-items:center;gap:6px}
-.order-name i{color:var(--brand);font-size:14px}
-.order-meta{font-size:11.5px;color:var(--ink-3);margin-top:4px;line-height:1.6}
+.order-name{
+  font-size:16px;font-weight:700;color:var(--ink);
+  margin-top:8px;display:flex;align-items:center;gap:8px;
+  letter-spacing:-0.01em;
+}
+.order-name i{color:var(--accent);font-size:16px;background:var(--chip-bg);padding:6px;border-radius:50%;}
+.order-meta{font-size:12px;color:var(--ink-3);margin-top:6px;line-height:1.6;font-weight:500;}
 .order-total{
-  font-size:20px;font-weight:800;color:var(--ink);
-  font-family:'Instrument Serif',serif;font-style:italic;letter-spacing:-0.01em;
+  font-size:22px;font-weight:800;color:var(--ink);
+  font-family:'Instrument Serif',serif;font-style:italic;letter-spacing:-0.02em;
   text-align:right;line-height:1;
 }
-.order-total small{display:block;font-size:10px;font-style:normal;font-family:inherit;font-weight:500;color:var(--ink-3);margin-top:4px;letter-spacing:0.04em;text-transform:uppercase}
+.order-total small{display:block;font-size:10px;font-style:normal;font-family:inherit;font-weight:600;color:var(--ink-4);margin-top:6px;letter-spacing:0.06em;text-transform:uppercase}
 .order-actions{
-  display:flex;gap:6px;flex-wrap:wrap;
-  margin-top:10px;padding-top:10px;
-  border-top:1px dashed var(--line);
+  display:flex;gap:8px;flex-wrap:wrap;
+  margin-top:14px;padding-top:14px;
+  border-top:1px solid var(--line);
   align-items:center;
+}
+.exp-icon-wrap {
+  width: 36px; height: 36px; border-radius: 50%; 
+  background: var(--surface); border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center; 
+  color: var(--ink-2); transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.order-head:hover .exp-icon-wrap {
+  background: var(--ink); color: var(--surface);
 }
 
 /* === v4.2: New Order Card Body — clean info rows === */
@@ -4162,29 +4107,117 @@ const YARZ = window.YARZ = {
     $('notif-panel').classList.remove('show');
   },
 
+  clearNotifications() {
+    localStorage.setItem('yarz_notif_cleared', Date.now().toString());
+    this.renderNotifications();
+    toast('সব নোটিফিকেশন ক্লিয়ার করা হয়েছে', 'success');
+  },
+
   renderNotifications(){
     const ws = state.data.websiteOrders;
-    const pending = ws.filter(o=>!o.status || o.status==='Pending' || o.status==='Processing' || o.status==='Confirmed');
+    let pending = ws.filter(o=>!o.status || o.status==='Pending' || o.status==='Processing' || o.status==='Confirmed');
+    
+    // ✅ v10.5: Respect cleared time
+    const clearedTime = parseInt(localStorage.getItem('yarz_notif_cleared') || '0', 10);
+    pending = pending.filter(o => !o.date || o.date.getTime() > clearedTime);
+
+    // ✅ v10.5: Group by orderId to prevent multiple notifications for same checkout
+    const orderGroups = new Map();
+    pending.forEach(o => {
+      let g = orderGroups.get(o.orderId);
+      if (!g) {
+        g = { ...o, itemsCount: 0, totalAmount: 0, products: [] };
+        orderGroups.set(o.orderId, g);
+      }
+      g.itemsCount++;
+      g.totalAmount += parseFloat(o.total) || ((parseFloat(o.price)||0) * parseInt(o.qty||1));
+      g.products.push(o);
+    });
+    pending = Array.from(orderGroups.values());
+
     // Sort newest first
     pending.sort((a,b)=> (b.date?b.date.getTime():0) - (a.date?a.date.getTime():0));
+    
     const list = $('notif-list');
+    const header = document.querySelector('.notif-panel-header');
+    
+    // Add Clear Button to header if not exists
+    if (header && !header.querySelector('.notif-clear-btn')) {
+      header.innerHTML += `<button class="notif-clear-btn" onclick="YARZ.clearNotifications()" style="background:transparent;border:none;color:var(--ink-3);cursor:pointer;font-size:12px;margin-left:auto;padding:4px 8px;border-radius:4px;"><i class="ri-check-double-line"></i> Clear All</button>`;
+      header.style.display = 'flex';
+      header.style.alignItems = 'center';
+    }
+
     if(!pending.length){
       list.innerHTML = '<div class="notif-empty"><i class="ri-notification-off-line" style="font-size:24px;opacity:0.4"></i><p style="margin-top:8px">কোনো নতুন নোটিফিকেশন নেই</p></div>';
       $('np-count').classList.add('hidden');
       return;
     }
+    
     $('np-count').textContent = toBn(pending.length);
     $('np-count').classList.remove('hidden');
-    list.innerHTML = pending.slice(0,15).map(o=>`
-      <div class="notif-item" onclick="YARZ.closeNotif();YARZ.goPage('orders');YARZ.ord.setTab('website');YARZ.ord.setStage('new');setTimeout(()=>{const el=document.getElementById('ord-${esc(o.orderId)}');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid var(--accent)';setTimeout(()=>el.style.outline='',1500);}},200)">
-        <div class="ni-dot"></div>
-        <div class="ni-body">
-          <div class="ni-title">🛍️ নতুন অর্ডার — ${esc(o.customer||'Customer')}</div>
-          <div class="ni-meta">${esc(o.product||'—')} · ${fmtBDT(o.total)} · ${esc(o.phone||'')}</div>
-          <div class="ni-meta" style="margin-top:2px">${o.date?relativeTime(o.date):''}</div>
+
+    // ✅ v10.5: Group by Date (Today, Yesterday, Older)
+    const groups = { today: [], yesterday: [], older: [] };
+    const todayStr = new Date().toDateString();
+    const yestDate = new Date(); yestDate.setDate(yestDate.getDate()-1);
+    const yestStr = yestDate.toDateString();
+
+    pending.forEach(o => {
+      if (!o.date) { groups.older.push(o); return; }
+      const dStr = o.date.toDateString();
+      if (dStr === todayStr) groups.today.push(o);
+      else if (dStr === yestStr) groups.yesterday.push(o);
+      else groups.older.push(o);
+    });
+
+    let html = '';
+    const renderGroup = (title, items) => {
+      if (!items.length) return '';
+      let grpHtml = `<div style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--ink-3);background:var(--surface-1);border-top:1px solid var(--line);border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:0.5px">${title}</div>`;
+      grpHtml += items.map(o=>`
+        <div class="notif-item" onclick="YARZ.closeNotif();YARZ.goPage('orders');YARZ.ord.setTab('website');YARZ.ord.setStage('new');setTimeout(()=>{const el=document.getElementById('ord-${esc(o.orderId)}');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});el.style.outline='2px solid var(--accent)';setTimeout(()=>el.style.outline='',1500);}},200)">
+          <div class="ni-dot"></div>
+          <div class="ni-body" style="width:100%">
+            <div class="ni-title" style="display:flex;justify-content:space-between;align-items:center">
+              <span>🛍️ Order #${esc(o.orderId)}</span>
+              <span style="font-weight:400;color:var(--ink-3);font-size:10.5px">${esc(o.customer||'Customer')}</span>
+            </div>
+            
+            <div style="margin:6px 0; background:rgba(0,0,0,0.02); padding:6px; border-radius:6px; border:1px solid rgba(0,0,0,0.04)">
+              ${o.products.map(p => `
+                <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:3px; color:var(--ink-2); line-height:1.4;">
+                  <span style="flex:1; padding-right:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                    <b style="color:var(--ink-1)">${toBn(p.qty||1)}x</b> ${esc(p.product)} <span style="opacity:0.7">${p.size ? `(${esc(p.size)})` : ''}</span>
+                  </span>
+                  <span style="font-weight:600; flex-shrink:0;">${fmtBDT((parseFloat(p.price)||0)*(parseInt(p.qty)||1))}</span>
+                </div>
+              `).join('')}
+              <div style="border-top:1px dashed var(--line); margin-top:4px; padding-top:4px; display:flex; justify-content:space-between; font-size:11px;">
+                <span style="color:var(--ink-3)">ডেলিভারি চার্জ</span>
+                <span style="font-weight:600; color:var(--ink-2)">${fmtBDT(o.delivery||0)}</span>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+              <span style="font-size:12.5px; font-weight:700; color:var(--accent)">মোট: ${fmtBDT(o.totalAmount)}</span>
+              <span style="font-size:10px; color:var(--ink-3);"><i class="ri-phone-line"></i> ${esc(o.phone||'')}</span>
+            </div>
+            <div class="ni-meta" style="margin-top:2px; font-size:10px; opacity:0.7;">${o.date?relativeTime(o.date):''}</div>
+          </div>
         </div>
-      </div>
-    `).join('');
+      `).join('');
+      return grpHtml;
+    };
+
+    html += renderGroup('আজ (Today)', groups.today);
+    html += renderGroup('গতকাল (Yesterday)', groups.yesterday);
+    html += renderGroup('পুরোনো (Older)', groups.older);
+
+    // Remove top border from first group
+    html = html.replace('border-top:1px solid var(--line);', '');
+    
+    list.innerHTML = html;
   },
 
   // ----- Logout -----
@@ -5226,6 +5259,8 @@ Team YARZ`;
         };
         orderGroups.set(o.orderId, g);
       }
+      // Keep the maximum delivery charge (since checkout attaches it only to the first item)
+      g.deliveryAmount = Math.max(g.deliveryAmount, parseFloat(o.delivery) || 0);
       g.products.push({
         product: o.product,
         size: o.size,
@@ -5342,20 +5377,29 @@ Team YARZ`;
     const prodImg = prodObj && prodObj.img1 ? getImgSrc(prodObj.img1) : '';
     const prodImgStyle = prodImg ? `background-image:url('${esc(prodImg)}')` : '';
 
-    // ✅ v4.6: Calculate price breakdown — DEFENSIVE against bad data
-    const qty = parseInt(o.qty)||1;
-    const unitPrice = parseFloat(o.price)||0;
-    const delivery = parseFloat(o.delivery)||0;
-    const subtotal = unitPrice * qty;
+    // ✅ v10.5: Calculate price breakdown over all products in the group!
+    const prods = o.products || [{ qty: o.qty, price: o.price }];
+    let totalQty = 0;
+    let subtotal = 0;
+    prods.forEach(p => {
+      const q = parseInt(p.qty) || 1;
+      totalQty += q;
+      subtotal += q * (parseFloat(p.price) || 0);
+    });
+    
+    // We only charge delivery once per order (it's stored in the first item)
+    const delivery = parseFloat(o.deliveryAmount) || parseFloat(o.delivery) || 0;
     const expectedTotal = subtotal + delivery;
-    let total = parseFloat(o.total)||0;
-    // Sanity check: if stored total is clearly wrong (e.g. > 10× expected),
-    // recompute to avoid showing absurd values like ৳50,330 for a ৳719 product.
+    
+    // If g.totalAmount was calculated in renderWebsite, use it, otherwise fallback to expectedTotal
+    let total = parseFloat(o.totalAmount) || parseFloat(o.total) || 0;
+    
+    // Sanity check: if stored total is clearly wrong, recompute.
     if (total <= 0 || total > expectedTotal * 10) {
       total = expectedTotal;
     }
-    // Coupon detection — explicit code in column O takes priority,
-    // otherwise compute implicit discount from total mismatch.
+    
+    // Coupon detection
     const couponCode = (o.coupon || '').trim();
     const couponDiscount = expectedTotal > total ? (expectedTotal - total) : 0;
     const hasCoupon = !!couponCode || couponDiscount > 0;
@@ -5367,36 +5411,50 @@ Team YARZ`;
     // ✅ v4.2: Build the redesigned card
     return `<div class="order-card ${isNewBadge?'is-new':''}" id="ord-${esc(o.orderId)}">
       <!-- Header: Order ID + Customer Name + Total -->
-      <div class="order-head">
+      <div class="order-head" style="cursor:pointer;" onclick="const b=document.getElementById('ob-${esc(o.orderId)}'); const i=this.querySelector('.exp-icon'); if(b.style.display==='none'){b.style.display='block';i.style.transform='rotate(180deg)';}else{b.style.display='none';i.style.transform='rotate(0deg)';}">
         <div style="min-width:0;flex:1">
-          <div class="order-id"><i class="ri-hashtag" style="font-size:10px"></i>${esc(o.orderId)}</div>
-          <div class="order-name"><i class="ri-user-3-line"></i>${esc(o.customer||'Customer')}</div>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-            <span><i class="ri-time-line" style="font-size:11px"></i> <span class="bn-num">${esc(timeStr)}</span></span>
-            ${relTime ? `<span style="opacity:0.7">· ${esc(relTime)}</span>` : ''}
+          <div class="order-id"><i class="ri-hashtag" style="font-size:12px"></i>${esc(o.orderId)}</div>
+          <div class="order-name"><i class="ri-user-3-fill"></i>${esc(o.customer||'Customer')}</div>
+          <div class="order-meta">
+            <span><i class="ri-time-line"></i> <span class="bn-num">${esc(timeStr)}</span></span>
+            ${relTime ? `<span style="opacity:0.7; margin-left: 6px;">· ${esc(relTime)}</span>` : ''}
           </div>
         </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div class="order-total bn-num">${fmtBDT(total)}<small>মোট পেমেন্ট</small></div>
-          ${stage!=='delivered' && o.status ? `<div style="margin-top:6px"><span class="chip ${sc}">${esc(o.status)}</span></div>`:''}
+        <div style="text-align:right;flex-shrink:0; display:flex; align-items:center; gap:16px;">
+          <div>
+            <div class="order-total bn-num">${fmtBDT(total)}<small>মোট পেমেন্ট</small></div>
+            ${stage!=='delivered' && o.status ? `<div style="margin-top:8px"><span class="chip ${sc}">${esc(o.status)}</span></div>`:''}
+          </div>
+          <div class="exp-icon-wrap">
+            <i class="ri-arrow-down-s-line exp-icon" style="transition:transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); font-size: 20px;"></i>
+          </div>
         </div>
       </div>
 
-      <!-- Product Row (clickable -> opens product details with image) -->
-      <div class="oc-product-row" onclick="YARZ.inv.showDetails('${esc(o.product||'')}')" title="ক্লিক করে প্রোডাক্ট ডিটেইল দেখুন">
-        <div class="oc-product-thumb" style="${prodImgStyle}">
-          ${prodImg ? '' : '<i class="ri-shopping-bag-3-line"></i>'}
-        </div>
-        <div class="oc-product-info">
-          <a class="oc-product-name" onclick="event.stopPropagation();YARZ.inv.showDetails('${esc(o.product||'')}')">${esc(o.product||'প্রোডাক্ট নাম নেই')}</a>
-          <div class="oc-product-attrs">
-            ${o.size ? `<span class="attr"><i class="ri-shirt-line"></i>সাইজ: <b>${esc(o.size)}</b></span>` : ''}
-            <span class="attr"><i class="ri-stack-line"></i>পরিমাণ: <b class="bn-num">${toBn(qty)}</b></span>
-            <span class="attr"><i class="ri-price-tag-3-line"></i>প্রতি পিস: <b class="bn-num">${fmtBDT(unitPrice)}</b></span>
+      <div class="order-body" id="ob-${esc(o.orderId)}" style="display:none; padding-top:16px; margin-top:12px; border-top:1px dashed var(--line);">
+      <!-- Product Rows (clickable -> opens product details with image) -->
+      ${ (o.products || [{ product: o.product, size: o.size, qty: o.qty, price: o.price }]).map(p => {
+        const pQty = parseInt(p.qty)||1;
+        const pPrice = parseFloat(p.price)||0;
+        const pObj = (state.data.inventory || []).find(inv => inv.name === p.product);
+        const pImg = pObj && pObj.img1 ? getImgSrc(pObj.img1) : '';
+        const pImgStyle = pImg ? `background-image:url('${esc(pImg)}')` : '';
+        return `
+        <div class="oc-product-row" onclick="YARZ.inv.showDetails('${esc(p.product||'')}')" title="ক্লিক করে প্রোডাক্ট ডিটেইল দেখুন">
+          <div class="oc-product-thumb" style="${pImgStyle}">
+            ${pImg ? '' : '<i class="ri-shopping-bag-3-line"></i>'}
           </div>
-        </div>
-        <div class="oc-view-icon" title="View Product"><i class="ri-eye-line"></i></div>
-      </div>
+          <div class="oc-product-info">
+            <a class="oc-product-name" onclick="event.stopPropagation();YARZ.inv.showDetails('${esc(p.product||'')}')">${esc(p.product||'প্রোডাক্ট নাম নেই')}</a>
+            <div class="oc-product-attrs">
+              ${p.size ? `<span class="attr"><i class="ri-shirt-line"></i>সাইজ: <b>${esc(p.size)}</b></span>` : ''}
+              <span class="attr"><i class="ri-stack-line"></i>পরিমাণ: <b class="bn-num">${toBn(pQty)}</b></span>
+              <span class="attr"><i class="ri-price-tag-3-line"></i>প্রতি পিস: <b class="bn-num">${fmtBDT(pPrice)}</b></span>
+            </div>
+          </div>
+          <div class="oc-view-icon" title="View Product"><i class="ri-eye-line"></i></div>
+        </div>`;
+      }).join('') }
 
       <!-- Customer Info Grid -->
       <div class="oc-info-grid">
@@ -5442,7 +5500,7 @@ Team YARZ`;
       <!-- Price Breakdown -->
       <div class="oc-price-box">
         <div class="oc-price-line">
-          <span class="lbl"><i class="ri-shopping-cart-2-line"></i>প্রোডাক্ট প্রাইস <span style="opacity:0.7">(<span class="bn-num">${toBn(qty)}</span> × <span class="bn-num">${fmtBDT(unitPrice)}</span>)</span></span>
+          <span class="lbl"><i class="ri-shopping-cart-2-line"></i>প্রোডাক্ট প্রাইস <span style="opacity:0.7">(<span class="bn-num">${toBn(totalQty)}</span> টি আইটেম)</span></span>
           <span class="bn-num"><b>${fmtBDT(subtotal)}</b></span>
         </div>
         <div class="oc-price-line">
@@ -5481,6 +5539,7 @@ Team YARZ`;
         <button class="btn btn-ghost btn-xs" onclick="YARZ.ord.callCustomer('${esc(o.phone||'')}')" title="ফোন করুন"><i class="ri-phone-fill" style="color:#0ea5e9"></i></button>
         ${stage!=='delivered' ? `<button class="btn btn-ghost btn-xs" onclick="YARZ.ord.showStatusMenu('${esc(o.orderId)}')" title="Change Status"><i class="ri-more-2-line"></i></button>` : ''}
         <button class="btn btn-ghost btn-xs" style="margin-left:auto;color:var(--danger)" onclick="YARZ.ord.deleteWebOrder('${esc(o.orderId)}')" title="ডিলিট"><i class="ri-delete-bin-6-line"></i></button>
+      </div>
       </div>
     </div>`;
   },
