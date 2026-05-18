@@ -1745,11 +1745,13 @@ body.dark .order-card{
 .order-card.is-new::before{
   content:'NEW';
   position:absolute; top:-8px; left:16px;
-  background: linear-gradient(135deg,#3FBFA5,#2DA68C);
+  bottom: auto !important; right: auto !important;
+  background: linear-gradient(135deg,#3FBFA5,#2DA68C) !important;
   color:#fff; font-size:9px; font-weight:800;
   padding: 3px 10px; border-radius:999px;
   letter-spacing:0.1em;
   box-shadow: 0 3px 8px rgba(63,191,165,0.35);
+  z-index: 10;
 }
 .order-card:hover{ transform: translateY(-2px); box-shadow: var(--shadow-lg); }
 
@@ -5210,6 +5212,32 @@ Team YARZ`;
       const hay = (o.orderId+'|'+o.phone+'|'+o.customer+'|'+o.product+'|'+(o.courier||'')+'|'+tp.tracking+'|'+tp.courier).toLowerCase();
       return hay.includes(q);
     });
+
+    // ✅ v10.2: GROUP BY ORDER ID (for multi-product checkouts)
+    const orderGroups = new Map();
+    items.forEach(o => {
+      let g = orderGroups.get(o.orderId);
+      if (!g) {
+        g = {
+          ...o, // keep all base details
+          products: [],
+          totalAmount: 0,
+          deliveryAmount: parseFloat(o.delivery) || 0
+        };
+        orderGroups.set(o.orderId, g);
+      }
+      g.products.push({
+        product: o.product,
+        size: o.size,
+        qty: o.qty,
+        price: o.price,
+        coupon: o.coupon,
+        total: o.total
+      });
+      g.totalAmount += parseFloat(o.total) || ((parseFloat(o.price)||0) * (parseInt(o.qty)||1) + (g.products.length === 1 ? g.deliveryAmount : 0));
+    });
+    
+    items = Array.from(orderGroups.values());
 
     // Sort by date DESC (newest first)
     items.sort((a,b)=>{
