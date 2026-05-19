@@ -6415,7 +6415,7 @@ YARZ.webControl = {
     const ttpx = $('wc-tt-pixel'); if(ttpx) ttpx.value = s['TT Pixel'] || '';
     const pinpx = $('wc-pin-pixel'); if(pinpx) pinpx.value = s['Pinterest Pixel'] || '';
     const snappx = $('wc-snap-pixel'); if(snappx) snappx.value = s['Snapchat Pixel'] || '';
-    const feedUrlDisp = $('fb-feed-url-display'); if(feedUrlDisp) feedUrlDisp.value = DEFAULT_API_URL + "?action=fb_feed&key=" + DEFAULT_API_KEY;
+    const feedUrlDisp = $('fb-feed-url-display'); if(feedUrlDisp) feedUrlDisp.value = DEFAULT_APPS_URL + "?action=fb_feed&key=" + DEFAULT_API_KEY;
     const ogimg = $('wc-og-img'); if(ogimg) { ogimg.value = s['OG Image'] || ''; this._previewImg(ogimg, 'wc-og-preview'); }
     const gsct = $('wc-gsc-tag'); if(gsct) gsct.value = s['GSC Tag'] || '';
     const ccss = $('wc-custom-css'); if(ccss) ccss.value = s['Custom CSS'] || '';
