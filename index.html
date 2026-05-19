@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
@@ -2999,7 +2999,7 @@ body.dark select.select option{
           <div class="section-title"><h2><i class="ri-plug-line" style="color:var(--accent-2)"></i> কানেকশন সেটআপ</h2></div>
           <div class="field">
             <label>Google Apps Script Web App URL <span class="req">*</span></label>
-            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbzh9d71MmtM_s1PS6d_svwfo605xUR1XAvROaeu56H6_wEW5ZU-ugbfFN50onCSqjui/exec" data-default-url="https://script.google.com/macros/s/AKfycbzh9d71MmtM_s1PS6d_svwfo605xUR1XAvROaeu56H6_wEW5ZU-ugbfFN50onCSqjui/exec">
+            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbx1ML8HMRtee56piBEGObXs8TZv0hhPswtm2b0eVz_UHCJRptH3vafFxgAzQksH65Nx/exec" data-default-url="https://script.google.com/macros/s/AKfycbx1ML8HMRtee56piBEGObXs8TZv0hhPswtm2b0eVz_UHCJRptH3vafFxgAzQksH65Nx/exec">
             <div style="font-size:11px;opacity:0.6;margin-top:4px">✓ Default URL pre-filled — যদি deployment পরিবর্তন করেন তবে এখানে নতুন URL দিন</div>
           </div>
           <div class="field">
@@ -3256,7 +3256,7 @@ const DEFAULT_API_KEY  = 'AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k';
 // 🔑 v3.9: Settings version bumped — auto-resets stale localStorage values (forces new URL)
 const SETTINGS_VERSION = 'v4.0-2026-05-14';
 // ★ হার্ডকোডেড Apps Script URL — এর ফলে Settings-এ URL না দিলেও Write operations কাজ করবে
-const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbzh9d71MmtM_s1PS6d_svwfo605xUR1XAvROaeu56H6_wEW5ZU-ugbfFN50onCSqjui/exec';
+const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbx1ML8HMRtee56piBEGObXs8TZv0hhPswtm2b0eVz_UHCJRptH3vafFxgAzQksH65Nx/exec';
 const TZ = 'Asia/Dhaka';
 
 // ============ CRYPTO UTIL ============
@@ -3285,13 +3285,14 @@ const COL = {
   SIZE_CHART:10, DELIVERY_DAYS:11,
   COST:12, REG:13, SALE:14, DISC_PCT:15, DISC_TYPE:16,
   DELIVERY_IN:17, DELIVERY_OUT:18,
-  STK_S:19, STK_M:20, STK_L:21, STK_XL:22, STK_XXL:23, STK_3XL:24,
-  SOLD_S:25, SOLD_M:26, SOLD_L:27, SOLD_XL:28, SOLD_XXL:29, SOLD_3XL:30,
-  TOT_SOLD:31, RETURNS:32, REMAINING:33, TOT_STOCK:34, TOT_INVEST:35,
-  REVENUE:36, TO_RECOVER:37, GROSS:38, FB_AD:39, NET:40, DISC_IMPACT:41,
-  UPDATED:42, STATUS:43,
-  IMG4:44, IMG5:45, IMG6:46,
-  C_ACT:47, C_CODE:48, C_DISC:49,
+  STK_M:19, STK_L:20, STK_XL:21, STK_XXL:22,
+  SOLD_M:23, SOLD_L:24, SOLD_XL:25, SOLD_XXL:26,
+  TOT_SOLD:27, RETURNS:28, REMAINING:29, TOT_STOCK:30, TOT_INVEST:31,
+  REVENUE:32, TO_RECOVER:33, GROSS:34, FB_AD:35, NET:36, DISC_IMPACT:37,
+  UPDATED:38, STATUS:39,
+  IMG4:40, IMG5:41, IMG6:42,
+  C_ACT:43, C_CODE:44, C_DISC:45,
+  STK_S:46, STK_3XL:47, SOLD_S:48, SOLD_3XL:49,
   TOTAL:49
 };
 
