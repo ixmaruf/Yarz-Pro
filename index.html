@@ -2999,7 +2999,7 @@ body.dark select.select option{
           <div class="section-title"><h2><i class="ri-plug-line" style="color:var(--accent-2)"></i> কানেকশন সেটআপ</h2></div>
           <div class="field">
             <label>Google Apps Script Web App URL <span class="req">*</span></label>
-            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbx1ML8HMRtee56piBEGObXs8TZv0hhPswtm2b0eVz_UHCJRptH3vafFxgAzQksH65Nx/exec" data-default-url="https://script.google.com/macros/s/AKfycbx1ML8HMRtee56piBEGObXs8TZv0hhPswtm2b0eVz_UHCJRptH3vafFxgAzQksH65Nx/exec">
+            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbw93B1i8JIlEq2IIKKO6NbPSNXuCeDL__cgtZEAmXPP9e5ZturgFWYw4wQ1lkm6u2Oz/exec" data-default-url="https://script.google.com/macros/s/AKfycbw93B1i8JIlEq2IIKKO6NbPSNXuCeDL__cgtZEAmXPP9e5ZturgFWYw4wQ1lkm6u2Oz/exec">
             <div style="font-size:11px;opacity:0.6;margin-top:4px">✓ Default URL pre-filled — যদি deployment পরিবর্তন করেন তবে এখানে নতুন URL দিন</div>
           </div>
           <div class="field">
@@ -3256,7 +3256,7 @@ const DEFAULT_API_KEY  = 'AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k';
 // 🔑 v3.9: Settings version bumped — auto-resets stale localStorage values (forces new URL)
 const SETTINGS_VERSION = 'v4.0-2026-05-14';
 // ★ হার্ডকোডেড Apps Script URL — এর ফলে Settings-এ URL না দিলেও Write operations কাজ করবে
-const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbx1ML8HMRtee56piBEGObXs8TZv0hhPswtm2b0eVz_UHCJRptH3vafFxgAzQksH65Nx/exec';
+const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbw93B1i8JIlEq2IIKKO6NbPSNXuCeDL__cgtZEAmXPP9e5ZturgFWYw4wQ1lkm6u2Oz/exec';
 const TZ = 'Asia/Dhaka';
 
 // ============ CRYPTO UTIL ============
@@ -4644,7 +4644,7 @@ YARZ.inv = {
         <table style="width:100%;font-size:12.5px">
           <thead><tr style="opacity:0.7"><th style="text-align:left;padding:4px">Size</th><th style="padding:4px">Stock</th><th style="padding:4px">Sold</th><th style="padding:4px">Left</th></tr></thead>
           <tbody>
-            ${['M','L','XL','XXL'].map(sz=>{
+            ${['S','M','L','XL','XXL','3XL'].map(sz=>{
               const s=p['stk'+sz], so=p['sold'+sz], l=s-so;
               return `<tr><td style="padding:5px"><b>${sz}</b></td><td style="text-align:center">${toBn(s)}</td><td style="text-align:center">${toBn(so)}</td><td style="text-align:center;color:${l<=0?'#F87171':'#34D399'};font-weight:700">${toBn(l)}</td></tr>`;
             }).join('')}
@@ -4731,7 +4731,7 @@ YARZ.inv = {
       <div class="list" style="max-height:60vh;overflow-y:auto">
         ${items.length ? items.map(p=>{
           const alerts = [];
-          ['M','L','XL','XXL'].forEach(sz=>{
+          ['S','M','L','XL','XXL','3XL'].forEach(sz=>{
             const left = p['stk'+sz]-p['sold'+sz];
             if(left<=0) alerts.push(`<span class="chip chip-red">${sz}:⛔</span>`);
             else if(left<=threshold) alerts.push(`<span class="chip chip-amber">${sz}:${toBn(left)}</span>`);
@@ -4796,7 +4796,7 @@ YARZ.inv = {
           <span class="chip ${p.status==='Active'?'chip-green':'chip-amber'}" style="font-size:10px">${esc(p.status)}</span>
         </div>
         <div class="grid grid-4" style="gap:6px">
-          ${['M','L','XL','XXL'].map(sz=>{
+          ${['S','M','L','XL','XXL','3XL'].map(sz=>{
             const left = p['stk'+sz]-p['sold'+sz];
             const pendVal = pend[sz];
             const previewLeft = (pendVal !== undefined && pendVal !== null && pendVal !== '')
@@ -4883,9 +4883,9 @@ YARZ.inv = {
     if(!p){ toast('Product নেই','error'); return; }
 
     // Compute deltas based on new desired stock vs current stk
-    const data = { name, dM:0, dL:0, dXL:0, dXXL:0 };
+    const data = { name, dS:0, dM:0, dL:0, dXL:0, dXXL:0, d3XL:0 };
     let anyChange = false;
-    ['M','L','XL','XXL'].forEach(sz=>{
+    ['S','M','L','XL','XXL','3XL'].forEach(sz=>{
       const v = pend[sz];
       if(v === undefined || v === null || v === '') return;
       const newVal = parseInt(v,10);
@@ -4909,7 +4909,7 @@ YARZ.inv = {
       const res = await appsPost('applyStockChange', data);
       if(res && res.ok===false) throw new Error(res.msg||'Failed');
       // Apply locally
-      ['M','L','XL','XXL'].forEach(sz=>{
+      ['S','M','L','XL','XXL','3XL'].forEach(sz=>{
         if(data['d'+sz] !== 0){
           p['stk'+sz] = Math.max(0, p['stk'+sz] + data['d'+sz]);
         }
@@ -7917,3 +7917,4 @@ if (document.readyState === 'loading') {
 
 </body>
 </html>
+
