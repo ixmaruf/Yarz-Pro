@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
@@ -3720,14 +3720,14 @@ async function loadInventory(){
         cost: num(r[11]), regular: num(r[12]), sale: num(r[13]),
         discPct: num(r[14]), discType: safeStr(r[15])||'Normal',
         deliveryDhaka: num(r[16])||60, deliveryOutside: num(r[17])||120,
-        stkS: int(r[COL.STK_S-1]), stkS: int(r[COL.STK_S-1]), stkM: int(r[COL.STK_M-1]), stkL: int(r[COL.STK_L-1]), stkXL: int(r[COL.STK_XL-1]), stkXXL: int(r[COL.STK_XXL-1]), stk3XL: int(r[COL.STK_3XL-1]), stk3XL: int(r[COL.STK_3XL-1]),
-        soldS: int(r[COL.SOLD_S-1]), soldS: int(r[COL.SOLD_S-1]), soldM: int(r[COL.SOLD_M-1]), soldL: int(r[COL.SOLD_L-1]), soldXL: int(r[COL.SOLD_XL-1]), soldXXL: int(r[COL.SOLD_XXL-1]), sold3XL: int(r[COL.SOLD_3XL-1]), sold3XL: int(r[COL.SOLD_3XL-1]),
-        totalSold: num(r[30]), returns: num(r[31]), remaining: num(r[32]), totalStock: num(r[33]),
-        invest: num(r[34]), revenue: num(r[35]), toRecover: num(r[36]),
-        gross: num(r[37]), fbAd: num(r[38]), net: num(r[39]), discImpact: num(r[40]),
-        updated: r[41], status: safeStr(r[42])||'Draft',
-        img4: safeStr(r[43]), img5: safeStr(r[44]), img6: safeStr(r[45]),
-        couponActive: safeStr(r[46])||'No', couponCode: safeStr(r[47]), couponDisc: num(r[48])
+        stkS: int(r[COL.STK_S-1]), stkM: int(r[COL.STK_M-1]), stkL: int(r[COL.STK_L-1]), stkXL: int(r[COL.STK_XL-1]), stkXXL: int(r[COL.STK_XXL-1]), stk3XL: int(r[COL.STK_3XL-1]),
+        soldS: int(r[COL.SOLD_S-1]), soldM: int(r[COL.SOLD_M-1]), soldL: int(r[COL.SOLD_L-1]), soldXL: int(r[COL.SOLD_XL-1]), soldXXL: int(r[COL.SOLD_XXL-1]), sold3XL: int(r[COL.SOLD_3XL-1]),
+        totalSold: num(r[COL.TOT_SOLD-1]), returns: num(r[COL.RETURNS-1]), remaining: num(r[COL.REMAINING-1]), totalStock: num(r[COL.TOT_STOCK-1]),
+        invest: num(r[COL.TOT_INVEST-1]), revenue: num(r[COL.REVENUE-1]), toRecover: num(r[COL.TO_RECOVER-1]),
+        gross: num(r[COL.GROSS-1]), fbAd: num(r[COL.FB_AD-1]), net: num(r[COL.NET-1]), discImpact: num(r[COL.DISC_IMPACT-1]),
+        updated: r[COL.UPDATED-1], status: safeStr(r[COL.STATUS-1])||'Draft',
+        img4: safeStr(r[COL.IMG4-1]), img5: safeStr(r[COL.IMG5-1]), img6: safeStr(r[COL.IMG6-1]),
+        couponActive: safeStr(r[COL.C_ACT-1])||'No', couponCode: safeStr(r[COL.C_CODE-1]), couponDisc: num(r[COL.C_DISC-1])
       });
     }
     state.data.inventory = items;
