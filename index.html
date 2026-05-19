@@ -2652,26 +2652,31 @@ body.dark select.select option{
           </div>
 
           <div class="card" style="padding:22px;margin-bottom:14px">
-            <div class="section-title"><h2><i class="ri-window-line" style="color:var(--purple)"></i> Promotional Popup</h2></div>
+            <div class="section-title"><h2><i class="ri-image-2-line" style="color:var(--purple)"></i> Bottom Showcase (2 Images)</h2></div>
             <div class="flex-gap" style="margin-bottom:14px">
               <label class="ios-toggle">
                 <input type="checkbox" id="wc-popup-active">
                 <span class="slider"></span>
               </label>
-              <span style="font-weight:600;color:var(--ink-2)">Show Popup on Website Load</span>
+              <span style="font-weight:600;color:var(--ink-2)">Show Showcase at Website Bottom</span>
             </div>
             <div class="grid grid-2" style="gap:16px">
               <div class="field">
-                <label>Popup Image URL</label>
-                <input type="text" id="wc-popup-img" class="input" placeholder="e.g. imgur.com/promo.jpg" oninput="YARZ.webControl._previewImg(this, 'wc-popup-preview')">
+                <label>First Image URL</label>
+                <input type="text" id="wc-popup-img" class="input" placeholder="e.g. imgur.com/image1.jpg" oninput="YARZ.webControl._previewImg(this, 'wc-popup-preview')">
               </div>
               <div class="field">
-                <label>Target Link (Optional)</label>
-                <input type="text" id="wc-popup-link" class="input" placeholder="e.g. /category/winter">
+                <label>Second Image URL</label>
+                <input type="text" id="wc-popup-link" class="input" placeholder="e.g. imgur.com/image2.jpg" oninput="YARZ.webControl._previewImg(this, 'wc-popup-preview2')">
               </div>
             </div>
-            <div id="wc-popup-preview" style="height:120px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);margin-top:10px;overflow:hidden">
-              <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3"><i class="ri-image-line"></i></div>
+            <div style="display:flex; gap:10px; margin-top:10px">
+              <div id="wc-popup-preview" style="height:120px;flex:1;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden">
+                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3"><i class="ri-image-line"></i></div>
+              </div>
+              <div id="wc-popup-preview2" style="height:120px;flex:1;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden">
+                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3"><i class="ri-image-line"></i></div>
+              </div>
             </div>
           </div>
         </div>
@@ -2937,7 +2942,7 @@ body.dark select.select option{
               <div class="field"><label>Global Meta Title</label><input type="text" id="wc-meta-title" class="input" placeholder="Best Online Store in BD"></div>
               <div class="field"><label>Global Meta Description</label><input type="text" id="wc-meta-desc" class="input" placeholder="Shop the latest trends..."></div>
               <div class="field"><label>Facebook Pixel ID</label><input type="text" id="wc-fb-pixel" class="input" placeholder="123456789"></div>
-              <div class="field"><label>FB CAPI Access Token <span style="font-size:10px;opacity:0.6">(Server-Side)</span></label><input type="text" id="wc-fb-capi-token" class="input" placeholder="EAAxxxxxxx..."></div>
+              <div class="field"><label>Facebook CAPI Token <span class="badge" style="background:var(--primary);color:#fff">Premium</span></label><input type="password" id="wc-fb-capi-token" class="input" placeholder="EAAxxxxxxx... (Server-Side Token)"></div>
               <div class="field"><label>Google Analytics 4 ID</label><input type="text" id="wc-ga4" class="input" placeholder="G-XXXXXX"></div>
               <div class="field"><label>Instagram Pixel ID</label><input type="text" id="wc-ig-pixel" class="input" placeholder="Meta Conversion ID / Pixel"></div>
               <div class="field"><label>TikTok Pixel ID</label><input type="text" id="wc-tt-pixel" class="input" placeholder="Tiktok Event ID"></div>
@@ -2962,6 +2967,16 @@ body.dark select.select option{
               </div>
               <div class="field" style="grid-column:1/-1"><label>Google Search Console Verification Tag</label><input type="text" id="wc-gsc-tag" class="input" placeholder="e.g. <meta name='google-site-verification' content='...' />"></div>
             </div>
+          </div>
+          
+          <!-- ✅ Premium: Product Feed URL -->
+          <div class="card" style="margin-top:20px;">
+            <div class="section-title">📊 Facebook Product Feed <span class="badge" style="background:var(--primary);color:#fff">Premium</span></div>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">এই লিংকটি Facebook Commerce Manager-এ Data Source হিসেবে যুক্ত করুন। আপনার ইনভেন্টরি নিজে থেকেই ফেসবুকে আপডেট হবে।</p>
+            <div class="field">
+              <input type="text" id="fb-feed-url-display" class="input" readonly style="background:#F3F4F6; color:var(--text-main); font-family:monospace; font-size:11px;" value="URL will appear after generating">
+            </div>
+          </div>
 
             <div class="section-title" style="margin-top:24px;"><h2><i class="ri-code-s-slash-line" style="color:var(--purple)"></i> Advanced Code Injection</h2></div>
             <div class="field">
@@ -3269,11 +3284,14 @@ const COL = {
   SIZE_CHART:10, DELIVERY_DAYS:11,
   COST:12, REG:13, SALE:14, DISC_PCT:15, DISC_TYPE:16,
   DELIVERY_IN:17, DELIVERY_OUT:18,
-  STK_M:19, STK_L:20, STK_XL:21, STK_XXL:22,
-  SOLD_M:23, SOLD_L:24, SOLD_XL:25, SOLD_XXL:26,
-  TOT_SOLD:27, RETURNS:28, REMAINING:29, TOT_STOCK:30, TOT_INVEST:31,
-  REVENUE:32, TO_RECOVER:33, GROSS:34, FB_AD:35, NET:36, DISC_IMPACT:37,
-  UPDATED:38, STATUS:39
+  STK_S:19, STK_M:20, STK_L:21, STK_XL:22, STK_XXL:23, STK_3XL:24,
+  SOLD_S:25, SOLD_M:26, SOLD_L:27, SOLD_XL:28, SOLD_XXL:29, SOLD_3XL:30,
+  TOT_SOLD:31, RETURNS:32, REMAINING:33, TOT_STOCK:34, TOT_INVEST:35,
+  REVENUE:36, TO_RECOVER:37, GROSS:38, FB_AD:39, NET:40, DISC_IMPACT:41,
+  UPDATED:42, STATUS:43,
+  IMG4:44, IMG5:45, IMG6:46,
+  C_ACT:47, C_CODE:48, C_DISC:49,
+  TOTAL:49
 };
 
 const DEFAULT_CATEGORIES = ["Shirt","T-Shirt","Polo","Formal","Casual","Panjabi","Kurta","Pant","Formal Pant","Jeans","Chinos","Cargo Pant","Trouser","Hoodie","Sweater","Jacket","Blazer","Coat","Waistcoat","Tracksuit","Shorts","Three Quarter","Shoes","Sneakers","Sandals","Belt","Cap","Hat","Watch","Wallet","Sunglasses","Accessories","Other"];
@@ -3685,8 +3703,8 @@ async function appsPost(action, payload){
 // ============ DATA LOADERS ============
 async function loadInventory(){
   try {
-    // INVENTORY is large. Read A2:AS1000
-    const rows = await sheetRead('INVENTORY!A2:AS1000');
+    // INVENTORY is large. Read A2:AW1000 (49 columns)
+    const rows = await sheetRead('INVENTORY!A2:AW1000');
     const items = [];
     for(const r of rows){
       if(!r[0]) continue;
@@ -3700,14 +3718,14 @@ async function loadInventory(){
         cost: num(r[11]), regular: num(r[12]), sale: num(r[13]),
         discPct: num(r[14]), discType: safeStr(r[15])||'Normal',
         deliveryDhaka: num(r[16])||60, deliveryOutside: num(r[17])||120,
-        stkM: int(r[18]), stkL: int(r[19]), stkXL: int(r[20]), stkXXL: int(r[21]),
-        soldM: int(r[22]), soldL: int(r[23]), soldXL: int(r[24]), soldXXL: int(r[25]),
-        totalSold: num(r[26]), returns: num(r[27]), remaining: num(r[28]), totalStock: num(r[29]),
-        invest: num(r[30]), revenue: num(r[31]), toRecover: num(r[32]),
-        gross: num(r[33]), fbAd: num(r[34]), net: num(r[35]), discImpact: num(r[36]),
-        updated: r[37], status: safeStr(r[38])||'Draft',
-        img4: safeStr(r[39]), img5: safeStr(r[40]), img6: safeStr(r[41]),
-        couponActive: safeStr(r[42])||'No', couponCode: safeStr(r[43]), couponDisc: num(r[44])
+        stkS: int(r[COL.STK_S-1]), stkS: int(r[COL.STK_S-1]), stkM: int(r[COL.STK_M-1]), stkL: int(r[COL.STK_L-1]), stkXL: int(r[COL.STK_XL-1]), stkXXL: int(r[COL.STK_XXL-1]), stk3XL: int(r[COL.STK_3XL-1]), stk3XL: int(r[COL.STK_3XL-1]),
+        soldS: int(r[COL.SOLD_S-1]), soldS: int(r[COL.SOLD_S-1]), soldM: int(r[COL.SOLD_M-1]), soldL: int(r[COL.SOLD_L-1]), soldXL: int(r[COL.SOLD_XL-1]), soldXXL: int(r[COL.SOLD_XXL-1]), sold3XL: int(r[COL.SOLD_3XL-1]), sold3XL: int(r[COL.SOLD_3XL-1]),
+        totalSold: num(r[30]), returns: num(r[31]), remaining: num(r[32]), totalStock: num(r[33]),
+        invest: num(r[34]), revenue: num(r[35]), toRecover: num(r[36]),
+        gross: num(r[37]), fbAd: num(r[38]), net: num(r[39]), discImpact: num(r[40]),
+        updated: r[41], status: safeStr(r[42])||'Draft',
+        img4: safeStr(r[43]), img5: safeStr(r[44]), img6: safeStr(r[45]),
+        couponActive: safeStr(r[46])||'No', couponCode: safeStr(r[47]), couponDisc: num(r[48])
       });
     }
     state.data.inventory = items;
@@ -4002,22 +4020,30 @@ const YARZ = window.YARZ = {
   },
 
   updateBadges(){
-    const pending = state.data.websiteOrders.filter(o=>!o.status || o.status==='Pending' || o.status==='Processing' || o.status==='Confirmed').length;
+    let pendingOrders = state.data.websiteOrders.filter(o=>!o.status || o.status==='Pending' || o.status==='Processing' || o.status==='Confirmed');
+    const pendingCount = pendingOrders.length;
+    
     const b = $('nav-orders-badge');
-    if(pending>0){ b.textContent = toBn(pending); b.classList.remove('hidden'); }
+    if(pendingCount>0){ b.textContent = toBn(pendingCount); b.classList.remove('hidden'); }
     else b.classList.add('hidden');
-    $('web-orders-count').textContent = pending>0 ? toBn(pending)+' Pending' : 'All Clear';
+    
+    const woc = $('web-orders-count');
+    if (woc) woc.textContent = pendingCount>0 ? toBn(pendingCount)+' Pending' : 'All Clear';
+
+    // Calculate unread notifications based on clearedTime
+    const clearedTime = parseInt(localStorage.getItem('yarz_notif_cleared') || '0', 10);
+    const unreadCount = pendingOrders.filter(o => !o.date || o.date.getTime() > clearedTime).length;
 
     // Notification bell indicator
     const notifBtn = $('notif-btn');
     if(notifBtn){
-      if(pending>0) notifBtn.classList.add('has-notif');
+      if(unreadCount>0) notifBtn.classList.add('has-notif');
       else notifBtn.classList.remove('has-notif');
     }
     // Notification count badge inside panel
     const npc = $('np-count');
     if(npc){
-      if(pending>0){ npc.textContent = toBn(pending); npc.classList.remove('hidden'); }
+      if(unreadCount>0){ npc.textContent = toBn(unreadCount); npc.classList.remove('hidden'); }
       else npc.classList.add('hidden');
     }
 
@@ -4025,7 +4051,7 @@ const YARZ = window.YARZ = {
     let low = 0;
     state.data.inventory.forEach(p=>{
       if(p.status!=='Active') return;
-      const sizes = [p.stkM-p.soldM, p.stkL-p.soldL, p.stkXL-p.soldXL, p.stkXXL-p.soldXXL];
+      const sizes = [p.stkS-p.soldS, p.stkM-p.soldM, p.stkL-p.soldL, p.stkXL-p.soldXL, p.stkXXL-p.soldXXL, p.stk3XL-p.sold3XL];
       if(sizes.some(s=>s<=threshold)) low++;
     });
     $('lowstock-count').textContent = low>0 ? toBn(low)+' Items' : 'সব ঠিক';
@@ -4550,7 +4576,7 @@ YARZ.inv = {
             ${lowStock?`<span class="chip chip-red">Low</span>`:''}
             <span style="opacity:0.7">${esc(p.category||'—')}</span>
           </div>
-          <div class="li-sub">M:${toBn(p.stkM-p.soldM)} L:${toBn(p.stkL-p.soldL)} XL:${toBn(p.stkXL-p.soldXL)} XXL:${toBn(p.stkXXL-p.soldXXL)} • Sold: ${toBn(p.totalSold)}</div>
+          <div class="li-sub">S:${toBn(p.stkS-p.soldS)} M:${toBn(p.stkM-p.soldM)} L:${toBn(p.stkL-p.soldL)} XL:${toBn(p.stkXL-p.soldXL)} XXL:${toBn(p.stkXXL-p.soldXXL)} 3XL:${toBn(p.stk3XL-p.sold3XL)} • Sold: ${toBn(p.totalSold)}</div>
         </div>
         <div class="li-right">
           <div class="price">${fmtBDT(p.sale)}</div>
@@ -4568,7 +4594,7 @@ YARZ.inv = {
   showDetails(name){
     const p = state.data.inventory.find(x=>x.name===name);
     if(!p){ toast('Not found','error'); return; }
-    const totalLeft = (p.stkM-p.soldM)+(p.stkL-p.soldL)+(p.stkXL-p.soldXL)+(p.stkXXL-p.soldXXL);
+    const totalLeft = (p.stkS-p.soldS)+(p.stkM-p.soldM)+(p.stkL-p.soldL)+(p.stkXL-p.soldXL)+(p.stkXXL-p.soldXXL)+(p.stk3XL-p.sold3XL);
     const html = `
       <div class="modal-header">
         <h3><i class="fas fa-box"></i> ${esc(p.name)}</h3>
@@ -4690,7 +4716,7 @@ YARZ.inv = {
     const threshold = int(state.data.settings['Low Stock Threshold']||5);
     const items = state.data.inventory.filter(p=>{
       if(p.status!=='Active') return false;
-      const sizes = [p.stkM-p.soldM, p.stkL-p.soldL, p.stkXL-p.soldXL, p.stkXXL-p.soldXXL];
+      const sizes = [p.stkS-p.soldS, p.stkM-p.soldM, p.stkL-p.soldL, p.stkXL-p.soldXL, p.stkXXL-p.soldXXL, p.stk3XL-p.sold3XL];
       return sizes.some(s=>s<=threshold);
     });
     const html = `
@@ -6206,7 +6232,7 @@ YARZ.preview = {
     if(q) items = items.filter(p=>(p.name+p.category+p.fabric).toLowerCase().includes(q));
     $('preview-grid').innerHTML = items.length ? items.map(p=>{
       const left = Math.max(0,p.remaining);
-      const sizesAvail = ['M','L','XL','XXL'].filter(sz=>(p['stk'+sz]-p['sold'+sz])>0);
+      const sizesAvail = ['S','M','L','XL','XXL','3XL'].filter(sz=>(p['stk'+sz]-p['sold'+sz])>0);
       const imgs = [p.img1, p.img2, p.img3].map(x=>x?getImgSrc(x):'').filter(Boolean);
       const imgData = esc(JSON.stringify(imgs));
       return `<div class="preview-card" onclick="YARZ.inv.showDetails('${esc(p.name)}')">
@@ -6295,7 +6321,10 @@ YARZ.webControl = {
       this._previewImg(popupImg, 'wc-popup-preview');
     }
     const popupLink = $('wc-popup-link');
-    if(popupLink) popupLink.value = s['Promo Popup Link'] || '';
+    if(popupLink) {
+      popupLink.value = s['Promo Popup Link'] || '';
+      this._previewImg(popupLink, 'wc-popup-preview2');
+    }
 
     // --- Branding ---
     const logoEl = $('wc-logo'); if(logoEl) { logoEl.value = s['Website Logo URL']||''; this._previewImg(logoEl, 'wc-logo-preview'); }
@@ -6384,6 +6413,7 @@ YARZ.webControl = {
     const ttpx = $('wc-tt-pixel'); if(ttpx) ttpx.value = s['TT Pixel'] || '';
     const pinpx = $('wc-pin-pixel'); if(pinpx) pinpx.value = s['Pinterest Pixel'] || '';
     const snappx = $('wc-snap-pixel'); if(snappx) snappx.value = s['Snapchat Pixel'] || '';
+    const feedUrlDisp = $('fb-feed-url-display'); if(feedUrlDisp) feedUrlDisp.value = DEFAULT_API_URL + "?action=fb_feed&key=" + DEFAULT_API_KEY;
     const ogimg = $('wc-og-img'); if(ogimg) { ogimg.value = s['OG Image'] || ''; this._previewImg(ogimg, 'wc-og-preview'); }
     const gsct = $('wc-gsc-tag'); if(gsct) gsct.value = s['GSC Tag'] || '';
     const ccss = $('wc-custom-css'); if(ccss) ccss.value = s['Custom CSS'] || '';
@@ -6650,6 +6680,7 @@ YARZ.webControl = {
       'Meta Title': $('wc-meta-title')?.value.trim() || '',
       'Meta Desc': $('wc-meta-desc')?.value.trim() || '',
       'FB Pixel': $('wc-fb-pixel')?.value.trim() || '',
+      'FB CAPI Token': $('wc-fb-capi')?.value.trim() || '',
       'FB CAPI Token': $('wc-fb-capi-token')?.value.trim() || '',
       'GA4': $('wc-ga4')?.value.trim() || '',
       'IG Pixel': $('wc-ig-pixel')?.value.trim() || '',
@@ -7127,10 +7158,12 @@ const modalBuilders = {
 
       <div class="modal-section-title">📊 স্টক</div>
       <div class="row">
+        <div class="field"><label>S</label><input id="f-sS" type="number" class="input" value="0"></div>
         <div class="field"><label>M</label><input id="f-sM" type="number" class="input" value="0"></div>
         <div class="field"><label>L</label><input id="f-sL" type="number" class="input" value="0"></div>
         <div class="field"><label>XL</label><input id="f-sXL" type="number" class="input" value="0"></div>
         <div class="field"><label>XXL</label><input id="f-sXXL" type="number" class="input" value="0"></div>
+        <div class="field"><label>3XL</label><input id="f-s3XL" type="number" class="input" value="0"></div>
       </div>
 
       <div class="modal-actions">
@@ -7204,10 +7237,12 @@ const modalBuilders = {
       </div>
       <div class="modal-section-title">📊 স্টক</div>
       <div class="row">
+        <div class="field"><label>S</label><input id="f-sS" type="number" class="input" value="${p.stkS}"></div>
         <div class="field"><label>M</label><input id="f-sM" type="number" class="input" value="${p.stkM}"></div>
         <div class="field"><label>L</label><input id="f-sL" type="number" class="input" value="${p.stkL}"></div>
         <div class="field"><label>XL</label><input id="f-sXL" type="number" class="input" value="${p.stkXL}"></div>
         <div class="field"><label>XXL</label><input id="f-sXXL" type="number" class="input" value="${p.stkXXL}"></div>
+        <div class="field"><label>3XL</label><input id="f-s3XL" type="number" class="input" value="${p.stk3XL}"></div>
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
@@ -7231,7 +7266,7 @@ const modalBuilders = {
       </div>
       <div class="row">
         <div class="field"><label>Size <span id="se-stk-badge" class="chip chip-gray" style="font-size:10px;padding:2px 4px;margin-left:4px;display:none"></span></label>
-          <select id="se-size" class="select" onchange="YARZ._updateStkBadge('se')"><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+          <select id="se-size" class="select" onchange="YARZ._updateStkBadge('se')"><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>3XL</option></select>
         </div>
         <div class="field"><label>Quantity</label><input id="se-qty" type="number" class="input" value="1" min="1"></div>
       </div>
@@ -7290,7 +7325,7 @@ const modalBuilders = {
       </div>
       <div class="row">
         <div class="field"><label>Size <span id="o-stk-badge" class="chip chip-gray" style="font-size:10px;padding:2px 4px;margin-left:4px;display:none"></span></label>
-          <select id="o-size" class="select" onchange="YARZ._updateStkBadge('o')"><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+          <select id="o-size" class="select" onchange="YARZ._updateStkBadge('o')"><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>3XL</option></select>
         </div>
         <div class="field"><label>Qty</label><input id="o-qty" type="number" class="input" value="1" min="1" onchange="YARZ._calcOrder()"></div>
       </div>
@@ -7384,7 +7419,7 @@ const modalBuilders = {
       </div>
       <div class="row">
         <div class="field"><label>Size <span id="rt-stk-badge" class="chip chip-gray" style="font-size:10px;padding:2px 4px;margin-left:4px;display:none"></span></label>
-          <select id="rt-size" class="select" onchange="YARZ._updateStkBadge('rt')"><option>M</option><option>L</option><option>XL</option><option>XXL</option></select>
+          <select id="rt-size" class="select" onchange="YARZ._updateStkBadge('rt')"><option>S</option><option>M</option><option>L</option><option>XL</option><option>XXL</option><option>3XL</option></select>
         </div>
         <div class="field"><label>Quantity</label><input id="rt-q" type="number" class="input" value="1" min="1"></div>
       </div>
@@ -7432,30 +7467,35 @@ YARZ._saveNewProduct = async function(){
     vid:$('f-vid').value.trim(), desc:$('f-desc').value, sc:$('f-sc').value,
     cost, reg, sale, discPct:num($('f-disc').value),
     din:num($('f-din').value)||60, dout:num($('f-dout').value)||120,
-    sM:int($('f-sM').value), sL:int($('f-sL').value),
-    sXL:int($('f-sXL').value), sXXL:int($('f-sXXL').value)
+    sS:int($('f-sS')?$('f-sS').value:0), sM:int($('f-sM').value), sL:int($('f-sL').value),
+    sXL:int($('f-sXL').value), sXXL:int($('f-sXXL').value), s3XL:int($('f-s3XL')?$('f-s3XL').value:0)
   };
-  const btn = $('save-product'); btn.disabled = true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> সেভ হচ্ছে...';
+  const btn = $('save-product'); btn.disabled = true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
   try {
-    await resolveImageLinks(d);
-    const res = await appsPost('saveProductFromForm', d);
-    if(res && res.ok===false) throw new Error(res.msg||'Failed');
-    toast('প্রোডাক্ট সেভ হয়েছে','success');
+    // ✅ INSTANT UI SERVER: Close modal and update UI immediately (Zero latency)
     YARZ.closeModal();
-    // ✅ Optimistic UI: Insert directly into state so it shows up instantly without waiting
     state.data.inventory.unshift({
       name: d.name, img1: d.img1, img2: d.img2, img3: d.img3,
       img4: d.img4, img5: d.img5, img6: d.img6, video: d.vid,
       cost: d.cost, regular: d.reg, sale: d.sale, discPct: d.discPct,
       status: d.status, category: d.cat, fabric: d.fab, badge: d.bad,
-      stkM: d.sM, stkL: d.sL, stkXL: d.sXL, stkXXL: d.sXXL,
-      soldM: 0, soldL: 0, soldXL: 0, soldXXL: 0,
+      stkS: d.sS, stkM: d.sM, stkL: d.sL, stkXL: d.sXL, stkXXL: d.sXXL, stk3XL: d.s3XL,
+      soldS: 0, soldM: 0, soldL: 0, soldXL: 0, soldXXL: 0, sold3XL: 0,
       deliveryDhaka: d.din, deliveryOutside: d.dout,
       couponActive: d.cAct, couponCode: d.cCode, couponDisc: d.cDisc
     });
     YARZ.render();
-    // Background sync
-    loadInventory();
+    toast('সেভ করা হচ্ছে (Background)...', 'info');
+    
+    // Background Server Sync - Resolving images happens silently
+    resolveImageLinks(d).then(() => {
+      return appsPost('saveProductFromForm', d);
+    }).then(res => {
+      if(res && res.ok===false) throw new Error(res.msg||'Failed');
+      toast('প্রোডাক্ট সেভ হয়েছে!', 'success');
+      loadInventory();
+    }).catch(e => toast('Background Save Error: ' + e.message, 'error'));
+
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-floppy-disk"></i> সেভ করুন'; }
 };
 
@@ -7476,31 +7516,34 @@ YARZ._saveEditProduct = async function(){
     cost:num($('f-cost').value), reg:num($('f-reg').value), sale:num($('f-sale').value),
     discPct:num($('f-disc').value),
     din:num($('f-din').value)||60, dout:num($('f-dout').value)||120,
-    sM:int($('f-sM').value), sL:int($('f-sL').value),
-    sXL:int($('f-sXL').value), sXXL:int($('f-sXXL').value)
+    sS:int($('f-sS')?$('f-sS').value:0), sM:int($('f-sM').value), sL:int($('f-sL').value),
+    sXL:int($('f-sXL').value), sXXL:int($('f-sXXL').value), s3XL:int($('f-s3XL')?$('f-s3XL').value:0)
   };
-  const btn = $('save-edit'); btn.disabled = true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Updating...';
+  const btn = $('save-edit'); btn.disabled = true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
   try {
-    await resolveImageLinks(d);
-    const res = await appsPost('saveProductEditFromForm', d);
-    if(res && res.ok===false) throw new Error(res.msg||'Failed');
-    toast('Updated','success');
+    // ✅ INSTANT UI SERVER: Update state instantly (Zero latency)
     YARZ.closeModal();
-    // ✅ Optimistic UI: Update state directly for instant reflection
     const p = state.data.inventory.find(x => x.name === d.origName);
     if(p) {
-      p.name = d.name;
-      p.category = d.cat; p.fabric = d.fab; p.status = d.status; p.badge = d.bad;
-      p.img1 = d.img1; p.img2 = d.img2; p.img3 = d.img3;
-      p.img4 = d.img4; p.img5 = d.img5; p.img6 = d.img6; p.video = d.vid;
+      p.name = d.name; p.category = d.cat; p.fabric = d.fab; p.status = d.status; p.badge = d.bad;
+      p.img1 = d.img1; p.img2 = d.img2; p.img3 = d.img3; p.img4 = d.img4; p.img5 = d.img5; p.img6 = d.img6; p.video = d.vid;
       p.cost = d.cost; p.regular = d.reg; p.sale = d.sale; p.discPct = d.discPct;
-      p.stkM = d.sM; p.stkL = d.sL; p.stkXL = d.sXL; p.stkXXL = d.sXXL;
+      p.stkS = d.sS; p.stkM = d.sM; p.stkL = d.sL; p.stkXL = d.sXL; p.stkXXL = d.sXXL; p.stk3XL = d.s3XL;
       p.deliveryDhaka = d.din; p.deliveryOutside = d.dout;
       p.couponActive = d.cAct; p.couponCode = d.cCode; p.couponDisc = d.cDisc;
     }
     YARZ.render();
-    // Background sync
-    loadInventory();
+    toast('আপডেট করা হচ্ছে (Background)...', 'info');
+
+    // Background Server Sync - Resolving images happens silently
+    resolveImageLinks(d).then(() => {
+      return appsPost('saveProductEditFromForm', d);
+    }).then(res => {
+      if(res && res.ok===false) throw new Error(res.msg||'Failed');
+      toast('Updated!', 'success');
+      loadInventory();
+    }).catch(e => toast('Background Update Error: ' + e.message, 'error'));
+
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-floppy-disk"></i> Update'; }
 };
 
@@ -7519,13 +7562,20 @@ YARZ._saveSale = async function(){
   }
   const btn = $('save-sale'); btn.disabled = true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
   try {
-    const res = await appsPost('recordSale', { product, size, qty });
-    if(res && res.ok===false) throw new Error(res.msg||'Failed');
-    toast('বিক্রয় রেকর্ড হয়েছে','success');
+    // ✅ INSTANT UI SERVER
     YARZ.closeModal();
-    await loadInventory();
-    await loadTransactions();
+    if(pData) pData['sold'+size] += qty; // Optimistic stock update
     YARZ.render();
+    toast('বিক্রয় সেভ করা হচ্ছে (Background)...', 'info');
+
+    appsPost('recordSale', { product, size, qty }).then(async res => {
+      if(res && res.ok===false) throw new Error(res.msg||'Failed');
+      toast('বিক্রয় রেকর্ড হয়েছে!', 'success');
+      await loadInventory();
+      await loadTransactions();
+      YARZ.render();
+    }).catch(e => toast('Sale Sync Error: ' + e.message, 'error'));
+
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> বিক্রয় কনফার্ম'; }
 };
 
@@ -7552,7 +7602,7 @@ YARZ._showProductPreview = function(prefix){
   $(pfx+'-prod-name').textContent = p.name;
   $(pfx+'-prod-cat').textContent = (p.category||'') + (p.fabric?' · '+p.fabric:'') + (p.badge?' · '+p.badge:'');
   $(pfx+'-prod-price').textContent = fmtBDT(p.sale) + (p.regular>p.sale ? '  (MRP: '+fmtBDT(p.regular)+')' : '');
-  const sizes = [['M',p.stkM-p.soldM],['L',p.stkL-p.soldL],['XL',p.stkXL-p.soldXL],['XXL',p.stkXXL-p.soldXXL]];
+  const sizes = [['S',p.stkS-p.soldS],['M',p.stkM-p.soldM],['L',p.stkL-p.soldL],['XL',p.stkXL-p.soldXL],['XXL',p.stkXXL-p.soldXXL],['3XL',p.stk3XL-p.sold3XL]];
   $(pfx+'-prod-stock').innerHTML = sizes.map(([sz,qty])=>`<span class="chip ${qty>0?'chip-green':'chip-red'}" style="font-size:10px">${sz}: ${toBn(Math.max(0,qty))}</span>`).join('');
 };
 
@@ -7598,13 +7648,28 @@ YARZ._saveOrder = async function(){
   }
   const btn = $('save-order'); btn.disabled = true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
   try {
-    const res = await appsPost('saveOrderFromForm', d);
-    if(res && res.ok===false) throw new Error(res.msg||'Failed');
-    toast('Order সেভ হয়েছে','success');
+    // ✅ INSTANT UI SERVER
     YARZ.closeModal();
-    await loadOrders();
-    await loadInventory();
+    if(pData) pData['sold'+d.sz] += d.qty; // Optimistic stock decrease
+    
+    // Optimistic Order Injection
+    if (!state.data.orders) state.data.orders = [];
+    state.data.orders.unshift({
+      id: d.oid, date: new Date().toISOString(), customer: d.cust, phone: d.ph,
+      amount: (d.price * d.qty) + d.dlv, status: d.status,
+      items: [{name: d.prod, size: d.sz, qty: d.qty, price: d.price}]
+    });
     YARZ.render();
+    toast('অর্ডার সেভ করা হচ্ছে (Background)...', 'info');
+
+    appsPost('saveOrderFromForm', d).then(async res => {
+      if(res && res.ok===false) throw new Error(res.msg||'Failed');
+      toast('Order সেভ হয়েছে!', 'success');
+      await loadOrders();
+      await loadInventory();
+      YARZ.render();
+    }).catch(e => toast('Order Sync Error: ' + e.message, 'error'));
+
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> অর্ডার সেভ'; }
 };
 
@@ -7615,28 +7680,31 @@ YARZ._saveAd = async function(){
   const d = { prod:$('ad-p').value, spend, reach:0, imp:0, cl:0, nt:$('ad-notes').value };
   const btn = $('save-ad'); btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
   try {
-    const res = await appsPost('saveAdFromForm', d);
-    if(res && res.ok===false) throw new Error(res.msg||'Failed');
-    toast('Ad সেভ হয়েছে','success');
     YARZ.closeModal();
-    await loadAdTracker();
-    YARZ.render();
+    toast('Ad সেভ হচ্ছে (Background)...', 'info');
+    appsPost('saveAdFromForm', d).then(async res => {
+      if(res && res.ok===false) throw new Error(res.msg||'Failed');
+      toast('Ad সেভ হয়েছে!', 'success');
+      await loadAdTracker();
+      YARZ.render();
+    }).catch(e => toast('Ad Sync Error', 'error'));
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> সেভ'; }
 };
 
 YARZ._saveExp = async function(){
   const amt = num($('ex-amt').value);
   if(!amt){ toast('Amount দরকার','error'); return; }
-  // Fix: Apps Script saveExpenseFromForm expects {cat, desc, amt, nt}
   const d = { cat:$('ex-cat').value, amt, desc:$('ex-desc').value, nt:$('ex-paid').value };
   const btn = $('save-exp'); btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
   try {
-    const res = await appsPost('saveExpenseFromForm', d);
-    if(res && res.ok===false) throw new Error(res.msg||'Failed');
-    toast('Expense সেভ হয়েছে','success');
     YARZ.closeModal();
-    await loadExpenses();
-    YARZ.render();
+    toast('Expense সেভ হচ্ছে (Background)...', 'info');
+    appsPost('saveExpenseFromForm', d).then(async res => {
+      if(res && res.ok===false) throw new Error(res.msg||'Failed');
+      toast('Expense সেভ হয়েছে!', 'success');
+      await loadExpenses();
+      YARZ.render();
+    }).catch(e => toast('Expense Sync Error', 'error'));
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-check"></i> সেভ'; }
 };
 
@@ -7644,13 +7712,15 @@ YARZ._saveRet = async function(){
   const d = { prod:$('rt-product').value, sz:$('rt-size').value, qty:parseInt($('rt-q').value)||1, nt:$('rt-r').value, delLoss:parseFloat($('rt-dlv-loss')?.value)||0 };
   const btn = $('save-ret'); btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
   try {
-    const res = await appsPost('saveReturnFromForm', d);
-    if(res && res.ok===false) throw new Error(res.msg||'Failed');
-    toast('Return সেভ হয়েছে','success');
     YARZ.closeModal();
-    await loadInventory();
-    await loadTransactions();
-    YARZ.render();
+    toast('Return সেভ হচ্ছে (Background)...', 'info');
+    appsPost('saveReturnFromForm', d).then(async res => {
+      if(res && res.ok===false) throw new Error(res.msg||'Failed');
+      toast('Return সেভ হয়েছে!', 'success');
+      await loadInventory();
+      await loadTransactions();
+      YARZ.render();
+    }).catch(e => toast('Return Sync Error', 'error'));
   } catch(e){ toast(e.message,'error'); btn.disabled=false; btn.innerHTML='<i class="fas fa-rotate-left"></i> Return'; }
 };
 
