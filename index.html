@@ -93,7 +93,7 @@ body{
   font-size:14px;line-height:1.6;
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
-  overflow-x:hidden;
+  overflow-x:clip;
   letter-spacing:-0.005em;
 }
 
@@ -4136,6 +4136,7 @@ const YARZ = window.YARZ = {
   clearNotifications() {
     localStorage.setItem('yarz_notif_cleared', Date.now().toString());
     this.renderNotifications();
+    this.updateBadges(); // ✅ v10.5 Fix: Clear red dot immediately
     toast('সব নোটিফিকেশন ক্লিয়ার করা হয়েছে', 'success');
   },
 
