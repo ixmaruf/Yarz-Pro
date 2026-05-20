@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+all<!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
@@ -750,6 +750,187 @@ body.dark .load-overlay{background:rgba(0,0,0,0.6)}
 .load-overlay.show{display:flex}
 .load-overlay p{font-weight:500;color:#fff;font-size:12.5px}
 body.light .load-overlay p{color:var(--ink)}
+
+/* ============================================================
+   v11: BULK EDIT — Category chips + Action bar + Row styling
+============================================================ */
+.bulk-cat-chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-bottom:10px;
+  max-height:120px;
+  overflow-y:auto;
+  padding:4px;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.bulk-cat-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:5px 11px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:var(--surface);
+  color:var(--ink-2);
+  font-size:11.5px;
+  font-weight:600;
+  cursor:pointer;
+  transition:all 0.15s ease;
+  white-space:nowrap;
+  font-family:inherit;
+}
+.bulk-cat-chip:hover{
+  border-color:var(--accent);
+  color:var(--ink);
+}
+.bulk-cat-chip.active{
+  background:var(--accent);
+  color:var(--accent-ink, #fff);
+  border-color:var(--accent);
+}
+.bulk-cat-count{
+  background:rgba(255,255,255,0.25);
+  color:inherit;
+  font-size:9.5px;
+  font-weight:700;
+  padding:1px 6px;
+  border-radius:999px;
+  margin-left:2px;
+}
+.bulk-cat-chip:not(.active) .bulk-cat-count{
+  background:var(--chip-bg);
+  color:var(--ink-3);
+}
+.bulk-action-bar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  align-items:center;
+  margin-bottom:10px;
+  padding:8px 10px;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+.bulk-action-bar .btn-xs{
+  font-size:10.5px;
+  padding:4px 9px;
+}
+.bulk-list-row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  padding:8px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  background:var(--surface);
+  margin-bottom:4px;
+  border:1px solid transparent;
+  transition:all 0.12s ease;
+}
+.bulk-list-row:hover{
+  background:var(--surface-2);
+  border-color:var(--line);
+}
+.bulk-list-row input[type="checkbox"]{
+  width:16px;
+  height:16px;
+  cursor:pointer;
+  accent-color:var(--accent);
+  flex-shrink:0;
+}
+@media (max-width:600px){
+  .bulk-action-bar{
+    gap:4px;
+    padding:6px 8px;
+  }
+  .bulk-action-bar .btn-xs{
+    font-size:10px;
+    padding:4px 7px;
+  }
+  .bulk-cat-chip{
+    font-size:11px;
+    padding:4px 9px;
+  }
+}
+
+/* ✅ v11.1: Inventory Summary Tiles (per-category breakdown) */
+.inv-summary-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(180px, 1fr));
+  gap:10px;
+}
+.inv-summary-tile{
+  border-radius:12px;
+  padding:12px 13px;
+  border:1px solid var(--line);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  min-height:122px;
+  transition:transform 0.18s ease, box-shadow 0.18s ease;
+}
+.inv-summary-tile:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 18px rgba(0,0,0,0.06);
+}
+.inv-summary-tile .ist-label{
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.inv-summary-tile .ist-main{
+  display:flex;
+  align-items:baseline;
+  gap:6px;
+}
+.inv-summary-tile .ist-num{
+  font-size:26px;
+  font-weight:800;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+.inv-summary-tile .ist-sub{
+  font-size:11px;
+  font-weight:500;
+}
+.inv-summary-tile .ist-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+}
+.inv-summary-tile .ist-pill{
+  font-size:11px;
+  font-weight:600;
+  padding:3px 8px;
+  border-radius:999px;
+}
+.inv-summary-tile .ist-status{
+  font-size:10.5px;
+  font-weight:500;
+  margin-top:auto;
+  letter-spacing:0.01em;
+}
+@media (max-width:600px){
+  .inv-summary-grid{
+    grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+    gap:8px;
+  }
+  .inv-summary-tile{
+    padding:10px 11px;
+    min-height:108px;
+  }
+  .inv-summary-tile .ist-num{
+    font-size:22px;
+  }
+}
 
 /* Sub-tab pill bar (for Website Orders) */
 .subtab-bar{
@@ -2411,6 +2592,15 @@ body.dark select.select option{
           </div>
         </div>
 
+        <!-- ✅ v11.1: Inventory Summary Stats — products + stock per category -->
+        <div class="card" id="inv-summary-card" style="padding:14px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+            <div style="font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px"><i class="ri-pie-chart-2-line" style="color:var(--purple)"></i> ইনভেন্টরি সারসংক্ষেপ</div>
+            <div style="font-size:11px;color:var(--ink-3)">প্রোডাক্ট সংখ্যা ও স্টকের হিসাব ক্যাটাগরি ভিত্তিক</div>
+          </div>
+          <div id="inv-summary-grid" class="inv-summary-grid"></div>
+        </div>
+
         <div class="card" style="padding:14px">
           <div class="search-wrap">
             <i class="ri-search-line sicon"></i>
@@ -2557,6 +2747,7 @@ body.dark select.select option{
           <button class="subtab wc-tab" data-wc-tab="checkout" onclick="YARZ.webControl.setTab('checkout')"><i class="ri-shopping-cart-2-line"></i> Cart & Checkout</button>
           <button class="subtab wc-tab" data-wc-tab="marketing" onclick="YARZ.webControl.setTab('marketing')"><i class="ri-megaphone-line"></i> Marketing</button>
           <button class="subtab wc-tab" data-wc-tab="branding" onclick="YARZ.webControl.setTab('branding')"><i class="ri-paint-brush-line"></i> Branding & SEO</button>
+          <button class="subtab wc-tab" data-wc-tab="extras" onclick="YARZ.webControl.setTab('extras')"><i class="ri-sparkling-2-fill"></i> Extras (Premium)</button>
         </div>
 
         <style>
@@ -2991,6 +3182,259 @@ body.dark select.select option{
               <textarea id="wc-custom-css" class="textarea" style="font-family:monospace; font-size:12px; min-height:80px; background:#1e1e1e; color:#d4d4d4" placeholder="/* Write custom CSS here */"></textarea>
             </div>
           </div>
+        </div>
+
+        <!-- ✅ TAB: EXTRAS (PREMIUM) — v11 New: 15+ Shopify-grade controls -->
+        <div id="wc-tab-extras" class="wc-tab-content hidden">
+
+          <!-- 1. THEME PALETTE -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-palette-line" style="color:#7C3AED"></i> Full Theme Palette</h2></div>
+            <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.6">পুরো সাইটের রঙ একসাথে কন্ট্রোল — Primary brand, button accent, background, text, links সব এই তিনটা ভ্যালু থেকে auto-generate হবে।</div>
+            <div class="grid grid-3" style="gap:12px">
+              <div class="field"><label>Primary Color</label>
+                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-primary-pick" oninput="document.getElementById('wc-theme-primary').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-primary" class="input" placeholder="#634A8E" oninput="document.getElementById('wc-theme-primary-pick').value=this.value"></div>
+              </div>
+              <div class="field"><label>Background Tone</label>
+                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-bg-pick" oninput="document.getElementById('wc-theme-bg').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-bg" class="input" placeholder="#FBF8F1" oninput="document.getElementById('wc-theme-bg-pick').value=this.value"></div>
+              </div>
+              <div class="field"><label>Text Color</label>
+                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-text-pick" oninput="document.getElementById('wc-theme-text').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-text" class="input" placeholder="#1A1A2E" oninput="document.getElementById('wc-theme-text-pick').value=this.value"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. CUSTOM FONTS -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-font-size" style="color:#0EA5E9"></i> Typography Controls</h2></div>
+            <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px">Heading + body font আলাদা করে সেট করুন। Bengali font alongside English ফন্ট।</div>
+            <div class="grid grid-3" style="gap:12px">
+              <div class="field"><label>Heading Font</label>
+                <select id="wc-heading-font" class="select">
+                  <option value="">Default (Playfair Display)</option>
+                  <option value="Playfair Display">Playfair Display (Premium Italic)</option>
+                  <option value="Instrument Serif">Instrument Serif</option>
+                  <option value="Cormorant Garamond">Cormorant Garamond</option>
+                  <option value="Bodoni Moda">Bodoni Moda (Vogue)</option>
+                  <option value="DM Serif Display">DM Serif Display</option>
+                  <option value="Inter">Inter (Modern Sans)</option>
+                  <option value="Poppins">Poppins</option>
+                </select>
+              </div>
+              <div class="field"><label>Body Font</label>
+                <select id="wc-body-font" class="select">
+                  <option value="">Default (Inter)</option>
+                  <option value="Inter">Inter</option>
+                  <option value="Poppins">Poppins</option>
+                  <option value="Roboto">Roboto</option>
+                  <option value="Open Sans">Open Sans</option>
+                  <option value="Lato">Lato</option>
+                  <option value="Nunito">Nunito</option>
+                  <option value="Outfit">Outfit</option>
+                </select>
+              </div>
+              <div class="field"><label>Bengali Font</label>
+                <select id="wc-bn-font" class="select">
+                  <option value="">Default (Hind Siliguri)</option>
+                  <option value="Hind Siliguri">Hind Siliguri</option>
+                  <option value="Noto Sans Bengali">Noto Sans Bengali</option>
+                  <option value="Tiro Bangla">Tiro Bangla</option>
+                  <option value="Galada">Galada</option>
+                  <option value="Atma">Atma</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. PRODUCT CARD STYLE -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-layout-grid-2-line" style="color:#10B981"></i> Product Card Style</h2></div>
+            <div class="grid grid-2" style="gap:12px">
+              <div class="field"><label>Card Variant</label>
+                <select id="wc-card-style" class="select">
+                  <option value="rounded">Rounded (Default)</option>
+                  <option value="square">Square / Sharp</option>
+                  <option value="minimal">Minimal (No border)</option>
+                  <option value="glass">Glassmorphism</option>
+                </select>
+              </div>
+              <div class="field"><label>Hover Effect on Image</label>
+                <select id="wc-card-hover" class="select">
+                  <option value="zoom">Zoom In (Default)</option>
+                  <option value="swap">Swap to 2nd Image</option>
+                  <option value="lift">Lift + Shadow</option>
+                  <option value="none">None</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. SALE COUNTDOWN BAR -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-timer-line" style="color:#EF4444"></i> Sale Countdown Banner</h2></div>
+            <div class="flex-gap" style="margin-bottom:12px">
+              <label class="ios-toggle"><input type="checkbox" id="wc-countdown-active"><span class="slider"></span></label>
+              <span style="font-weight:600">Show countdown banner above hero</span>
+            </div>
+            <div class="grid grid-3" style="gap:12px">
+              <div class="field"><label>End Date & Time</label><input type="datetime-local" id="wc-countdown-end" class="input"></div>
+              <div class="field"><label>Banner Title</label><input type="text" id="wc-countdown-title" class="input" placeholder="🔥 Eid Mega Sale Ends In"></div>
+              <div class="field"><label>Style</label>
+                <select id="wc-countdown-style" class="select">
+                  <option value="red">Red Urgency</option>
+                  <option value="black">Premium Black</option>
+                  <option value="gradient">Gradient Sunset</option>
+                  <option value="brand">Brand Color</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. FREE SHIPPING BAR -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-truck-line" style="color:#22C55E"></i> Free Shipping Bar</h2></div>
+            <div class="flex-gap" style="margin-bottom:12px">
+              <label class="ios-toggle"><input type="checkbox" id="wc-freeship-active"><span class="slider"></span></label>
+              <span style="font-weight:600">Show free-shipping bar (above announcement)</span>
+            </div>
+            <div class="field">
+              <label>Bar Text — use {amount} placeholder for the threshold</label>
+              <input type="text" id="wc-freeship-text" class="input" placeholder="🚚 Free shipping on orders over ৳{amount}">
+            </div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:6px">⚠️ Free shipping target amount নিচে "Cart & Checkout" tab এর "Free Shipping Target Amount" ফিল্ডে সেট করবেন।</div>
+          </div>
+
+          <!-- 6. BEST SELLERS / NEW ARRIVALS / RECENTLY VIEWED -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-fire-line" style="color:#F59E0B"></i> Auto-Generated Sections</h2></div>
+            <div class="grid grid-2" style="gap:14px;margin-bottom:14px">
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-bestseller-active"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Best Sellers Section</div><div style="font-size:11px;color:var(--ink-3)">Top selling products auto-shown</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-newarrival-active"><span class="slider"></span></label>
+                <div><div style="font-weight:600">New Arrivals Auto-Badge</div><div style="font-size:11px;color:var(--ink-3)">Add "New" badge to recent products</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-recently-viewed"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Recently Viewed Section</div><div style="font-size:11px;color:var(--ink-3)">Bottom of homepage</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-wishlist-active"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Wishlist (Heart Icon)</div><div style="font-size:11px;color:var(--ink-3)">Save items for later</div></div>
+              </div>
+            </div>
+            <div class="grid grid-3" style="gap:12px">
+              <div class="field"><label>Best Sellers Title</label><input type="text" id="wc-bestseller-title" class="input" placeholder="🔥 Best Sellers"></div>
+              <div class="field"><label>Best Sellers Count</label><input type="number" id="wc-bestseller-count" class="input" placeholder="8" min="4" max="20"></div>
+              <div class="field"><label>"New" Threshold (Days)</label><input type="number" id="wc-newarrival-days" class="input" placeholder="7" min="1" max="60"></div>
+            </div>
+          </div>
+
+          <!-- 7. STICKY BUY BAR + VIDEO AUTOPLAY -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-shopping-bag-line" style="color:#EC4899"></i> Product Page Premium</h2></div>
+            <div class="grid grid-2" style="gap:14px">
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-sticky-buy"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Mobile Sticky Buy Bar</div><div style="font-size:11px;color:var(--ink-3)">Add-to-cart always visible on mobile</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-video-autoplay"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Product Video Autoplay</div><div style="font-size:11px;color:var(--ink-3)">Muted autoplay on detail page</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-oos-hide"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Hide Out-of-Stock Products</div><div style="font-size:11px;color:var(--ink-3)">Otherwise show with "Sold Out" overlay</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-quick-view-active"><span class="slider"></span></label>
+                <div><div style="font-weight:600">Quick View Modal</div><div style="font-size:11px;color:var(--ink-3)">Preview without leaving page</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 8. NEWSLETTER POPUP -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-mail-line" style="color:#3B82F6"></i> Newsletter Popup with Discount</h2></div>
+            <div class="flex-gap" style="margin-bottom:12px">
+              <label class="ios-toggle"><input type="checkbox" id="wc-newsletter-active"><span class="slider"></span></label>
+              <span style="font-weight:600">Show newsletter popup to new visitors</span>
+            </div>
+            <div class="grid grid-2" style="gap:12px;margin-bottom:10px">
+              <div class="field"><label>Headline</label><input type="text" id="wc-newsletter-title" class="input" placeholder="Get 10% off your first order!"></div>
+              <div class="field"><label>Discount Code to Reveal</label><input type="text" id="wc-newsletter-code" class="input" placeholder="WELCOME10"></div>
+            </div>
+            <div class="field">
+              <label>Trigger</label>
+              <select id="wc-newsletter-trigger" class="select">
+                <option value="5">After 5 seconds</option>
+                <option value="15">After 15 seconds</option>
+                <option value="30">After 30 seconds</option>
+                <option value="exit">On exit intent</option>
+                <option value="scroll">After 50% scroll</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 9. STORE HOURS / NEXT BUSINESS DAY -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-time-line" style="color:#8B5CF6"></i> Store Hours & Delivery Timing</h2></div>
+            <div class="flex-gap" style="margin-bottom:12px">
+              <label class="ios-toggle"><input type="checkbox" id="wc-hours-active"><span class="slider"></span></label>
+              <span style="font-weight:600">Show "Order ships next business day" message</span>
+            </div>
+            <div class="grid grid-2" style="gap:12px;margin-bottom:10px">
+              <div class="field"><label>Open Time (24h)</label><input type="time" id="wc-hours-open" class="input"></div>
+              <div class="field"><label>Close Time (24h)</label><input type="time" id="wc-hours-close" class="input"></div>
+            </div>
+            <div class="field"><label>After-Hours Message</label><input type="text" id="wc-hours-msg" class="input" placeholder="🌙 Order will ship next business day"></div>
+          </div>
+
+          <!-- 10. FAQ SECTION -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-question-answer-line" style="color:#0D9488"></i> FAQ Section (Footer)</h2></div>
+            <div class="flex-gap" style="margin-bottom:12px">
+              <label class="ios-toggle"><input type="checkbox" id="wc-faq-active"><span class="slider"></span></label>
+              <span style="font-weight:600">Show FAQ accordion on homepage</span>
+            </div>
+            <div id="wc-faq-list" style="display:flex;flex-direction:column;gap:10px"></div>
+            <button type="button" class="btn btn-ghost" onclick="YARZ.webControl.addFaq()" style="margin-top:10px;width:100%;color:var(--brand);border:1px dashed var(--brand)"><i class="ri-add-line"></i> Add FAQ Item (max 10)</button>
+          </div>
+
+          <!-- 11. CUSTOMER TESTIMONIALS -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-double-quotes-l" style="color:#F59E0B"></i> Customer Testimonials</h2></div>
+            <div class="flex-gap" style="margin-bottom:12px">
+              <label class="ios-toggle"><input type="checkbox" id="wc-reviews-active"><span class="slider"></span></label>
+              <span style="font-weight:600">Show testimonials section</span>
+            </div>
+            <div id="wc-reviews-list" style="display:flex;flex-direction:column;gap:10px"></div>
+            <button type="button" class="btn btn-ghost" onclick="YARZ.webControl.addReview()" style="margin-top:10px;width:100%;color:var(--brand);border:1px dashed var(--brand)"><i class="ri-add-line"></i> Add Testimonial (max 10)</button>
+          </div>
+
+          <!-- 12. FLOAT CHAT POSITION -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-chat-3-line" style="color:#25D366"></i> Floating Chat Button Position</h2></div>
+            <div class="grid grid-2" style="gap:12px">
+              <div class="field"><label>Position</label>
+                <select id="wc-float-pos" class="select">
+                  <option value="bottom-right">Bottom Right (Default)</option>
+                  <option value="bottom-left">Bottom Left</option>
+                </select>
+              </div>
+              <div class="field"><label>Bottom Offset (px)</label><input type="number" id="wc-float-offset" class="input" placeholder="20" min="0" max="200"></div>
+            </div>
+          </div>
+
+          <!-- 13. POPUP BANNER SLOTS -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-image-edit-line" style="color:#A855F7"></i> Promo Popup Slots (Eid, Ramadan, etc.)</h2></div>
+            <div style="font-size:12px;color:var(--ink-3);margin-bottom:14px">3টা পপআপ স্লট — schedule করুন কোনটা কখন দেখাবে।</div>
+            <div id="wc-popup-slots" style="display:flex;flex-direction:column;gap:14px"></div>
+          </div>
+
         </div>
 
         <!-- SAVE BUTTON STICKY — v10 FIX: spacer + safe-area + bottom-nav offset -->
@@ -4574,6 +5018,9 @@ YARZ.inv = {
     fc.innerHTML = '<option value="">সব Category</option>'+cats.map(c=>`<option ${c===curC?'selected':''}>${esc(c)}</option>`).join('');
     ff.innerHTML = '<option value="">সব Fabric</option>'+fabs.map(f=>`<option ${f===curF?'selected':''}>${esc(f)}</option>`).join('');
 
+    // ✅ v11.1: Render top summary widget (per-category counts + stock)
+    this.renderSummary();
+
     const q = ($('inv-search').value||'').toLowerCase().trim();
     const st = $('inv-filter-status').value;
     const c = $('inv-filter-cat').value;
@@ -4612,6 +5059,81 @@ YARZ.inv = {
         </div>
       </div>`;
     }).join('') : '<div class="empty-state"><i class="ri-archive-line" style="font-size:32px;opacity:0.4"></i><p style="margin-top:10px">কোনো পণ্য পাওয়া যায়নি</p></div>';
+  },
+
+  // ✅ v11.1: Per-category inventory summary widget
+  renderSummary(){
+    const grid = $('inv-summary-grid');
+    if(!grid) return;
+    const inv = state.data.inventory || [];
+    if(!inv.length){
+      grid.innerHTML = '<div style="grid-column:1/-1;padding:14px;text-align:center;color:var(--ink-3);font-size:12px">কোনো প্রোডাক্ট নেই</div>';
+      return;
+    }
+
+    // Helpers — one product's total left & total sold across all 6 sizes
+    const stockOf = (p) =>
+      Math.max(0, (p.stkS||0)-(p.soldS||0)) +
+      Math.max(0, (p.stkM||0)-(p.soldM||0)) +
+      Math.max(0, (p.stkL||0)-(p.soldL||0)) +
+      Math.max(0, (p.stkXL||0)-(p.soldXL||0)) +
+      Math.max(0, (p.stkXXL||0)-(p.soldXXL||0)) +
+      Math.max(0, (p.stk3XL||0)-(p.sold3XL||0));
+    const soldOf = (p) =>
+      (p.totalSold != null ? Number(p.totalSold) :
+        ((p.soldS||0)+(p.soldM||0)+(p.soldL||0)+(p.soldXL||0)+(p.soldXXL||0)+(p.sold3XL||0)));
+
+    // Group by category — count active+draft+archived separately + stock totals
+    const groups = {};
+    inv.forEach(p => {
+      const cat = (p.category || '').trim() || 'Uncategorized';
+      if(!groups[cat]) groups[cat] = { count:0, active:0, draft:0, archived:0, stock:0, sold:0, lowStock:0 };
+      const g = groups[cat];
+      g.count++;
+      const s = String(p.status||'').toLowerCase();
+      if(s === 'active') g.active++;
+      else if(s === 'draft') g.draft++;
+      else if(s === 'archived') g.archived++;
+      const left = stockOf(p);
+      g.stock += left;
+      g.sold  += soldOf(p);
+      if(left > 0 && left < 5) g.lowStock++;
+    });
+
+    // Totals
+    const total = { count:inv.length, active:0, draft:0, archived:0, stock:0, sold:0, lowStock:0 };
+    Object.values(groups).forEach(g => {
+      total.active += g.active; total.draft += g.draft; total.archived += g.archived;
+      total.stock  += g.stock;  total.sold  += g.sold;  total.lowStock  += g.lowStock;
+    });
+
+    // Build HTML — Total tile first (purple), then per-category tiles
+    const tile = (label, g, isTotal) => {
+      const accent = isTotal ? 'linear-gradient(135deg,#7C3AED,#A855F7)' : 'var(--surface-2)';
+      const fg = isTotal ? '#fff' : 'var(--ink)';
+      const fg2 = isTotal ? 'rgba(255,255,255,0.85)' : 'var(--ink-3)';
+      const subStock = g.stock === 0 ? 'No stock' : (g.lowStock ? `${toBn(g.lowStock)} low stock` : 'OK');
+      return `
+        <div class="inv-summary-tile" style="background:${accent};color:${fg};${isTotal?'box-shadow:0 6px 18px rgba(124,58,237,0.25)':''}">
+          <div class="ist-label" style="color:${fg2}">${esc(label)}</div>
+          <div class="ist-main">
+            <div class="ist-num">${toBn(g.count)}</div>
+            <div class="ist-sub" style="color:${fg2}">প্রোডাক্ট</div>
+          </div>
+          <div class="ist-row">
+            <span class="ist-pill" style="background:${isTotal?'rgba(255,255,255,0.18)':'var(--surface-1)'};color:${fg}">📦 Stock: ${toBn(g.stock)}</span>
+            <span class="ist-pill" style="background:${isTotal?'rgba(255,255,255,0.18)':'var(--surface-1)'};color:${fg}">💰 Sold: ${toBn(g.sold)}</span>
+          </div>
+          <div class="ist-status" style="color:${fg2}">
+            🟢 ${toBn(g.active)} • 📝 ${toBn(g.draft)} • 📦 ${toBn(g.archived)}${g.lowStock?` • ⚠ ${toBn(g.lowStock)} low`:''}
+          </div>
+        </div>`;
+    };
+
+    const sortedCats = Object.keys(groups).sort((a,b)=> groups[b].count - groups[a].count);
+    let html = tile('সব মিলিয়ে (Total)', total, true);
+    sortedCats.forEach(c => { html += tile(c, groups[c], false); });
+    grid.innerHTML = html;
   },
 
   showDetails(name){
@@ -4960,22 +5482,42 @@ YARZ.inv = {
   },
 
   showBulkEdit(){
-    const items = state.data.inventory.slice();
+    // ✅ v11: Compute unique categories from inventory for filter chips
+    const cats = [...new Set(state.data.inventory.map(p=>p.category).filter(Boolean))].sort();
+    const catChipsHtml = `
+      <button class="bulk-cat-chip active" data-cat="" onclick="YARZ.inv._bulkSetCat('')">All <span class="bulk-cat-count">${toBn(state.data.inventory.length)}</span></button>
+      ${cats.map(c => {
+        const count = state.data.inventory.filter(p => p.category === c).length;
+        return `<button class="bulk-cat-chip" data-cat="${esc(c)}" onclick="YARZ.inv._bulkSetCat('${esc(c).replace(/'/g,"\\'")}')">${esc(c)} <span class="bulk-cat-count">${toBn(count)}</span></button>`;
+      }).join('')}
+    `;
     const html = `
       <div class="modal-header">
-        <h3>🗂️ Bulk Editor</h3>
+        <h3>🗂️ Bulk Editor <span style="font-size:11px;font-weight:500;color:var(--ink-3);margin-left:8px">— Select & apply changes to many products at once</span></h3>
         <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
       </div>
       <div class="search-wrap">
         <i class="fas fa-search sicon"></i>
-        <input id="bulk-search" class="input" placeholder="Search..." oninput="YARZ.inv._bulkRender()">
+        <input id="bulk-search" class="input" placeholder="Search products..." oninput="YARZ.inv._bulkRender()">
       </div>
-      <div class="flex-gap mb-2">
-        <button class="btn btn-ghost btn-xs" onclick="YARZ.inv._bulkSelAll(true)">All</button>
-        <button class="btn btn-ghost btn-xs" onclick="YARZ.inv._bulkSelAll(false)">None</button>
-        <span id="bulk-count" style="margin-left:auto;font-size:11px;opacity:0.7">0 selected</span>
+
+      <!-- ✅ v11: Category filter chips -->
+      <div class="modal-section-title" style="margin-top:6px;margin-bottom:6px">📁 Filter by Category</div>
+      <div class="bulk-cat-chips" id="bulk-cat-chips">
+        ${catChipsHtml}
       </div>
-      <div id="bulk-list" style="max-height:40vh;overflow-y:auto;margin-bottom:14px"></div>
+
+      <!-- ✅ v11: Select-all helpers (current view + current category) -->
+      <div class="bulk-action-bar">
+        <button class="btn btn-ghost btn-xs" onclick="YARZ.inv._bulkSelVisible(true)" title="Select everything currently visible"><i class="fas fa-check-square"></i> Select Visible</button>
+        <button class="btn btn-ghost btn-xs" onclick="YARZ.inv._bulkSelVisible(false)"><i class="far fa-square"></i> Deselect Visible</button>
+        <button class="btn btn-ghost btn-xs" onclick="YARZ.inv._bulkSelByCategory()" title="Select all products in the currently filtered category"><i class="fas fa-folder-plus"></i> Select All in Category</button>
+        <button class="btn btn-ghost btn-xs" onclick="YARZ.inv._bulkSelAll(false)"><i class="fas fa-times"></i> Clear All</button>
+        <span id="bulk-count" style="margin-left:auto;font-size:12px;font-weight:700;color:var(--accent)">০ selected</span>
+      </div>
+
+      <div id="bulk-list" style="max-height:36vh;overflow-y:auto;margin-bottom:14px;border:1px solid var(--line);border-radius:10px;padding:6px"></div>
+
       <div class="modal-section-title">Apply Changes</div>
       <div class="row">
         <div class="field"><label>Status</label>
@@ -4984,7 +5526,7 @@ YARZ.inv = {
           </select>
         </div>
         <div class="field"><label>Discount %</label>
-          <input id="bulk-disc" type="number" class="input" placeholder="10">
+          <input id="bulk-disc" type="number" class="input" placeholder="e.g. 10" min="0" max="90">
         </div>
         <div class="field"><label>Badge</label>
           <select id="bulk-badge" class="select">
@@ -4993,93 +5535,202 @@ YARZ.inv = {
           </select>
         </div>
       </div>
-      <div class="modal-section-title" style="margin-top:12px">🚚 ডেলিভারি চার্জ (Bulk Update)</div>
-      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;margin-bottom:14px">
-        <div style="font-size:11px;opacity:0.65;margin-bottom:8px">ফাঁকা রাখলে আগের চার্জ থাকবে। নতুন মান দিলে সিলেক্ট করা সব প্রোডাক্টে একসাথে আপডেট হবে।</div>
+
+      <!-- ✅ v11: Category change (move products to a different category) -->
+      <div class="row" style="margin-top:6px">
+        <div class="field"><label>Change Category To</label>
+          <input id="bulk-cat-new" class="input" list="bulk-cat-list" placeholder="— Skip — (type or pick existing)">
+          <datalist id="bulk-cat-list">
+            ${cats.map(c=>`<option value="${esc(c)}">`).join('')}
+          </datalist>
+        </div>
+      </div>
+
+      <div class="modal-section-title" style="margin-top:14px">🚚 Delivery Charge (Bulk Update)</div>
+      <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px">
+        <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px">ফাঁকা রাখলে আগের চার্জ থাকবে। নতুন মান দিলে সিলেক্ট করা সব প্রোডাক্টে একসাথে আপডেট হবে।</div>
         <div class="row">
-          <div class="field"><label>🏠 Inside Narayanganj (৳)</label>
-            <input id="bulk-del-inside" type="number" class="input" placeholder="যেমন: 70" min="0" step="5">
+          <div class="field"><label>🏠 Inside Charge (৳)</label>
+            <input id="bulk-del-inside" type="number" class="input" placeholder="e.g. 70" min="0" step="5">
           </div>
-          <div class="field"><label>🚛 Outside Narayanganj (৳)</label>
-            <input id="bulk-del-outside" type="number" class="input" placeholder="যেমন: 140" min="0" step="5">
+          <div class="field"><label>🚛 Outside Charge (৳)</label>
+            <input id="bulk-del-outside" type="number" class="input" placeholder="e.g. 140" min="0" step="5">
           </div>
         </div>
       </div>
+
+      <!-- ✅ v11.1: Coupon Code Bulk Update -->
+      <div class="modal-section-title">🎫 Coupon Code (Bulk Update)</div>
+      <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px">
+        <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px">সিলেক্ট করা প্রোডাক্টগুলোতে আলাদা কুপন কোড দিন। নিচের 3টা ফাঁকা রাখলে আগের কুপন থাকবে।</div>
+        <div class="row">
+          <div class="field"><label>Coupon Active</label>
+            <select id="bulk-coupon-active" class="select">
+              <option value="">— Skip —</option>
+              <option value="Yes">Yes (Activate)</option>
+              <option value="No">No (Deactivate)</option>
+            </select>
+          </div>
+          <div class="field"><label>Coupon Code</label>
+            <input id="bulk-coupon-code" class="input" placeholder="e.g. EID20" maxlength="32">
+          </div>
+          <div class="field"><label>Coupon Discount %</label>
+            <input id="bulk-coupon-disc" type="number" class="input" placeholder="e.g. 15" min="0" max="90">
+          </div>
+        </div>
+      </div>
+
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
-        <button class="btn btn-primary" onclick="YARZ.inv._bulkApply()"><i class="fas fa-check"></i> Apply</button>
+        <button class="btn btn-primary" onclick="YARZ.inv._bulkApply()"><i class="fas fa-check"></i> Apply to Selected</button>
       </div>
     `;
     $('modal-content').innerHTML = html;
     $('modal-overlay').classList.add('show');
     YARZ.inv._bulkSel = {};
+    YARZ.inv._bulkCatFilter = '';
     YARZ.inv._bulkRender();
   },
 
   _bulkSel: {},
-  _bulkRender(){
+  _bulkCatFilter: '',
+
+  // ✅ v11: Filter list by category chip
+  _bulkSetCat(cat){
+    YARZ.inv._bulkCatFilter = cat || '';
+    // Update chip active state
+    qsa('.bulk-cat-chip').forEach(el => {
+      el.classList.toggle('active', (el.dataset.cat || '') === (cat || ''));
+    });
+    YARZ.inv._bulkRender();
+  },
+
+  // ✅ v11: Get currently visible items (after search + category filter)
+  _bulkVisibleItems(){
     const q = ($('bulk-search')?.value||'').toLowerCase().trim();
+    const cat = YARZ.inv._bulkCatFilter || '';
     let items = state.data.inventory.slice();
-    if(q) items = items.filter(p=>p.name.toLowerCase().includes(q));
+    if(cat) items = items.filter(p => p.category === cat);
+    if(q) items = items.filter(p => p.name.toLowerCase().includes(q));
+    return items;
+  },
+
+  _bulkRender(){
+    const items = YARZ.inv._bulkVisibleItems();
     $('bulk-list').innerHTML = items.map((p,i)=>{
       const chk = YARZ.inv._bulkSel[p.name]?'checked':'';
-      return `<label style="display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px;cursor:pointer;background:rgba(255,255,255,0.04);margin-bottom:5px">
-        <input type="checkbox" ${chk} onchange="YARZ.inv._bulkSel['${esc(p.name)}']=this.checked;YARZ.inv._bulkCount()">
-        <div style="flex:1">
-          <div style="font-size:12.5px;font-weight:600">${esc(p.name)}</div>
-          <div style="font-size:10.5px;opacity:0.6">${esc(p.status)} • ${fmtBDT(p.sale)}</div>
+      const stChip = p.status === 'Active' ? 'chip-green' : p.status === 'Draft' ? 'chip-amber' : 'chip-gray';
+      return `<label class="bulk-list-row">
+        <input type="checkbox" ${chk} onchange="YARZ.inv._bulkSel['${esc(p.name).replace(/'/g,"\\'")}']=this.checked;YARZ.inv._bulkCount()">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</div>
+          <div style="font-size:10.5px;color:var(--ink-3);margin-top:3px">
+            <span class="chip ${stChip}" style="font-size:9px;padding:1px 6px">${esc(p.status||'Draft')}</span>
+            <span style="margin-left:6px">${esc(p.category||'No category')}</span>
+            <span style="margin-left:6px;font-weight:600;color:var(--ink-2)">${fmtBDT(p.sale)}</span>
+          </div>
         </div>
       </label>`;
-    }).join('') || '<div class="empty-state">নেই</div>';
+    }).join('') || '<div class="empty-state" style="padding:24px;text-align:center;color:var(--ink-3)">No products match.</div>';
     YARZ.inv._bulkCount();
   },
 
   _bulkCount(){
     const c = Object.values(YARZ.inv._bulkSel).filter(Boolean).length;
-    $('bulk-count').textContent = toBn(c)+' selected';
+    const el = $('bulk-count');
+    if(el) {
+      // ✅ v11.1: Show out-of-total count, e.g. "5 / 12 selected"
+      const total = YARZ.inv._bulkVisibleItems().length;
+      el.textContent = `${toBn(c)} / ${toBn(total)} selected`;
+      el.style.color = c > 0 ? 'var(--success, #22c55e)' : 'var(--ink-3)';
+    }
   },
 
   _bulkSelAll(v){
-    state.data.inventory.forEach(p=>{ YARZ.inv._bulkSel[p.name] = !!v; });
+    if(v){
+      state.data.inventory.forEach(p=>{ YARZ.inv._bulkSel[p.name] = true; });
+    } else {
+      YARZ.inv._bulkSel = {};
+    }
     YARZ.inv._bulkRender();
+  },
+
+  // ✅ v11: Select / deselect only the items currently visible (after filter+search)
+  _bulkSelVisible(v){
+    const items = YARZ.inv._bulkVisibleItems();
+    items.forEach(p => { YARZ.inv._bulkSel[p.name] = !!v; });
+    YARZ.inv._bulkRender();
+  },
+
+  // ✅ v11: Select every product in the currently filtered category
+  _bulkSelByCategory(){
+    const cat = YARZ.inv._bulkCatFilter;
+    if(!cat){
+      toast('প্রথমে উপরের চিপ থেকে একটা ক্যাটাগরি সিলেক্ট করুন', 'warning');
+      return;
+    }
+    state.data.inventory
+      .filter(p => p.category === cat)
+      .forEach(p => { YARZ.inv._bulkSel[p.name] = true; });
+    YARZ.inv._bulkRender();
+    toast(`${toBn(Object.values(YARZ.inv._bulkSel).filter(Boolean).length)} products selected from ${cat}`, 'success');
   },
 
   async _bulkApply(){
     const names = Object.keys(YARZ.inv._bulkSel).filter(k=>YARZ.inv._bulkSel[k]);
-    if(!names.length){ toast('সিলেক্ট করুন','error'); return; }
-    const st = $('bulk-status').value;
-    const disc = parseFloat($('bulk-disc').value)||0;
-    const bd = $('bulk-badge').value;
-    // v4.3: Delivery charge bulk update
+    if(!names.length){ toast('কমপক্ষে একটি প্রোডাক্ট সিলেক্ট করুন','error'); return; }
+    const st = $('bulk-status')?.value || '';
+    const disc = parseFloat($('bulk-disc')?.value)||0;
+    const bd = $('bulk-badge')?.value || '';
+    const newCat = $('bulk-cat-new')?.value.trim() || '';
     const delInsideEl = $('bulk-del-inside');
     const delOutsideEl = $('bulk-del-outside');
-    const delInside = delInsideEl && delInsideEl.value !== '' ? parseFloat(delInsideEl.value) : null;
+    const delInside  = delInsideEl  && delInsideEl.value !== ''  ? parseFloat(delInsideEl.value)  : null;
     const delOutside = delOutsideEl && delOutsideEl.value !== '' ? parseFloat(delOutsideEl.value) : null;
-    
-    // Validate: at least one field should have a value
-    if(!st && !disc && !bd && delInside === null && delOutside === null){
+
+    // ✅ v11.1: Coupon bulk fields
+    const cAct = $('bulk-coupon-active')?.value || '';
+    const cCode = $('bulk-coupon-code')?.value.trim() || '';
+    const cDiscRaw = $('bulk-coupon-disc')?.value;
+    const cDisc = cDiscRaw !== '' && cDiscRaw != null ? parseFloat(cDiscRaw) : null;
+
+    // Validate: at least one change must be requested
+    if(!st && !disc && !bd && !newCat && delInside === null && delOutside === null
+       && !cAct && !cCode && cDisc === null){
       toast('কমপক্ষে একটি ফিল্ড পূরণ করুন','warning');
       return;
     }
-    
-    showLoader('Bulk আপডেট হচ্ছে...');
+
+    showLoader(`${toBn(names.length)} টি প্রোডাক্ট আপডেট হচ্ছে...`);
     try {
       const payload = { names, st, disc, bd };
+      if(newCat) payload.category = newCat;
       if(delInside !== null) payload.delInside = delInside;
       if(delOutside !== null) payload.delOutside = delOutside;
+      if(cAct)             payload.couponActive = cAct;
+      if(cCode)            payload.couponCode = cCode;
+      if(cDisc !== null)   payload.couponDisc = cDisc;
       const res = await appsPost('applyBulkEdit', payload);
       if(res && res.ok===false) throw new Error(res.msg||'Failed');
-      // Optimistic local update for delivery charges
-      if(delInside !== null || delOutside !== null){
-        names.forEach(name => {
-          const p = state.data.inventory.find(x=>x.name===name);
-          if(p){
-            if(delInside !== null) p.deliveryDhaka = delInside;
-            if(delOutside !== null) p.deliveryOutside = delOutside;
-          }
-        });
-      }
-      toast(`${toBn(names.length)} টি আপডেট হয়েছে`,'success');
+
+      // Optimistic local updates so admin UI reflects changes instantly
+      names.forEach(name => {
+        const p = state.data.inventory.find(x=>x.name===name);
+        if(!p) return;
+        if(st) p.status = st;
+        if(bd) p.badge = bd;
+        if(newCat) p.category = newCat;
+        if(disc > 0 && p.regular > 0){
+          p.sale = Math.round(p.regular * (1 - disc/100));
+        }
+        if(delInside  !== null) p.deliveryDhaka  = delInside;
+        if(delOutside !== null) p.deliveryOutside = delOutside;
+        if(cAct)            p.couponActive = cAct;
+        if(cCode)           p.couponCode = cCode;
+        if(cDisc !== null)  p.couponDisc = cDisc;
+      });
+
+      toast(`${toBn(names.length)} টি প্রোডাক্ট সফলভাবে আপডেট হয়েছে ✅`,'success');
       YARZ.closeModal();
       await loadInventory();
       YARZ.render();
@@ -6312,6 +6963,12 @@ YARZ.webControl = {
       } else if(tab === 'checkout') {
         const dc = $('wc-delivery-locations');
         if(dc && !dc.children.length) this.renderDeliveryRows();
+      } else if(tab === 'extras') {
+        // ✅ v11: Lazy-render the Extras tab on first open
+        const fl = $('wc-faq-list'), rl = $('wc-reviews-list'), ps = $('wc-popup-slots');
+        if(fl && !fl.children.length) this.renderFaqs();
+        if(rl && !rl.children.length) this.renderReviews();
+        if(ps && !ps.children.length) this.renderPopupSlots();
       }
     } catch(e) { /* silent */ }
   },
@@ -6451,6 +7108,9 @@ YARZ.webControl = {
     const ccss = $('wc-custom-css'); if(ccss) ccss.value = s['Custom CSS'] || '';
     const tgt = $('wc-tg-token'); if(tgt) tgt.value = s['Telegram Bot Token'] || '';
     const tgc = $('wc-tg-chat'); if(tgc) tgc.value = s['Telegram Chat ID'] || '';
+
+    // ✅ v11: Extras tab fields
+    try { this._renderExtras(); } catch(e) { console.warn('Extras render error', e); }
   },
 
   // ✅ v3.7 FIX: Hero Slider Banners now have a dedicated render function so
@@ -6652,6 +7312,179 @@ YARZ.webControl = {
     }
   },
 
+  /* ============================================================
+     ✅ v11 EXTRAS TAB (PREMIUM) — render + save helpers
+     ============================================================ */
+
+  // FAQ rows
+  _buildFaqRowHTML(idx, q, a){
+    return `
+      <div class="wc-faq-row" data-idx="${idx}" style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-1);position:relative">
+        <button type="button" onclick="this.closest('.wc-faq-row').remove()" style="position:absolute;top:6px;right:6px;background:var(--danger);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px" title="Remove"><i class="ri-close-line"></i></button>
+        <div class="field" style="margin:0 0 8px 0"><label style="font-size:11px">Question</label><input type="text" class="input wc-faq-q" value="${esc(q||'')}" placeholder="e.g. What is your return policy?"></div>
+        <div class="field" style="margin:0"><label style="font-size:11px">Answer</label><textarea class="input wc-faq-a" rows="2" placeholder="Short, customer-friendly answer">${esc(a||'')}</textarea></div>
+      </div>`;
+  },
+  renderFaqs(){
+    const list = $('wc-faq-list'); if(!list) return;
+    const s = state.data.settings || {};
+    let html = '';
+    for(let i=1;i<=10;i++){
+      const q = s[`FAQ Q${i}`] || '';
+      const a = s[`FAQ A${i}`] || '';
+      if(q || a) html += this._buildFaqRowHTML(i, q, a);
+    }
+    if(!html) html = this._buildFaqRowHTML(1, '', '');
+    list.innerHTML = html;
+  },
+  addFaq(){
+    const list = $('wc-faq-list'); if(!list) return;
+    if(list.children.length >= 10){ toast('Maximum 10 FAQ items','error'); return; }
+    const div = document.createElement('div');
+    div.innerHTML = this._buildFaqRowHTML(list.children.length + 1, '', '');
+    list.appendChild(div.firstElementChild);
+  },
+
+  // Testimonial rows
+  _buildReviewRowHTML(idx, name, photo, stars, text){
+    return `
+      <div class="wc-rev-row" data-idx="${idx}" style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-1);position:relative">
+        <button type="button" onclick="this.closest('.wc-rev-row').remove()" style="position:absolute;top:6px;right:6px;background:var(--danger);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px" title="Remove"><i class="ri-close-line"></i></button>
+        <div class="grid grid-3" style="gap:10px;margin-bottom:8px">
+          <div class="field" style="margin:0"><label style="font-size:11px">Customer Name</label><input type="text" class="input wc-rev-name" value="${esc(name||'')}" placeholder="e.g. Tahmid Hasan"></div>
+          <div class="field" style="margin:0"><label style="font-size:11px">Photo URL (optional)</label><input type="text" class="input wc-rev-photo" value="${esc(photo||'')}" placeholder="i.ibb.co/abc/face.jpg"></div>
+          <div class="field" style="margin:0"><label style="font-size:11px">Stars (1-5)</label><input type="number" min="1" max="5" class="input wc-rev-stars" value="${esc(stars||'5')}"></div>
+        </div>
+        <div class="field" style="margin:0"><label style="font-size:11px">Review Text</label><textarea class="input wc-rev-text" rows="2" placeholder="দারুণ কোয়ালিটি, খুব দ্রুত ডেলিভারি!">${esc(text||'')}</textarea></div>
+      </div>`;
+  },
+  renderReviews(){
+    const list = $('wc-reviews-list'); if(!list) return;
+    const s = state.data.settings || {};
+    let html = '';
+    for(let i=1;i<=10;i++){
+      const n = s[`Review ${i} Name`] || '';
+      const p = s[`Review ${i} Photo`] || '';
+      const st = s[`Review ${i} Stars`] || '';
+      const t = s[`Review ${i} Text`] || '';
+      if(n || t) html += this._buildReviewRowHTML(i, n, p, st, t);
+    }
+    if(!html) html = this._buildReviewRowHTML(1, '', '', '5', '');
+    list.innerHTML = html;
+  },
+  addReview(){
+    const list = $('wc-reviews-list'); if(!list) return;
+    if(list.children.length >= 10){ toast('Maximum 10 testimonials','error'); return; }
+    const div = document.createElement('div');
+    div.innerHTML = this._buildReviewRowHTML(list.children.length + 1, '', '', '5', '');
+    list.appendChild(div.firstElementChild);
+  },
+
+  // Promo Popup Slots (3)
+  _buildPopupSlotHTML(idx, active, img, link, start, end, trigger){
+    return `
+      <div class="wc-popup-slot" data-idx="${idx}" style="padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface-1)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-weight:700;color:var(--ink-2)">Popup Slot ${idx}</div>
+          <label class="ios-toggle"><input type="checkbox" class="wc-popup-active" ${active?'checked':''}><span class="slider"></span></label>
+        </div>
+        <div class="grid grid-2" style="gap:10px;margin-bottom:8px">
+          <div class="field" style="margin:0"><label style="font-size:11px">Popup Image URL</label><input type="text" class="input wc-popup-img" value="${esc(img||'')}" placeholder="https://i.ibb.co/abc/eid-popup.jpg"></div>
+          <div class="field" style="margin:0"><label style="font-size:11px">Click Target Link (optional)</label><input type="text" class="input wc-popup-link" value="${esc(link||'')}" placeholder="/category/eid-special"></div>
+        </div>
+        <div class="grid grid-3" style="gap:10px">
+          <div class="field" style="margin:0"><label style="font-size:11px">Start Date</label><input type="date" class="input wc-popup-start" value="${esc(start||'')}"></div>
+          <div class="field" style="margin:0"><label style="font-size:11px">End Date</label><input type="date" class="input wc-popup-end" value="${esc(end||'')}"></div>
+          <div class="field" style="margin:0"><label style="font-size:11px">Trigger</label>
+            <select class="input wc-popup-trigger">
+              <option value="3" ${trigger==='3'?'selected':''}>After 3s</option>
+              <option value="10" ${trigger==='10'?'selected':''}>After 10s</option>
+              <option value="30" ${trigger==='30'?'selected':''}>After 30s</option>
+              <option value="exit" ${trigger==='exit'?'selected':''}>On exit intent</option>
+              <option value="scroll" ${trigger==='scroll'?'selected':''}>After 50% scroll</option>
+            </select>
+          </div>
+        </div>
+      </div>`;
+  },
+  renderPopupSlots(){
+    const list = $('wc-popup-slots'); if(!list) return;
+    const s = state.data.settings || {};
+    let html = '';
+    for(let i=1;i<=3;i++){
+      const a = String(s[`Popup ${i} Active`] || '') === 'true';
+      const img = s[`Popup ${i} Image`] || '';
+      const link = s[`Popup ${i} Link`] || '';
+      const st = s[`Popup ${i} Start`] || '';
+      const en = s[`Popup ${i} End`] || '';
+      const tr = s[`Popup ${i} Trigger`] || '10';
+      html += this._buildPopupSlotHTML(i, a, img, link, st, en, tr);
+    }
+    list.innerHTML = html;
+  },
+
+  // Render all extras fields from settings
+  _renderExtras(){
+    const s = state.data.settings || {};
+    const setVal = (id, v, fb='') => { const el = $(id); if(el) el.value = v != null && v !== '' ? v : fb; };
+    const setChk = (id, v) => { const el = $(id); if(el) el.checked = (String(v) === 'true' || v === true); };
+    const setPair = (txtId, pickId, v, fb) => { const t=$(txtId), p=$(pickId); if(t) t.value = v||fb||''; if(p) p.value = v||fb||'#000000'; };
+
+    // 1. Theme Palette
+    setPair('wc-theme-primary', 'wc-theme-primary-pick', s['Theme Primary'], '#634A8E');
+    setPair('wc-theme-bg',      'wc-theme-bg-pick',      s['Theme BG'],      '#FBF8F1');
+    setPair('wc-theme-text',    'wc-theme-text-pick',    s['Theme Text'],    '#1A1A2E');
+    // 2. Typography
+    setVal('wc-heading-font', s['Heading Font']);
+    setVal('wc-body-font',    s['Body Font']);
+    setVal('wc-bn-font',      s['Bengali Font']);
+    // 3. Card Style
+    setVal('wc-card-style', s['Card Style'] || 'rounded');
+    setVal('wc-card-hover', s['Card Hover'] || 'zoom');
+    // 4. Countdown
+    setChk('wc-countdown-active', s['Countdown Active']);
+    setVal('wc-countdown-end',    s['Countdown End']);
+    setVal('wc-countdown-title',  s['Countdown Title']);
+    setVal('wc-countdown-style',  s['Countdown Style'] || 'red');
+    // 5. Free Shipping
+    setChk('wc-freeship-active', s['Free Ship Bar Active']);
+    setVal('wc-freeship-text',   s['Free Ship Bar Text'] || '🚚 Free shipping on orders over ৳{amount}');
+    // 6. Best Sellers / New Arrivals / Recently Viewed / Wishlist
+    setChk('wc-bestseller-active', s['Best Sellers Active']);
+    setVal('wc-bestseller-title',  s['Best Sellers Title'] || '🔥 Best Sellers');
+    setVal('wc-bestseller-count',  s['Best Sellers Count'] || 8);
+    setChk('wc-newarrival-active', s['New Arrival Active']);
+    setVal('wc-newarrival-days',   s['New Arrival Days'] || 7);
+    setChk('wc-recently-viewed',   s['Recently Viewed']);
+    setChk('wc-wishlist-active',   s['Wishlist Active']);
+    // 7. Product Page Premium
+    setChk('wc-sticky-buy',         s['Sticky ATC Mobile']);
+    setChk('wc-video-autoplay',     s['Video Autoplay']);
+    setChk('wc-oos-hide',           s['OOS Hide']);
+    setChk('wc-quick-view-active',  s['Quick View Active']);
+    // 8. Newsletter
+    setChk('wc-newsletter-active', s['Newsletter Active']);
+    setVal('wc-newsletter-title',  s['Newsletter Title'] || 'Get 10% off your first order!');
+    setVal('wc-newsletter-code',   s['Newsletter Code'] || '');
+    setVal('wc-newsletter-trigger',s['Newsletter Trigger'] || '15');
+    // 9. Store Hours
+    setChk('wc-hours-active', s['Store Hours Active']);
+    setVal('wc-hours-open',   s['Store Hours Open']);
+    setVal('wc-hours-close',  s['Store Hours Close']);
+    setVal('wc-hours-msg',    s['Store Hours Msg']);
+    // 10. FAQ
+    setChk('wc-faq-active', s['FAQ Active']);
+    this.renderFaqs();
+    // 11. Reviews
+    setChk('wc-reviews-active', s['Reviews Active']);
+    this.renderReviews();
+    // 12. Float Chat
+    setVal('wc-float-pos',    s['Float Chat Position'] || 'bottom-right');
+    setVal('wc-float-offset', s['Float Chat Offset']   || 20);
+    // 13. Popup Slots
+    this.renderPopupSlots();
+  },
+
   async save() {
     const deliveryLocations = this._collectDeliveryLocations();
     // ✅ v3.6: Narayanganj defaults (used for legacy Zone 1/2 settings backward-compat)
@@ -6721,7 +7554,6 @@ YARZ.webControl = {
       'Meta Title': $('wc-meta-title')?.value.trim() || '',
       'Meta Desc': $('wc-meta-desc')?.value.trim() || '',
       'FB Pixel': $('wc-fb-pixel')?.value.trim() || '',
-      'FB CAPI Token': $('wc-fb-capi')?.value.trim() || '',
       'FB CAPI Token': $('wc-fb-capi-token')?.value.trim() || '',
       'GA4': $('wc-ga4')?.value.trim() || '',
       'IG Pixel': $('wc-ig-pixel')?.value.trim() || '',
@@ -6773,6 +7605,115 @@ YARZ.webControl = {
       updates[`Section ${i} Category`] = '';
       updates[`Section ${i} Image`] = '';
       updates[`Section ${i} Link`] = '';
+    }
+
+    // ============================================================
+    // ✅ v11 EXTRAS TAB — collect all premium control values
+    // ============================================================
+    const v = (id) => ($(id)?.value || '').trim();
+    const c = (id) => $(id)?.checked ? 'true' : 'false';
+
+    // 1. Theme Palette
+    updates['Theme Primary'] = v('wc-theme-primary');
+    updates['Theme BG']      = v('wc-theme-bg');
+    updates['Theme Text']    = v('wc-theme-text');
+    // 2. Typography
+    updates['Heading Font']  = v('wc-heading-font');
+    updates['Body Font']     = v('wc-body-font');
+    updates['Bengali Font']  = v('wc-bn-font');
+    // 3. Card Style
+    updates['Card Style']    = v('wc-card-style') || 'rounded';
+    updates['Card Hover']    = v('wc-card-hover') || 'zoom';
+    // 4. Countdown
+    updates['Countdown Active'] = c('wc-countdown-active');
+    updates['Countdown End']    = v('wc-countdown-end');
+    updates['Countdown Title']  = v('wc-countdown-title');
+    updates['Countdown Style']  = v('wc-countdown-style') || 'red';
+    // 5. Free Shipping
+    updates['Free Ship Bar Active'] = c('wc-freeship-active');
+    updates['Free Ship Bar Text']   = v('wc-freeship-text');
+    // 6. Best Sellers / New Arrivals / Recently Viewed / Wishlist
+    updates['Best Sellers Active'] = c('wc-bestseller-active');
+    updates['Best Sellers Title']  = v('wc-bestseller-title');
+    updates['Best Sellers Count']  = v('wc-bestseller-count') || 8;
+    updates['New Arrival Active']  = c('wc-newarrival-active');
+    updates['New Arrival Days']    = v('wc-newarrival-days') || 7;
+    updates['Recently Viewed']     = c('wc-recently-viewed');
+    updates['Wishlist Active']     = c('wc-wishlist-active');
+    // 7. Product Page Premium
+    updates['Sticky ATC Mobile']  = c('wc-sticky-buy');
+    updates['Video Autoplay']     = c('wc-video-autoplay');
+    updates['OOS Hide']           = c('wc-oos-hide');
+    updates['Quick View Active']  = c('wc-quick-view-active');
+    // 8. Newsletter
+    updates['Newsletter Active']  = c('wc-newsletter-active');
+    updates['Newsletter Title']   = v('wc-newsletter-title');
+    updates['Newsletter Code']    = v('wc-newsletter-code');
+    updates['Newsletter Trigger'] = v('wc-newsletter-trigger') || '15';
+    // 9. Store Hours
+    updates['Store Hours Active'] = c('wc-hours-active');
+    updates['Store Hours Open']   = v('wc-hours-open');
+    updates['Store Hours Close']  = v('wc-hours-close');
+    updates['Store Hours Msg']    = v('wc-hours-msg');
+    // 10. FAQ — toggle + collect rows + clear remaining
+    updates['FAQ Active'] = c('wc-faq-active');
+    {
+      const rows = qsa('#wc-faq-list .wc-faq-row');
+      let i = 1;
+      rows.forEach(row => {
+        if(i > 10) return;
+        const q = (row.querySelector('.wc-faq-q')?.value || '').trim();
+        const a = (row.querySelector('.wc-faq-a')?.value || '').trim();
+        if(q || a) {
+          updates[`FAQ Q${i}`] = q;
+          updates[`FAQ A${i}`] = a;
+          i++;
+        }
+      });
+      for(; i<=10; i++){ updates[`FAQ Q${i}`] = ''; updates[`FAQ A${i}`] = ''; }
+    }
+    // 11. Testimonials
+    updates['Reviews Active'] = c('wc-reviews-active');
+    {
+      const rows = qsa('#wc-reviews-list .wc-rev-row');
+      let i = 1;
+      rows.forEach(row => {
+        if(i > 10) return;
+        const n = (row.querySelector('.wc-rev-name')?.value || '').trim();
+        const p = (row.querySelector('.wc-rev-photo')?.value || '').trim();
+        const st = (row.querySelector('.wc-rev-stars')?.value || '5').trim();
+        const t = (row.querySelector('.wc-rev-text')?.value || '').trim();
+        if(n || t) {
+          updates[`Review ${i} Name`]  = n;
+          updates[`Review ${i} Photo`] = p;
+          updates[`Review ${i} Stars`] = st;
+          updates[`Review ${i} Text`]  = t;
+          i++;
+        }
+      });
+      for(; i<=10; i++){
+        updates[`Review ${i} Name`]  = '';
+        updates[`Review ${i} Photo`] = '';
+        updates[`Review ${i} Stars`] = '';
+        updates[`Review ${i} Text`]  = '';
+      }
+    }
+    // 12. Float Chat
+    updates['Float Chat Position'] = v('wc-float-pos') || 'bottom-right';
+    updates['Float Chat Offset']   = v('wc-float-offset') || 20;
+    // 13. Popup Slots
+    {
+      const slots = qsa('#wc-popup-slots .wc-popup-slot');
+      slots.forEach((row, idx) => {
+        const i = idx + 1;
+        if(i > 3) return;
+        updates[`Popup ${i} Active`]  = row.querySelector('.wc-popup-active')?.checked ? 'true' : 'false';
+        updates[`Popup ${i} Image`]   = (row.querySelector('.wc-popup-img')?.value || '').trim();
+        updates[`Popup ${i} Link`]    = (row.querySelector('.wc-popup-link')?.value || '').trim();
+        updates[`Popup ${i} Start`]   = (row.querySelector('.wc-popup-start')?.value || '').trim();
+        updates[`Popup ${i} End`]     = (row.querySelector('.wc-popup-end')?.value || '').trim();
+        updates[`Popup ${i} Trigger`] = (row.querySelector('.wc-popup-trigger')?.value || '10').trim();
+      });
     }
 
     showLoader('ওয়েবসাইট ডাটা সেভ হচ্ছে...');
