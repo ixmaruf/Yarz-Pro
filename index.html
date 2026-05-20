@@ -2589,6 +2589,7 @@ body.dark select.select option{
             <button class="btn btn-amber btn-sm" onclick="YARZ.inv.showLowStock()"><i class="ri-alert-line"></i> Low Stock</button>
             <button class="btn btn-ghost btn-sm" onclick="YARZ.inv.showBulkEdit()"><i class="ri-list-check-2"></i> Bulk Edit</button>
             <button class="btn btn-ghost btn-sm" onclick="YARZ.inv.showAnalytics()"><i class="ri-bar-chart-line"></i> Analytics</button>
+            <button class="btn btn-ghost btn-sm" onclick="YARZ.inv.diagnoseS3XL()" title="S/3XL save সমস্যা চেক করুন" style="border:1px dashed var(--warn);color:var(--warn)"><i class="ri-stethoscope-line"></i> S/3XL Diagnose</button>
           </div>
         </div>
 
@@ -5457,7 +5458,19 @@ YARZ.inv = {
         }
       });
       delete YARZ.inv._smPending[name];
-      toast('স্টক আপডেট হয়েছে ✅','success');
+      // ✅ v11.2: If GAS returned verified values, sync admin state to ground truth
+      if(res && res.verify){
+        const v = res.verify;
+        if(typeof v.S === 'number')   p.stkS   = v.S;
+        if(typeof v.M === 'number')   p.stkM   = v.M;
+        if(typeof v.L === 'number')   p.stkL   = v.L;
+        if(typeof v.XL === 'number')  p.stkXL  = v.XL;
+        if(typeof v.XXL === 'number') p.stkXXL = v.XXL;
+        if(typeof v['3XL'] === 'number') p.stk3XL = v['3XL'];
+        toast(`✅ Saved → S:${v.S} M:${v.M} L:${v.L} XL:${v.XL} XXL:${v.XXL} 3XL:${v['3XL']}`,'success');
+      } else {
+        toast('স্টক আপডেট হয়েছে ✅','success');
+      }
       YARZ.inv._renderSM();
       YARZ.inv.render();
     } catch(e){ toast(e.message,'error'); }
@@ -5735,6 +5748,42 @@ YARZ.inv = {
       await loadInventory();
       YARZ.render();
     } catch(e){ toast(e.message,'error'); }
+    finally { hideLoader(); }
+  },
+
+  // ✅ v11.2: S/3XL Diagnostic — verifies the entire write/read pipeline
+  async diagnoseS3XL(){
+    showLoader('S/3XL diagnostic চলছে...');
+    try {
+      const res = await appsPost('diagnoseS3XL', {});
+      if(!res){ toast('GAS থেকে কোনো response আসেনি', 'error'); return; }
+      const checks = res.checks || {};
+      const verdictColor = res.ok ? 'var(--success)' : 'var(--danger)';
+      const html = `
+        <div class="modal-header">
+          <h3>🩺 S/3XL Diagnostic Report</h3>
+          <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div style="padding:14px;border-radius:12px;background:var(--surface-1);border:1px solid var(--line);margin-bottom:14px">
+          <div style="font-size:14px;font-weight:700;color:${verdictColor};margin-bottom:6px">${esc(res.verdict || (res.ok?'OK':'Failed'))}</div>
+          <div style="font-size:11px;color:var(--ink-3)">GAS version: ${esc(res.version||'unknown')}</div>
+        </div>
+        <div class="modal-section-title">🔧 Diagnostic Details</div>
+        <pre style="background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:11px;line-height:1.6;overflow:auto;max-height:60vh;font-family:'Courier New',monospace;color:var(--ink)">${esc(JSON.stringify(checks, null, 2))}</pre>
+        <div style="font-size:11px;color:var(--ink-3);margin-top:10px;padding:10px;background:var(--surface-1);border-radius:8px;line-height:1.6">
+          <b>Quick read:</b><br>
+          • <b>colsOk: true</b> means COL constants in deployed GAS match expected (S=46, 3XL=47).<br>
+          • <b>writeOk: true</b> means writing to AT/AU columns works.<br>
+          • <b>headers_46_to_49</b> shows what's currently labelled in row 1 of the sheet.<br>
+          • If verdict says "redeploy required" — Apps Script editor → Deploy → Manage deployments → Edit (pencil) → New version → Deploy.
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" onclick="YARZ.closeModal()">OK</button>
+        </div>
+      `;
+      $('modal-content').innerHTML = html;
+      $('modal-overlay').classList.add('show');
+    } catch(e){ toast('Diagnostic error: ' + e.message, 'error'); }
     finally { hideLoader(); }
   },
 
@@ -8488,7 +8537,22 @@ YARZ._saveNewProduct = async function(){
       return appsPost('saveProductFromForm', d);
     }).then(res => {
       if(res && res.ok===false) throw new Error(res.msg||'Failed');
-      toast('প্রোডাক্ট সেভ হয়েছে!', 'success');
+      // ✅ v11.2: Sync local state with verified S/3XL values from GAS
+      if(res && res.verify){
+        const np = state.data.inventory.find(x=>x.name===d.name);
+        if(np){
+          const v = res.verify;
+          if(typeof v.S === 'number')   np.stkS   = v.S;
+          if(typeof v.M === 'number')   np.stkM   = v.M;
+          if(typeof v.L === 'number')   np.stkL   = v.L;
+          if(typeof v.XL === 'number')  np.stkXL  = v.XL;
+          if(typeof v.XXL === 'number') np.stkXXL = v.XXL;
+          if(typeof v['3XL'] === 'number') np.stk3XL = v['3XL'];
+        }
+        toast(`✅ Saved → S:${res.verify.S} M:${res.verify.M} L:${res.verify.L} XL:${res.verify.XL} XXL:${res.verify.XXL} 3XL:${res.verify['3XL']}`, 'success');
+      } else {
+        toast('প্রোডাক্ট সেভ হয়েছে!', 'success');
+      }
       loadInventory();
     }).catch(e => toast('Background Save Error: ' + e.message, 'error'));
 
@@ -8536,7 +8600,22 @@ YARZ._saveEditProduct = async function(){
       return appsPost('saveProductEditFromForm', d);
     }).then(res => {
       if(res && res.ok===false) throw new Error(res.msg||'Failed');
-      toast('Updated!', 'success');
+      // ✅ v11.2: Sync local state with verified S/3XL values from GAS
+      if(res && res.verify){
+        const ep = state.data.inventory.find(x=>x.name===d.name);
+        if(ep){
+          const v = res.verify;
+          if(typeof v.S === 'number')   ep.stkS   = v.S;
+          if(typeof v.M === 'number')   ep.stkM   = v.M;
+          if(typeof v.L === 'number')   ep.stkL   = v.L;
+          if(typeof v.XL === 'number')  ep.stkXL  = v.XL;
+          if(typeof v.XXL === 'number') ep.stkXXL = v.XXL;
+          if(typeof v['3XL'] === 'number') ep.stk3XL = v['3XL'];
+        }
+        toast(`✅ Updated → S:${res.verify.S} M:${res.verify.M} L:${res.verify.L} XL:${res.verify.XL} XXL:${res.verify.XXL} 3XL:${res.verify['3XL']}`, 'success');
+      } else {
+        toast('Updated!', 'success');
+      }
       loadInventory();
     }).catch(e => toast('Background Update Error: ' + e.message, 'error'));
 
