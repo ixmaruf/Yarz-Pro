@@ -2,7 +2,11 @@ all<!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<!-- iPhone notch + Dynamic Island support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#FAFAF7">
 <title>YARZ PRO — Business Dashboard</title>
 <link rel="dns-prefetch" href="https://script.google.com">
@@ -1101,6 +1105,32 @@ body.light .load-overlay p{color:var(--ink)}
 .oc-info-cell.full{grid-column:1/-1}
 .oc-info-cell.copyable{cursor:pointer;transition:all .15s}
 .oc-info-cell.copyable:hover{background:rgba(99,74,142,0.06);border-color:var(--brand)}
+
+/* ✅ v11.3: Copy button inside order info cells */
+.oc-info-cell{align-items:center}
+.copy-btn{
+  flex-shrink:0;
+  background:transparent;
+  border:1px solid var(--line);
+  border-radius:7px;
+  padding:6px 8px;
+  cursor:pointer;
+  color:var(--ink-2);
+  font-size:13px;
+  transition:all .15s ease;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:30px;height:30px;
+}
+.copy-btn:hover{
+  background:var(--brand);
+  color:#fff;
+  border-color:var(--brand);
+  transform:translateY(-1px);
+  box-shadow:0 2px 6px rgba(99,74,142,0.25);
+}
+.copy-btn:active{transform:scale(0.95)}
 
 /* Price breakdown box */
 .oc-price-box{
@@ -2655,6 +2685,12 @@ body.dark select.select option{
             <button class="btn btn-amber btn-sm" onclick="YARZ.ord.archiveCompleted()" style="margin-left:auto; border-radius:8px;"><i class="ri-archive-line"></i> ক্লিন কমপ্লিট অর্ডার</button>
           </div>
 
+          <!-- ✅ v11.4: Bulk Steadfast — appears only on "new" stage -->
+          <div id="wo-bulk-bar" style="display:none;margin-bottom:10px;padding:10px 14px;background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(5,150,105,0.04));border:1px solid rgba(16,185,129,0.3);border-radius:10px;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <div style="font-size:12px;color:var(--ink-2);line-height:1.5"><i class="ri-truck-line" style="color:#10B981"></i> <b>Steadfast Express</b> — সব Pending অর্ডার এক ক্লিকে কুরিয়ারে পাঠান</div>
+            <button class="btn btn-sm" style="background:linear-gradient(135deg,#10B981,#059669);color:#fff;border:none;font-weight:600" onclick="YARZ.ord.bulkSendToSteadfast()"><i class="ri-flashlight-fill"></i> সব Pending Steadfast-এ পাঠান</button>
+          </div>
+
           <div class="card" style="padding:16px">
             <div class="search-wrap">
               <i class="ri-search-line sicon"></i>
@@ -2749,6 +2785,7 @@ body.dark select.select option{
           <button class="subtab wc-tab" data-wc-tab="marketing" onclick="YARZ.webControl.setTab('marketing')"><i class="ri-megaphone-line"></i> Marketing</button>
           <button class="subtab wc-tab" data-wc-tab="branding" onclick="YARZ.webControl.setTab('branding')"><i class="ri-paint-brush-line"></i> Branding & SEO</button>
           <button class="subtab wc-tab" data-wc-tab="extras" onclick="YARZ.webControl.setTab('extras')"><i class="ri-sparkling-2-fill"></i> Extras (Premium)</button>
+          <button class="subtab wc-tab" data-wc-tab="advanced" onclick="YARZ.webControl.setTab('advanced')"><i class="ri-vip-crown-line"></i> Advanced (Royal)</button>
         </div>
 
         <style>
@@ -2787,6 +2824,66 @@ body.dark select.select option{
             transform: translateX(20px);
           }
           .dark .ios-toggle .slider { background-color: rgba(255,255,255,0.2); }
+
+          /* ✅ v14.0: Pixel Toggle Compact Variant — toggle + inline label */
+          .pix-tog {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+          }
+          .pix-tog:hover { border-color: var(--ink-4); background: var(--surface-2); }
+          .pix-tog.locked { opacity: 0.65; cursor: not-allowed; background: rgba(245,158,11,0.04); border-color: rgba(245,158,11,0.18); }
+          .pix-tog.locked:hover { background: rgba(245,158,11,0.04); }
+          .pix-tog input[type="checkbox"] {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            margin: 0;
+            appearance: none;
+            -webkit-appearance: none;
+            background: rgba(0,0,0,0.18);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.25s;
+            flex-shrink: 0;
+          }
+          .pix-tog input[type="checkbox"]:checked { background: #34C759; }
+          .pix-tog input[type="checkbox"]:disabled { cursor: not-allowed; }
+          .pix-tog input[type="checkbox"]::before {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 2px;
+            left: 2px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+          }
+          .pix-tog input[type="checkbox"]:checked::before { transform: translateX(16px); }
+          .pix-tog .slider { display: none; } /* override the absolute slider — we use checkbox itself */
+          .pix-tog .lbl {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--ink);
+            line-height: 1.3;
+          }
+          .pix-tog .lbl-sub {
+            display: block;
+            font-size: 10.5px;
+            font-weight: 500;
+            color: var(--ink-3);
+            margin-top: 1px;
+          }
+          .dark .pix-tog input[type="checkbox"] { background: rgba(255,255,255,0.15); }
         </style>
 
         <!-- TAB: GENERAL -->
@@ -3148,6 +3245,34 @@ body.dark select.select option{
               <div class="field"><label>Pinterest Tag ID</label><input type="text" id="wc-pin-pixel" class="input" placeholder="e.g. 26123456789"></div>
               <div class="field"><label>Snapchat Pixel ID</label><input type="text" id="wc-snap-pixel" class="input" placeholder="e.g. xxxxxxxx-xxxx"></div>
             </div>
+
+            <!-- ✅ v11.7: Server-side CAPI + Domain Verification (real-customer attribution) -->
+            <div style="margin:16px 0 8px;padding:12px;border-radius:10px;background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.25)">
+              <h4 style="margin:0 0 10px;font-size:13px;color:#7c3aed"><i class="ri-shield-check-line" style="margin-right:6px"></i> Server-Side Conversions API <span class="badge" style="background:var(--primary);color:#fff;font-size:10px">High-Intent</span></h4>
+              <p style="margin:0 0 10px;font-size:11px;color:var(--ink-3);line-height:1.5">iOS 14.5+ এ ৩০-৪০% সিগন্যাল হারায়। সার্ভার সাইডে এই কী গুলি দিয়ে FB/TikTok ad attribution রিকভার হয় → real-customer matching, lower CPA, sales objective campaigns ভালো পারফর্ম করে।</p>
+              <div class="grid grid-2" style="gap:12px">
+                <div class="field">
+                  <label>FB CAPI Test Event Code <span style="font-size:10px;color:var(--ink-3)">(optional)</span></label>
+                  <input type="text" id="wc-fb-capi-test-code" class="input" placeholder="TEST12345 (Events Manager → Test Events)">
+                </div>
+                <div class="field">
+                  <label>Facebook Domain Verification</label>
+                  <input type="text" id="wc-fb-domain-verify" class="input" placeholder="verification token (Business Mgr)">
+                </div>
+                <div class="field">
+                  <label>TikTok Events API Access Token</label>
+                  <input type="password" id="wc-tt-token" class="input" placeholder="TikTok Events Mgr → API → Access Token">
+                </div>
+                <div class="field">
+                  <label>TikTok Advertiser ID</label>
+                  <input type="text" id="wc-tt-advertiser-id" class="input" placeholder="e.g. 712345678901234">
+                </div>
+                <div class="field" style="grid-column:1/-1">
+                  <label>Average Order Value (BDT) <span style="font-size:10px;color:var(--ink-3)">— calibrates Lead/Subscribe bid value for FB optimization</span></label>
+                  <input type="number" id="wc-avg-order-value" class="input" placeholder="1500" min="0">
+                </div>
+              </div>
+            </div>
             <div style="margin:16px 0 8px;padding:12px;border-radius:10px;background:rgba(0,136,204,0.08);border:1px solid rgba(0,136,204,0.2)">
               <h4 style="margin:0 0 10px;font-size:13px;color:#0088cc"><i class="fab fa-telegram" style="margin-right:6px"></i>Telegram Order Notification</h4>
               <div class="grid grid-2" style="gap:12px">
@@ -3177,6 +3302,110 @@ body.dark select.select option{
             </div>
           </div>
 
+          <!-- ============================================================
+               ✅ v14.0: PIXEL EVENT TOGGLES — Per-event ON/OFF control
+               Lets seller enable/disable individual events without code change.
+               Critical events (Purchase, ViewContent, etc.) are LOCKED ON.
+          ============================================================ -->
+          <div class="card" style="margin-top:20px;">
+            <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
+              <h2><i class="ri-equalizer-line" style="color:#7c3aed"></i> Pixel Event Controls <span class="badge" style="background:#7c3aed;color:#fff;margin-left:8px">v14.0</span></h2>
+              <button class="btn btn-ghost btn-sm" onclick="YARZ.pixelToggles.resetAll()" style="font-size:11px"><i class="ri-refresh-line"></i> Reset (All ON)</button>
+            </div>
+            <p style="font-size:12px;color:var(--ink-3);margin-bottom:14px;line-height:1.6">
+              প্রত্যেকটি pixel event আলাদাভাবে ON/OFF করতে পারেন। যেগুলো ⚠️ মার্ক করা সেগুলো লক করা — disable করলে campaign চলবে না।
+              <br><b>Default:</b> সব ON (terminal status events ছাড়া — Delivered/Cancelled/Returned default OFF)।
+            </p>
+
+            <!-- Group 1: Ad Networks (Master Switches) -->
+            <details open style="margin-bottom:12px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--surface-2)">
+              <summary style="font-weight:700;font-size:13px;cursor:pointer;padding:6px 0;color:var(--ink)">
+                <i class="ri-broadcast-line" style="color:#0066ff;margin-right:6px"></i> Ad Networks (Master Switches)
+                <span style="font-size:11px;font-weight:500;color:var(--ink-3);margin-left:8px">— এগুলো OFF করলে সেই network এর সব event বন্ধ</span>
+              </summary>
+              <div class="grid grid-2" style="gap:10px;padding:10px 0 4px">
+                <label class="pix-tog"><input type="checkbox" id="pix_net_fb"        checked><span class="slider"></span><span class="lbl">Facebook Pixel <span class="lbl-sub">— সব FB events</span></span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_net_fb_capi"   checked><span class="slider"></span><span class="lbl">FB CAPI Server-Side <span class="lbl-sub">— iOS attribution</span></span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_net_ga4"       checked><span class="slider"></span><span class="lbl">Google Analytics 4</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_net_tiktok"    checked><span class="slider"></span><span class="lbl">TikTok Pixel</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_net_snap"      checked><span class="slider"></span><span class="lbl">Snapchat Pixel</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_net_pinterest" checked><span class="slider"></span><span class="lbl">Pinterest Tag</span></label>
+              </div>
+            </details>
+
+            <!-- Group 2: Commerce Events (Funnel) -->
+            <details style="margin-bottom:12px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--surface-2)">
+              <summary style="font-weight:700;font-size:13px;cursor:pointer;padding:6px 0;color:var(--ink)">
+                <i class="ri-shopping-cart-line" style="color:#10B981;margin-right:6px"></i> Commerce Events (Funnel)
+                <span style="font-size:11px;font-weight:500;color:var(--ink-3);margin-left:8px">— ⚠️ critical events লক</span>
+              </summary>
+              <div class="grid grid-2" style="gap:10px;padding:10px 0 4px">
+                <label class="pix-tog locked"><input type="checkbox" id="pix_evt_pageview"          checked disabled><span class="slider"></span><span class="lbl">⚠️ PageView <span class="lbl-sub">— locked (campaigns need it)</span></span></label>
+                <label class="pix-tog locked"><input type="checkbox" id="pix_evt_view_content"      checked disabled><span class="slider"></span><span class="lbl">⚠️ ViewContent <span class="lbl-sub">— locked (DABA needs it)</span></span></label>
+                <label class="pix-tog locked"><input type="checkbox" id="pix_evt_add_to_cart"       checked disabled><span class="slider"></span><span class="lbl">⚠️ AddToCart <span class="lbl-sub">— locked (funnel)</span></span></label>
+                <label class="pix-tog locked"><input type="checkbox" id="pix_evt_initiate_checkout" checked disabled><span class="slider"></span><span class="lbl">⚠️ InitiateCheckout <span class="lbl-sub">— locked (funnel)</span></span></label>
+                <label class="pix-tog locked"><input type="checkbox" id="pix_evt_purchase"          checked disabled><span class="slider"></span><span class="lbl">⚠️ Purchase <span class="lbl-sub">— locked (sales tracking)</span></span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_add_payment_info"  checked><span class="slider"></span><span class="lbl">AddPaymentInfo <span class="lbl-sub">— বিকাশ/নগদ select হলে</span></span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_add_to_wishlist"   checked><span class="slider"></span><span class="lbl">AddToWishlist <span class="lbl-sub">— ❤️ icon click</span></span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_search"            checked><span class="slider"></span><span class="lbl">Search <span class="lbl-sub">— 3+ char search</span></span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_lead"              checked><span class="slider"></span><span class="lbl">Lead <span class="lbl-sub">— newsletter/contact form</span></span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_abandoned_checkout" checked><span class="slider"></span><span class="lbl">AbandonedCheckout <span class="lbl-sub">— ATC + tab close</span></span></label>
+              </div>
+            </details>
+
+            <!-- Group 3: Engagement Events -->
+            <details style="margin-bottom:12px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--surface-2)">
+              <summary style="font-weight:700;font-size:13px;cursor:pointer;padding:6px 0;color:var(--ink)">
+                <i class="ri-time-line" style="color:#f59e0b;margin-right:6px"></i> Engagement Events
+                <span style="font-size:11px;font-weight:500;color:var(--ink-3);margin-left:8px">— যেকোনোটা OFF করা যাবে</span>
+              </summary>
+              <div class="grid grid-2" style="gap:10px;padding:10px 0 4px">
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_whatsapp_click"        checked><span class="slider"></span><span class="lbl">WhatsApp Click</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_time_on_page"          checked><span class="slider"></span><span class="lbl">Time on Product (30s)</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_size_selected"         checked><span class="slider"></span><span class="lbl">Size Selected</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_viewed_many_products"  checked><span class="slider"></span><span class="lbl">Viewed 3+ Products</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_engaged_session"       checked><span class="slider"></span><span class="lbl">Engaged Session <span class="lbl-sub">— Lookalike gold!</span></span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_session_end"           checked><span class="slider"></span><span class="lbl">Session End + Bounce</span></label>
+              </div>
+              <div style="font-size:12px;font-weight:600;color:var(--ink-2);margin:14px 0 6px">⏱️ Time-on-Site Milestones</div>
+              <div class="grid grid-2" style="gap:10px;padding-bottom:4px">
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_tos_15"  checked><span class="slider"></span><span class="lbl">15 seconds</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_tos_30"  checked><span class="slider"></span><span class="lbl">30 seconds</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_tos_60"  checked><span class="slider"></span><span class="lbl">1 minute</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_tos_120" checked><span class="slider"></span><span class="lbl">2 minutes</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_tos_180" checked><span class="slider"></span><span class="lbl">3 minutes</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_tos_300" checked><span class="slider"></span><span class="lbl">5 minutes</span></label>
+              </div>
+              <div style="font-size:12px;font-weight:600;color:var(--ink-2);margin:14px 0 6px">📜 Scroll Depth</div>
+              <div class="grid grid-2" style="gap:10px;padding-bottom:4px">
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_scroll_25"  checked><span class="slider"></span><span class="lbl">25%</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_scroll_50"  checked><span class="slider"></span><span class="lbl">50%</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_scroll_75"  checked><span class="slider"></span><span class="lbl">75%</span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_scroll_100" checked><span class="slider"></span><span class="lbl">100%</span></label>
+              </div>
+            </details>
+
+            <!-- Group 4: Order Status Events (Server-Side, BD-specific) -->
+            <details style="margin-bottom:12px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:rgba(220,38,38,0.04)">
+              <summary style="font-weight:700;font-size:13px;cursor:pointer;padding:6px 0;color:var(--ink)">
+                <i class="ri-truck-line" style="color:#ef4444;margin-right:6px"></i> Order Status Events <span class="badge" style="background:#ef4444;color:#fff;font-size:10px;margin-left:6px">BD Pro</span>
+                <span style="font-size:11px;font-weight:500;color:var(--ink-3);margin-left:8px">— default OFF (opt-in)</span>
+              </summary>
+              <p style="font-size:11.5px;color:var(--ink-3);margin:8px 0 10px;line-height:1.6">
+                Bangladesh-এর জন্য special: COD অর্ডার Delivered হলে Facebook-কে জানান যে আসলেই কাস্টমার পেমেন্ট করেছে।
+                <br>এতে Facebook শিখবে "ভালো COD কাস্টমার vs খারাপ COD" — Lookalike audience অনেক ভালো হবে।
+              </p>
+              <div class="grid grid-2" style="gap:10px;padding-bottom:4px">
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_order_delivered"><span class="slider"></span><span class="lbl">✅ OrderDelivered <span class="lbl-sub">— Lookalike gold!</span></span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_order_cancelled"><span class="slider"></span><span class="lbl">❌ OrderCancelled <span class="lbl-sub">— exclusion list</span></span></label>
+                <label class="pix-tog"><input type="checkbox" id="pix_evt_order_returned"><span class="slider"></span><span class="lbl">↩️ OrderReturned <span class="lbl-sub">— exclusion list</span></span></label>
+              </div>
+            </details>
+
+            <button class="btn btn-primary" onclick="YARZ.pixelToggles.save()" style="margin-top:8px"><i class="ri-save-line"></i> Save Pixel Controls</button>
+            <span id="pixel-toggles-status" style="margin-left:12px;font-size:12px;color:var(--success);font-weight:600"></span>
+          </div>
+
             <div class="section-title" style="margin-top:24px;"><h2><i class="ri-code-s-slash-line" style="color:var(--purple)"></i> Advanced Code Injection</h2></div>
             <div class="field">
               <label>Custom CSS (Head)</label>
@@ -3188,50 +3417,119 @@ body.dark select.select option{
         <!-- ✅ TAB: EXTRAS (PREMIUM) — v11 New: 15+ Shopify-grade controls -->
         <div id="wc-tab-extras" class="wc-tab-content hidden">
 
-          <!-- 1. THEME PALETTE -->
+          <!-- 1. THEME PALETTE — v11.3 Premium Edition with full color control -->
           <div class="card" style="padding:22px;margin-bottom:14px">
-            <div class="section-title"><h2><i class="ri-palette-line" style="color:#7C3AED"></i> Full Theme Palette</h2></div>
-            <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.6">পুরো সাইটের রঙ একসাথে কন্ট্রোল — Primary brand, button accent, background, text, links সব এই তিনটা ভ্যালু থেকে auto-generate হবে।</div>
-            <div class="grid grid-3" style="gap:12px">
-              <div class="field"><label>Primary Color</label>
+            <div class="section-title"><h2><i class="ri-palette-line" style="color:#7C3AED"></i> Full Theme Palette (Premium)</h2></div>
+            <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.6">পুরো সাইটের রঙ একসাথে কন্ট্রোল — Primary brand, button accent, background, text, links, footer সব আলাদা আলাদা সেট করুন। প্রিমিয়াম ফ্যাশন থিমের জন্য recommended: Black + Cream + Gold accent।</div>
+            <div class="grid grid-3" style="gap:12px;margin-bottom:8px">
+              <div class="field"><label>Primary Brand Color</label>
                 <div style="display:flex;gap:8px"><input type="color" id="wc-theme-primary-pick" oninput="document.getElementById('wc-theme-primary').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-primary" class="input" placeholder="#634A8E" oninput="document.getElementById('wc-theme-primary-pick').value=this.value"></div>
               </div>
-              <div class="field"><label>Background Tone</label>
+              <div class="field"><label>Accent / Highlight</label>
+                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-accent-pick" oninput="document.getElementById('wc-theme-accent').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-accent" class="input" placeholder="#D4910A (gold)" oninput="document.getElementById('wc-theme-accent-pick').value=this.value"></div>
+              </div>
+              <div class="field"><label>Page Background</label>
                 <div style="display:flex;gap:8px"><input type="color" id="wc-theme-bg-pick" oninput="document.getElementById('wc-theme-bg').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-bg" class="input" placeholder="#FBF8F1" oninput="document.getElementById('wc-theme-bg-pick').value=this.value"></div>
               </div>
-              <div class="field"><label>Text Color</label>
+              <div class="field"><label>Card Background</label>
+                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-card-pick" oninput="document.getElementById('wc-theme-card').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-card" class="input" placeholder="#FFFFFF" oninput="document.getElementById('wc-theme-card-pick').value=this.value"></div>
+              </div>
+              <div class="field"><label>Heading / Body Text</label>
                 <div style="display:flex;gap:8px"><input type="color" id="wc-theme-text-pick" oninput="document.getElementById('wc-theme-text').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-text" class="input" placeholder="#1A1A2E" oninput="document.getElementById('wc-theme-text-pick').value=this.value"></div>
               </div>
+              <div class="field"><label>Border / Divider</label>
+                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-border-pick" oninput="document.getElementById('wc-theme-border').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-border" class="input" placeholder="#E8E4DC" oninput="document.getElementById('wc-theme-border-pick').value=this.value"></div>
+              </div>
+              <div class="field"><label>Link Color</label>
+                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-link-pick" oninput="document.getElementById('wc-theme-link').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-link" class="input" placeholder="#634A8E" oninput="document.getElementById('wc-theme-link-pick').value=this.value"></div>
+              </div>
+              <div class="field"><label>Sale Price Color</label>
+                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-sale-pick" oninput="document.getElementById('wc-theme-sale').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-sale" class="input" placeholder="#1A1A1A" oninput="document.getElementById('wc-theme-sale-pick').value=this.value"></div>
+              </div>
+              <div class="field"><label>Footer Background</label>
+                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-footer-pick" oninput="document.getElementById('wc-theme-footer').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-footer" class="input" placeholder="#1A1A2E" oninput="document.getElementById('wc-theme-footer-pick').value=this.value"></div>
+              </div>
+            </div>
+            <div style="margin-top:12px;padding:10px;background:var(--surface-2);border-radius:8px;font-size:11px;color:var(--ink-3);line-height:1.6">
+              <b>💡 Premium ফ্যাশন প্রিসেট:</b><br>
+              • <b>Classic Luxe</b>: Primary `#1A1A1A` (ব্ল্যাক), Accent `#C9A23F` (গোল্ড), BG `#FBF8F1` (ক্রিম), Text `#1A1A1A`<br>
+              • <b>Modern Editorial</b>: Primary `#0F172A` (deep ink), Accent `#94633A` (tobacco), BG `#FFFFFF`, Text `#0F172A`<br>
+              • <b>Streetwear</b>: Primary `#FF6B35` (orange), Accent `#1A1A1A`, BG `#F4F4F5`, Text `#0F172A`
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="YARZ.webControl.applyThemePreset('luxe')" style="flex:1"><i class="ri-magic-line"></i> Classic Luxe প্রিসেট</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="YARZ.webControl.applyThemePreset('editorial')" style="flex:1"><i class="ri-magic-line"></i> Modern Editorial</button>
+              <button type="button" class="btn btn-ghost btn-sm" onclick="YARZ.webControl.applyThemePreset('reset')" style="color:var(--danger);border:1px dashed var(--danger)"><i class="ri-refresh-line"></i> ডিফল্টে ফিরুন</button>
             </div>
           </div>
 
-          <!-- 2. CUSTOM FONTS -->
+          <!-- 2. CUSTOM FONTS — v11.3 with 30+ premium fonts -->
           <div class="card" style="padding:22px;margin-bottom:14px">
-            <div class="section-title"><h2><i class="ri-font-size" style="color:#0EA5E9"></i> Typography Controls</h2></div>
-            <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px">Heading + body font আলাদা করে সেট করুন। Bengali font alongside English ফন্ট।</div>
+            <div class="section-title"><h2><i class="ri-font-size" style="color:#0EA5E9"></i> Typography Controls (30+ Premium Fonts)</h2></div>
+            <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px">Heading + body font আলাদা করে সেট করুন। Bengali font alongside English ফন্ট। ছেলেদের ফ্যাশনের জন্য Editorial Serif (Playfair, Bodoni, Cormorant) সবচেয়ে প্রিমিয়াম দেখায়।</div>
             <div class="grid grid-3" style="gap:12px">
-              <div class="field"><label>Heading Font</label>
+              <div class="field"><label>Heading Font (Editorial / Magazine)</label>
                 <select id="wc-heading-font" class="select">
                   <option value="">Default (Playfair Display)</option>
-                  <option value="Playfair Display">Playfair Display (Premium Italic)</option>
-                  <option value="Instrument Serif">Instrument Serif</option>
-                  <option value="Cormorant Garamond">Cormorant Garamond</option>
-                  <option value="Bodoni Moda">Bodoni Moda (Vogue)</option>
-                  <option value="DM Serif Display">DM Serif Display</option>
-                  <option value="Inter">Inter (Modern Sans)</option>
-                  <option value="Poppins">Poppins</option>
+                  <optgroup label="📰 Editorial Serif (Recommended for Men's Fashion)">
+                    <option value="Playfair Display">Playfair Display — Italic Premium</option>
+                    <option value="Bodoni Moda">Bodoni Moda — Vogue Style</option>
+                    <option value="Cormorant Garamond">Cormorant Garamond — Old-style Elegant</option>
+                    <option value="EB Garamond">EB Garamond — Garalde Classic</option>
+                    <option value="Libre Bodoni">Libre Bodoni — Runway Feel</option>
+                    <option value="Italiana">Italiana — Razor-thin Luxe</option>
+                    <option value="Forum">Forum — Atelier / Gallery</option>
+                    <option value="Marcellus">Marcellus — Roman Inscriptional</option>
+                    <option value="Cinzel">Cinzel — Monumental Caps</option>
+                    <option value="Tenor Sans">Tenor Sans — Modernist Tailored</option>
+                    <option value="Marcellus SC">Marcellus SC — Roman Caps</option>
+                    <option value="Cardo">Cardo — Renaissance</option>
+                    <option value="Antic Didone">Antic Didone — Razor Didone</option>
+                    <option value="Prata">Prata — Slim Bodoni</option>
+                  </optgroup>
+                  <optgroup label="🔥 Modern Display Serif">
+                    <option value="DM Serif Display">DM Serif Display — Punchy Banner</option>
+                    <option value="Instrument Serif">Instrument Serif — Modern Editorial</option>
+                    <option value="Petrona">Petrona — Variable Didone</option>
+                    <option value="Yeseva One">Yeseva One — Romantic Sweep</option>
+                    <option value="Frank Ruhl Libre">Frank Ruhl Libre — Bold Serif</option>
+                    <option value="Newsreader">Newsreader — Magazine Column</option>
+                    <option value="Spectral">Spectral — Rich Body-Display</option>
+                  </optgroup>
+                  <optgroup label="✨ Premium Sans">
+                    <option value="Inter">Inter — Modern Default</option>
+                    <option value="Plus Jakarta Sans">Plus Jakarta Sans — DTC Fashion</option>
+                    <option value="Manrope">Manrope — Rounded Premium</option>
+                    <option value="DM Sans">DM Sans — Soft Clean</option>
+                    <option value="Sora">Sora — Humanist Geometric</option>
+                    <option value="Space Grotesk">Space Grotesk — Streetwear Luxury</option>
+                    <option value="Albert Sans">Albert Sans — Magazine UI</option>
+                    <option value="Be Vietnam Pro">Be Vietnam Pro — Multilingual</option>
+                    <option value="Outfit">Outfit — Variable Modern</option>
+                    <option value="Hanken Grotesk">Hanken Grotesk — Neutral Grotesk</option>
+                    <option value="Poppins">Poppins — Friendly Geometric</option>
+                  </optgroup>
                 </select>
               </div>
-              <div class="field"><label>Body Font</label>
+              <div class="field"><label>Body Font (Reading Comfort)</label>
                 <select id="wc-body-font" class="select">
                   <option value="">Default (Inter)</option>
                   <option value="Inter">Inter</option>
+                  <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+                  <option value="Manrope">Manrope</option>
+                  <option value="DM Sans">DM Sans</option>
+                  <option value="Albert Sans">Albert Sans</option>
+                  <option value="Outfit">Outfit</option>
+                  <option value="Hanken Grotesk">Hanken Grotesk</option>
+                  <option value="Sora">Sora</option>
+                  <option value="Be Vietnam Pro">Be Vietnam Pro</option>
                   <option value="Poppins">Poppins</option>
                   <option value="Roboto">Roboto</option>
                   <option value="Open Sans">Open Sans</option>
                   <option value="Lato">Lato</option>
                   <option value="Nunito">Nunito</option>
-                  <option value="Outfit">Outfit</option>
+                  <option value="Spectral">Spectral (Serif Body)</option>
+                  <option value="Cardo">Cardo (Serif Body)</option>
                 </select>
               </div>
               <div class="field"><label>Bengali Font</label>
@@ -3242,6 +3540,9 @@ body.dark select.select option{
                   <option value="Tiro Bangla">Tiro Bangla</option>
                   <option value="Galada">Galada</option>
                   <option value="Atma">Atma</option>
+                  <option value="Baloo Da 2">Baloo Da 2</option>
+                  <option value="Mina">Mina</option>
+                  <option value="Anek Bangla">Anek Bangla</option>
                 </select>
               </div>
             </div>
@@ -3289,6 +3590,20 @@ body.dark select.select option{
                 </select>
               </div>
             </div>
+            <div class="grid grid-2" style="gap:12px;margin-top:10px">
+              <div class="field"><label>Custom Background Color <span style="font-size:10px;color:var(--ink-3)">(overrides Style preset)</span></label>
+                <div style="display:flex;gap:8px">
+                  <input type="color" id="wc-countdown-bg-pick" oninput="document.getElementById('wc-countdown-bg').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer">
+                  <input type="text" id="wc-countdown-bg" class="input" placeholder="Leave empty to use Style preset" oninput="if(/^#[0-9a-f]{3,8}$/i.test(this.value)) document.getElementById('wc-countdown-bg-pick').value=this.value">
+                </div>
+              </div>
+              <div class="field"><label>Custom Text Color</label>
+                <div style="display:flex;gap:8px">
+                  <input type="color" id="wc-countdown-text-pick" oninput="document.getElementById('wc-countdown-text').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer">
+                  <input type="text" id="wc-countdown-text" class="input" placeholder="#ffffff" oninput="if(/^#[0-9a-f]{3,8}$/i.test(this.value)) document.getElementById('wc-countdown-text-pick').value=this.value">
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- 5. FREE SHIPPING BAR -->
@@ -3301,6 +3616,27 @@ body.dark select.select option{
             <div class="field">
               <label>Bar Text — use {amount} placeholder for the threshold</label>
               <input type="text" id="wc-freeship-text" class="input" placeholder="🚚 Free shipping on orders over ৳{amount}">
+            </div>
+            <div class="grid grid-3" style="gap:12px;margin-top:10px">
+              <div class="field"><label>Background Color</label>
+                <div style="display:flex;gap:8px">
+                  <input type="color" id="wc-freeship-bg-pick" oninput="document.getElementById('wc-freeship-bg').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer">
+                  <input type="text" id="wc-freeship-bg" class="input" placeholder="#16A34A" oninput="if(/^#[0-9a-f]{3,8}$/i.test(this.value)) document.getElementById('wc-freeship-bg-pick').value=this.value">
+                </div>
+              </div>
+              <div class="field"><label>Text Color</label>
+                <div style="display:flex;gap:8px">
+                  <input type="color" id="wc-freeship-text-color-pick" oninput="document.getElementById('wc-freeship-text-color').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer">
+                  <input type="text" id="wc-freeship-text-color" class="input" placeholder="#ffffff" oninput="if(/^#[0-9a-f]{3,8}$/i.test(this.value)) document.getElementById('wc-freeship-text-color-pick').value=this.value">
+                </div>
+              </div>
+              <div class="field"><label>Bar Thickness</label>
+                <select id="wc-freeship-thickness" class="select">
+                  <option value="slim">Slim (default — chikon)</option>
+                  <option value="regular">Regular</option>
+                  <option value="thick">Thick</option>
+                </select>
+              </div>
             </div>
             <div style="font-size:11px;color:var(--ink-3);margin-top:6px">⚠️ Free shipping target amount নিচে "Cart & Checkout" tab এর "Free Shipping Target Amount" ফিল্ডে সেট করবেন।</div>
           </div>
@@ -3438,6 +3774,147 @@ body.dark select.select option{
 
         </div>
 
+        <!-- ✅ v11.8: TAB: ADVANCED (ROYAL) — 5 brand-new premium controls -->
+        <div id="wc-tab-advanced" class="wc-tab-content hidden">
+
+          <!-- A1. ROYAL ANNOUNCEMENT MARQUEE -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-megaphone-fill" style="color:#D4910A"></i> Royal Announcement Marquee</h2></div>
+            <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.6">পাইপ-সেপারেটেড একাধিক mini message scroll করবে header-এর নিচে — যেমন "Free Shipping over ৳1500 | Same-day Dhaka | Secure COD"। Premium fashion সাইটে এটা trust + urgency দুটোই বাড়ায়।</div>
+            <div class="flex-gap" style="margin-bottom:12px">
+              <label class="ios-toggle"><input type="checkbox" id="wc-marquee-active"><span class="slider"></span></label>
+              <span style="font-weight:600">Show royal marquee bar</span>
+            </div>
+            <div class="field" style="margin-bottom:10px">
+              <label>Messages — separate with " | " (pipe)</label>
+              <input type="text" id="wc-marquee-text" class="input" placeholder="✨ Free Shipping over ৳1500 | 💎 Premium Quality | 🚚 Same-day Dhaka Delivery | 🔒 100% Secure COD">
+            </div>
+            <div class="grid grid-3" style="gap:12px">
+              <div class="field"><label>Background Color</label>
+                <div style="display:flex;gap:8px">
+                  <input type="color" id="wc-marquee-bg-pick" oninput="document.getElementById('wc-marquee-bg').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer">
+                  <input type="text" id="wc-marquee-bg" class="input" placeholder="#1a1a1a" oninput="if(/^#[0-9a-f]{3,8}$/i.test(this.value)) document.getElementById('wc-marquee-bg-pick').value=this.value">
+                </div>
+              </div>
+              <div class="field"><label>Text Color</label>
+                <div style="display:flex;gap:8px">
+                  <input type="color" id="wc-marquee-text-color-pick" oninput="document.getElementById('wc-marquee-text-color').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer">
+                  <input type="text" id="wc-marquee-text-color" class="input" placeholder="#D4910A (gold)" oninput="if(/^#[0-9a-f]{3,8}$/i.test(this.value)) document.getElementById('wc-marquee-text-color-pick').value=this.value">
+                </div>
+              </div>
+              <div class="field"><label>Speed</label>
+                <select id="wc-marquee-speed" class="select">
+                  <option value="slow">Slow (Premium pace)</option>
+                  <option value="normal">Normal</option>
+                  <option value="fast">Fast (urgent)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- A2. PRODUCT TRUST BADGES STRIP -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-shield-check-fill" style="color:#10B981"></i> Product Page Trust Badges</h2></div>
+            <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.6">প্রতিটা product page-এর Add to Cart button-এর নিচে ৪টা small icon row দেখাবে — Free Shipping, COD, Easy Return, Secure Checkout। Customer immediately বুঝে যায় এটা trustworthy site।</div>
+            <div class="flex-gap" style="margin-bottom:12px">
+              <label class="ios-toggle"><input type="checkbox" id="wc-trust-strip-active"><span class="slider"></span></label>
+              <span style="font-weight:600">Show 4-icon trust strip on product page</span>
+            </div>
+            <div class="grid grid-2" style="gap:12px;margin-bottom:10px">
+              <div class="field"><label>Badge 1 — Icon emoji</label><input type="text" id="wc-trust-1-icon" class="input" placeholder="🚚" maxlength="3"></div>
+              <div class="field"><label>Badge 1 — Label</label><input type="text" id="wc-trust-1-label" class="input" placeholder="Free Shipping"></div>
+              <div class="field"><label>Badge 2 — Icon emoji</label><input type="text" id="wc-trust-2-icon" class="input" placeholder="💵" maxlength="3"></div>
+              <div class="field"><label>Badge 2 — Label</label><input type="text" id="wc-trust-2-label" class="input" placeholder="Cash on Delivery"></div>
+              <div class="field"><label>Badge 3 — Icon emoji</label><input type="text" id="wc-trust-3-icon" class="input" placeholder="↩️" maxlength="3"></div>
+              <div class="field"><label>Badge 3 — Label</label><input type="text" id="wc-trust-3-label" class="input" placeholder="Easy Return"></div>
+              <div class="field"><label>Badge 4 — Icon emoji</label><input type="text" id="wc-trust-4-icon" class="input" placeholder="🔒" maxlength="3"></div>
+              <div class="field"><label>Badge 4 — Label</label><input type="text" id="wc-trust-4-label" class="input" placeholder="Secure Checkout"></div>
+            </div>
+          </div>
+
+          <!-- A3. ROYAL CARD FRAME (premium product card overlay) -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-medal-2-fill" style="color:#D4910A"></i> Royal Card Frame</h2></div>
+            <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.6">প্রতিটা product card-এ subtle gold-foil corner accent + premium shadow add করে। সাইটটা boutique / royal vibe পায়।</div>
+            <div class="flex-gap" style="margin-bottom:12px">
+              <label class="ios-toggle"><input type="checkbox" id="wc-royal-frame-active"><span class="slider"></span></label>
+              <span style="font-weight:600">Apply royal frame to all product cards</span>
+            </div>
+            <div class="grid grid-2" style="gap:12px">
+              <div class="field"><label>Frame Accent Color</label>
+                <div style="display:flex;gap:8px">
+                  <input type="color" id="wc-royal-accent-pick" oninput="document.getElementById('wc-royal-accent').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer">
+                  <input type="text" id="wc-royal-accent" class="input" placeholder="#D4910A (gold)" oninput="if(/^#[0-9a-f]{3,8}$/i.test(this.value)) document.getElementById('wc-royal-accent-pick').value=this.value">
+                </div>
+              </div>
+              <div class="field"><label>Frame Style</label>
+                <select id="wc-royal-frame-style" class="select">
+                  <option value="corners">Gold Corner Accents</option>
+                  <option value="border">Thin Gold Border</option>
+                  <option value="glow">Subtle Gold Glow</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- A4. STORY / EDITORIAL SECTION -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-quill-pen-line" style="color:#7C3AED"></i> Editorial Story Section</h2></div>
+            <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.6">Homepage-এর মাঝখানে একটা magazine-style block — বড় image + serif italic heading + short story। Customer-কে brand experience দেয়, fast-fashion থেকে আলাদা মনে হয়।</div>
+            <div class="flex-gap" style="margin-bottom:12px">
+              <label class="ios-toggle"><input type="checkbox" id="wc-editorial-active"><span class="slider"></span></label>
+              <span style="font-weight:600">Show editorial story section</span>
+            </div>
+            <div class="grid grid-2" style="gap:12px;margin-bottom:10px">
+              <div class="field"><label>Section Image URL (landscape, 1600×900 ideal)</label>
+                <input type="text" id="wc-editorial-img" class="input" placeholder="https://i.imgur.com/xxx.jpg" oninput="YARZ.webControl._previewImg(this, 'wc-editorial-preview')">
+              </div>
+              <div class="field"><label>Heading (Serif italic looks best)</label>
+                <input type="text" id="wc-editorial-title" class="input" placeholder="Crafted for the Modern Gentleman">
+              </div>
+              <div class="field" style="grid-column:1/-1"><label>Body — 2-3 short lines</label>
+                <textarea id="wc-editorial-body" class="textarea" rows="3" placeholder="Every YARZ piece is hand-tailored from premium fabric. Designed in Bangladesh, worn worldwide."></textarea>
+              </div>
+              <div class="field"><label>Button Text</label>
+                <input type="text" id="wc-editorial-cta" class="input" placeholder="Explore Collection">
+              </div>
+              <div class="field"><label>Button Link</label>
+                <input type="text" id="wc-editorial-link" class="input" placeholder="#shop or /category/shirts">
+              </div>
+            </div>
+            <div id="wc-editorial-preview" style="height:120px;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden">
+              <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;opacity:0.3"><i class="ri-image-line"></i></div>
+            </div>
+          </div>
+
+          <!-- A5. INSTAGRAM-STYLE GALLERY -->
+          <div class="card" style="padding:22px;margin-bottom:14px">
+            <div class="section-title"><h2><i class="ri-instagram-line" style="color:#E1306C"></i> Instagram-Style Gallery</h2></div>
+            <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px;line-height:1.6">Footer-এর ঠিক উপরে ৬টা square image grid। Customer photos / lookbook posts দেখান — social proof বাড়ে।</div>
+            <div class="flex-gap" style="margin-bottom:12px">
+              <label class="ios-toggle"><input type="checkbox" id="wc-iggrid-active"><span class="slider"></span></label>
+              <span style="font-weight:600">Show Instagram-style 6-image gallery</span>
+            </div>
+            <div class="field" style="margin-bottom:10px">
+              <label>Gallery Heading</label>
+              <input type="text" id="wc-iggrid-title" class="input" placeholder="@yarzbd on Instagram">
+            </div>
+            <div class="grid grid-3" style="gap:10px">
+              <div class="field"><label>Image 1</label><input type="text" id="wc-iggrid-1" class="input" placeholder="https://..."></div>
+              <div class="field"><label>Image 2</label><input type="text" id="wc-iggrid-2" class="input" placeholder="https://..."></div>
+              <div class="field"><label>Image 3</label><input type="text" id="wc-iggrid-3" class="input" placeholder="https://..."></div>
+              <div class="field"><label>Image 4</label><input type="text" id="wc-iggrid-4" class="input" placeholder="https://..."></div>
+              <div class="field"><label>Image 5</label><input type="text" id="wc-iggrid-5" class="input" placeholder="https://..."></div>
+              <div class="field"><label>Image 6</label><input type="text" id="wc-iggrid-6" class="input" placeholder="https://..."></div>
+            </div>
+            <div class="field" style="margin-top:10px">
+              <label>Instagram Profile Link (clicking gallery sends here)</label>
+              <input type="text" id="wc-iggrid-link" class="input" placeholder="https://instagram.com/yarzbd">
+            </div>
+          </div>
+
+        </div>
+
         <!-- SAVE BUTTON STICKY — v10 FIX: spacer + safe-area + bottom-nav offset -->
         <div style="height:24px"></div>
         <div class="glass save-all-bar" style="position:sticky;bottom:calc(14px + env(safe-area-inset-bottom, 0px));margin-top:18px;padding:14px;border-radius:16px;display:flex;justify-content:flex-end;z-index:10;box-shadow:0 8px 32px rgba(0,0,0,0.12);background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--glass-border)">
@@ -3453,16 +3930,16 @@ body.dark select.select option{
           <div class="section-title"><h2><i class="ri-plug-line" style="color:var(--accent-2)"></i> কানেকশন সেটআপ</h2></div>
           <div class="field">
             <label>Google Apps Script Web App URL <span class="req">*</span></label>
-            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbzLs9KDameNALSxN4ntZXHKs-st2V-4gN5ITFL38UnqKFw_s2yXFPcmLFB4KXzIVs7K/exec" data-default-url="https://script.google.com/macros/s/AKfycbzLs9KDameNALSxN4ntZXHKs-st2V-4gN5ITFL38UnqKFw_s2yXFPcmLFB4KXzIVs7K/exec">
-            <div style="font-size:11px;opacity:0.6;margin-top:4px">✓ Default URL pre-filled — যদি deployment পরিবর্তন করেন তবে এখানে নতুন URL দিন</div>
+            <input id="set-apps-url" class="input" placeholder="https://script.google.com/macros/s/.../exec">
+            <div style="font-size:11px;opacity:0.6;margin-top:4px">⚠️ Configure via setup.html first, then manage here</div>
           </div>
           <div class="field">
             <label>Sheet ID</label>
-            <input id="set-sheet-id" class="input" value="1wQz5OQZAtISTD1FdSEs_j9-p0e-BHwYjmjN7PR9hA-Q">
+            <input id="set-sheet-id" class="input" placeholder="1wQz5O...">
           </div>
           <div class="field">
             <label>API Key</label>
-            <input id="set-api-key" class="input" value="AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k">
+            <input id="set-api-key" class="input" placeholder="AIzaSy...">
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn btn-primary" onclick="YARZ.settings.saveConn()"><i class="ri-check-line"></i> Save Connection</button>
@@ -3509,6 +3986,29 @@ body.dark select.select option{
           <div class="flex-gap mt-3" style="flex-wrap:wrap">
             <button class="btn btn-primary btn-sm" onclick="YARZ.settings.saveGitHub()"><i class="ri-save-line"></i> Save</button>
             <button class="btn btn-blue btn-sm" onclick="YARZ.settings.githubSync()"><i class="ri-cloud-line"></i> Sync Now</button>
+          </div>
+        </div>
+
+        <!-- ✅ v11.4: Steadfast Courier API — auto-create courier orders -->
+        <div class="card" style="padding:22px">
+          <div class="section-title"><h2><i class="ri-truck-line" style="color:#10B981"></i> Steadfast Courier API <span style="font-size:11px;font-weight:500;color:var(--ink-3);margin-left:8px">— এক ক্লিকে অর্ডার পাঠান</span></h2></div>
+          <div style="font-size:12px;color:var(--ink-3);margin-bottom:14px;line-height:1.6">
+            Steadfast Courier-এ <a href="https://steadfast.com.bd/user/api" target="_blank" style="color:var(--brand);font-weight:600">portal.steadfast.com.bd → More → API</a>-এ গিয়ে API Key এবং Secret Key কপি করুন। তারপর এখানে paste করে save করুন।
+            <br><b>সুবিধা:</b> অর্ডার সেকশনে "Send to Steadfast" বাটন আসবে — এক ক্লিকে অটোমেটিক consignment তৈরি হবে, tracking ID আসবে, status "Picked Up" হবে।
+          </div>
+          <div class="grid grid-2" style="gap:12px;margin-bottom:10px">
+            <div class="field"><label>API Key <span class="req">*</span></label>
+              <input id="sf-api-key" class="input" placeholder="nyzxqgjryqn4x4rsjtrcht2f00tg7mxx" autocomplete="off">
+            </div>
+            <div class="field"><label>Secret Key <span class="req">*</span></label>
+              <input id="sf-secret" class="input" type="password" placeholder="gofxlpbspqh2jyvpdyesvgdh" autocomplete="off">
+            </div>
+          </div>
+          <div class="flex-gap" style="flex-wrap:wrap;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="YARZ.settings.saveSteadfast()"><i class="ri-save-line"></i> Save Keys</button>
+            <button class="btn btn-blue btn-sm" onclick="YARZ.settings.testSteadfast()"><i class="ri-link"></i> Test Connection</button>
+            <button class="btn btn-ghost btn-sm" onclick="YARZ.settings.checkSteadfastBalance()"><i class="ri-wallet-3-line"></i> Balance চেক</button>
+            <span id="sf-balance-display" style="margin-left:auto;font-size:12px;color:var(--ink-2);font-weight:600"></span>
           </div>
         </div>
       </div>
@@ -3697,19 +4197,22 @@ body.dark select.select option{
 
 // ============ CONFIG ============
 // Credentials stored as SHA-256 hashes (NOT plaintext) — harder to read even if source leaks.
-// Credentials stored as SHA-256 hashes — never stored as plaintext in source code.
-// To change password: update ADMIN_SECRET in Apps Script AND the hash below.
+// To change password: update ADMIN_SECRET in your Apps Script backend AND the hash below.
+// Generate new hash: open browser console → crypto.subtle.digest('SHA-256', new TextEncoder().encode('your-password')).then(b=>console.log(Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')))
 const AUTH_HASHES = {
   // SHA-256 of admin username
   user: '418f961b144d99b6bb999123a1b575e15c9f9102b444954943f77c9dbdb54a75', 
   // SHA-256 of admin password (must match ADMIN_SECRET in Apps Script backend)
   pass: '495a8d6b8674581c1a2278b6f847af1b40d0dd6bd61c7e47ed54db6b0c9c8527'
 };
+// Default values used as fallbacks when admin hasn't configured custom ones.
+// These are inherently public (any browser making API calls will expose them in network tab).
+// Real security is in Google Cloud Console: API key MUST be restricted to your domain.
 const DEFAULT_SHEET_ID = '1wQz5OQZAtISTD1FdSEs_j9-p0e-BHwYjmjN7PR9hA-Q';
 const DEFAULT_API_KEY  = 'AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k';
-// 🔑 v3.9: Settings version bumped — auto-resets stale localStorage values (forces new URL)
-const SETTINGS_VERSION = 'v4.0-2026-05-14';
-// ★ হার্ডকোডেড Apps Script URL — এর ফলে Settings-এ URL না দিলেও Write operations কাজ করবে
+// Settings version — bump to force-refresh stale localStorage on all visitors
+const SETTINGS_VERSION = 'v12.0-2026-05-22';
+// Default Apps Script URL — same reasoning as above (inherently public for client-side apps)
 const DEFAULT_APPS_URL = 'https://script.google.com/macros/s/AKfycbzLs9KDameNALSxN4ntZXHKs-st2V-4gN5ITFL38UnqKFw_s2yXFPcmLFB4KXzIVs7K/exec';
 const TZ = 'Asia/Dhaka';
 
@@ -5941,12 +6444,18 @@ Team YARZ`;
     ['website','manual','customers'].forEach(tab=>{
       $('ord-tab-'+tab).classList.toggle('hidden', tab!==t);
     });
+    // ✅ v11.4: Re-evaluate bulk bar visibility based on current tab + stage
+    const bulk = $('wo-bulk-bar');
+    if(bulk) bulk.style.display = (t === 'website' && this.currentStage === 'new') ? 'flex' : 'none';
     this.render();
   },
 
   setStage(s){
     this.currentStage = s;
     qsa('.wo-stage').forEach(b=>b.classList.toggle('active', b.dataset.stage===s));
+    // ✅ v11.4: Show bulk Steadfast bar only on "new" stage
+    const bulk = $('wo-bulk-bar');
+    if(bulk) bulk.style.display = (s === 'new') ? 'flex' : 'none';
     this.renderWebsite();
   },
 
@@ -6111,6 +6620,12 @@ Team YARZ`;
       actionBtn = `<span class="chip ${sc}">${esc(o.status)}</span>`;
     }
 
+    // ✅ v11.4: Steadfast Express button — only show on Pending orders
+    const sfBtn = (stage === 'new') ? `<button class="btn btn-xs" style="background:linear-gradient(135deg,#10B981,#059669);color:#fff;border:none" onclick="YARZ.ord.sendToSteadfast('${esc(o.orderId)}')" title="এক ক্লিকে Steadfast Courier-এ পাঠান"><i class="ri-truck-line"></i> Steadfast-এ পাঠান</button>` : '';
+    // ✅ v11.5: Steadfast status check — show when courier field starts with "Steadfast"
+    const isSteadfast = (o.courier || '').toLowerCase().indexOf('steadfast') === 0;
+    const sfStatusBtn = (isSteadfast && stage !== 'new') ? `<button class="btn btn-ghost btn-xs" style="border:1px solid #10B981;color:#10B981" onclick="YARZ.ord.checkSteadfastStatus('${esc(o.orderId)}')" title="Steadfast থেকে real-time status চেক"><i class="ri-radar-line"></i> Status চেক</button>` : '';
+
     // Courier selector (useful at picked/shipped) — quick courier name
     const courierSel = (stage==='picked' || stage==='shipped') ? `
       <select class="select" style="max-width:150px;padding:7px 12px;font-size:11px;border-radius:999px" onchange="if(this.value)YARZ.ord.updateCourier('${esc(o.orderId)}',this.value)">
@@ -6214,21 +6729,31 @@ Team YARZ`;
         </div>`;
       }).join('') }
 
-      <!-- Customer Info Grid -->
+      <!-- Customer Info Grid (v11.3 — copyable cells with copy buttons) -->
       <div class="oc-info-grid">
-        <div class="oc-info-cell copyable" onclick="navigator.clipboard.writeText('${esc(o.phone||'')}');YARZ.toast?.('ফোন কপি হয়েছে','success')||toast('ফোন কপি হয়েছে','success')" title="ক্লিক করে কপি করুন">
+        <div class="oc-info-cell full">
+          <i class="ri-user-3-line"></i>
+          <div style="min-width:0;flex:1">
+            <div class="lbl">কাস্টমার নাম</div>
+            <div class="val">${esc(o.customer||'—')}</div>
+          </div>
+          <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.customer||'')}',this,'নাম কপি হয়েছে')" title="কপি করুন"><i class="ri-file-copy-line"></i></button>
+        </div>
+        <div class="oc-info-cell">
           <i class="ri-phone-line"></i>
           <div style="min-width:0;flex:1">
             <div class="lbl">ফোন নাম্বার</div>
-            <div class="val bn-num">${esc(o.phone||'—')}</div>
+            <div class="val bn-num">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</div>
           </div>
+          <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._normalizeBdPhone('${esc(o.phone||'')}')||'${esc(o.phone||'')}',this,'ফোন কপি হয়েছে')" title="কপি করুন"><i class="ri-file-copy-line"></i></button>
         </div>
         <div class="oc-info-cell">
           <i class="ri-map-pin-2-line"></i>
           <div style="min-width:0;flex:1">
-            <div class="lbl">লোকেশন</div>
+            <div class="lbl">জেলা / লোকেশন</div>
             <div class="val">${esc(o.location||o.city||'—')}</div>
           </div>
+          <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.location||o.city||'')}',this,'লোকেশন কপি হয়েছে')" title="কপি করুন"><i class="ri-file-copy-line"></i></button>
         </div>
         <div class="oc-info-cell">
           <i class="ri-wallet-3-line"></i>
@@ -6244,6 +6769,7 @@ Team YARZ`;
             <div class="lbl">ইমেইল</div>
             <div class="val" style="font-size:11.5px;word-break:break-all">${esc(o.email)}</div>
           </div>
+          <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.email||'')}',this,'ইমেইল কপি হয়েছে')" title="কপি করুন"><i class="ri-file-copy-line"></i></button>
         </div>` : ''}
         ${o.address ? `
         <div class="oc-info-cell full">
@@ -6252,8 +6778,15 @@ Team YARZ`;
             <div class="lbl">সম্পূর্ণ ঠিকানা</div>
             <div class="val" style="font-size:12.5px;line-height:1.5">${esc(o.address)}</div>
           </div>
+          <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy('${esc((o.address||'')+(o.location?', '+o.location:''))}',this,'ঠিকানা কপি হয়েছে')" title="কপি করুন"><i class="ri-file-copy-line"></i></button>
         </div>` : ''}
       </div>
+
+      <!-- ✅ v11.3: One-click courier block copy -->
+      <button class="btn btn-primary btn-xs" style="width:100%;margin:8px 0;padding:10px;font-size:12.5px"
+        onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._courierBlock('${esc(o.orderId)}'),this,'কুরিয়ারের জন্য সম্পূর্ণ ডিটেইল কপি হয়েছে — পেস্ট করুন')">
+        <i class="ri-clipboard-line"></i> কুরিয়ারের জন্য সম্পূর্ণ ডিটেইল কপি করুন
+      </button>
 
       <!-- Price Breakdown -->
       <div class="oc-price-box">
@@ -6291,6 +6824,8 @@ Team YARZ`;
 
       <div class="order-actions" style="flex-wrap:wrap;gap:6px">
         ${actionBtn}
+        ${sfBtn}
+        ${sfStatusBtn}
         ${courierSel}
         ${stage!=='delivered' ? addTrackBtn : ''}
         <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WhatsApp</button>
@@ -6355,6 +6890,253 @@ Team YARZ`;
       YARZ.updateBadges();
       toast(`#${orderId} → ${newStatus}`,'success');
     } catch(e){ toast(e.message,'error'); }
+    finally { hideLoader(); }
+  },
+
+  // ✅ v11.6: Send single order to Steadfast Courier API with styled modal + idempotency
+  async sendToSteadfast(orderId){
+    // Idempotency lock — prevent double-click
+    if(this._sfInFlight && this._sfInFlight[orderId]){
+      toast('⏳ এই অর্ডার ইতিমধ্যে পাঠানো হচ্ছে...','warning');
+      return;
+    }
+    const o = state.data.websiteOrders.find(x=>x.orderId===orderId);
+    if(!o){ toast('Order পাওয়া যায়নি','error'); return; }
+
+    // Pre-flight validation
+    const phone = (o.phone || '').trim();
+    if(!/^01[3-9]\d{8}$/.test(phone.replace(/[^0-9]/g,'').replace(/^880/,'0').slice(-11))){
+      toast('❌ Invalid phone number — Steadfast 11 digits ফোন accept করে', 'error');
+      return;
+    }
+    if(!o.customer || !o.customer.trim()){
+      toast('❌ কাস্টমার নাম খালি — পাঠানো যাবে না','error');
+      return;
+    }
+
+    // Confirm modal (styled)
+    const subtotal = (o.products || [{qty:o.qty,price:o.price}]).reduce((s,p)=>s+(parseFloat(p.qty)||1)*(parseFloat(p.price)||0),0);
+    const delivery = parseFloat(o.deliveryAmount||o.delivery)||0;
+    const total = subtotal + delivery;
+    const isPrepaid = /^(bkash|nagad|rocket|bank|paid)$/i.test(o.payment||'');
+    const cod = isPrepaid ? 0 : Math.round(total);
+
+    const confirmHtml = `
+      <div class="modal-header">
+        <h3><i class="ri-truck-line" style="color:#10B981"></i> Steadfast Courier-এ পাঠাবেন?</h3>
+        <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
+      </div>
+      <div style="padding:14px;background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(5,150,105,0.03));border:1px solid rgba(16,185,129,0.2);border-radius:12px;margin-bottom:16px">
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px">
+          <div style="color:var(--ink-3);font-weight:600">কাস্টমার:</div><div>${esc(o.customer)}</div>
+          <div style="color:var(--ink-3);font-weight:600">ফোন:</div><div class="bn-num">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</div>
+          <div style="color:var(--ink-3);font-weight:600">ঠিকানা:</div><div>${esc(o.address||'—')}${o.location?', '+esc(o.location):''}</div>
+          <div style="color:var(--ink-3);font-weight:600">COD Amount:</div><div style="font-weight:700;color:${isPrepaid?'#0ea5e9':'#10B981'};font-size:15px">৳${cod}${isPrepaid?' (Prepaid)':''}</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
+        <button class="btn btn-primary" style="background:linear-gradient(135deg,#10B981,#059669);border:none" onclick="YARZ.closeModal();YARZ.ord._sendToSteadfastConfirmed('${esc(orderId)}')"><i class="ri-truck-line"></i> পাঠান</button>
+      </div>
+    `;
+    $('modal-content').innerHTML = confirmHtml;
+    $('modal-overlay').classList.add('show');
+  },
+
+  async _sendToSteadfastConfirmed(orderId){
+    if(!this._sfInFlight) this._sfInFlight = {};
+    if(this._sfInFlight[orderId]) return;
+    this._sfInFlight[orderId] = true;
+    showLoader('Steadfast-এ অর্ডার পাঠাচ্ছি...');
+    try {
+      const res = await appsPost('steadfastCreate', { orderId });
+      if(!res || res.ok === false) throw new Error(res?.msg || res?.error || 'Failed');
+      const tc = res.trackingCode || '';
+      const cid = res.consignmentId || '';
+      const o = state.data.websiteOrders.find(x=>x.orderId===orderId);
+      if(o){
+        o.status = 'Picked Up';
+        o.courier = 'Steadfast' + (tc ? ' | ' + tc : '');
+      }
+      this.updateCounts();
+      this.renderWebsite();
+      YARZ.updateBadges();
+      // Success modal — show tracking + consignment + copy buttons
+      const successHtml = `
+        <div class="modal-header">
+          <h3>✅ Steadfast-এ সফল ভাবে পাঠানো হয়েছে!</h3>
+          <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div style="padding:18px;background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(5,150,105,0.04));border:1px solid rgba(16,185,129,0.3);border-radius:12px;text-align:center;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Tracking Code</div>
+          <div style="font-size:28px;font-weight:800;color:#10B981;font-family:monospace;letter-spacing:.05em;margin-bottom:8px">${esc(tc||'—')}</div>
+          ${tc ? `<button class="btn btn-ghost btn-sm" onclick="YARZ.ord._copy('${esc(tc)}',this,'Tracking কপি হয়েছে')"><i class="ri-file-copy-line"></i> Tracking কপি</button>` : ''}
+        </div>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px;margin-bottom:14px;padding:12px;background:var(--surface-1);border-radius:10px">
+          <div style="color:var(--ink-3);font-weight:600">Order ID:</div><div>${esc(orderId)}</div>
+          <div style="color:var(--ink-3);font-weight:600">Consignment ID:</div><div>${esc(cid||'—')}</div>
+          <div style="color:var(--ink-3);font-weight:600">COD:</div><div>৳${res.codAmount||0}${res.isPrepaid?' (Prepaid)':''}</div>
+          <div style="color:var(--ink-3);font-weight:600">Status:</div><div><span class="chip chip-blue">Picked Up</span></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" onclick="YARZ.closeModal()">OK</button>
+          ${tc ? `<button class="btn btn-blue" onclick="YARZ.closeModal();YARZ.ord.checkSteadfastStatus('${esc(orderId)}')"><i class="ri-radar-line"></i> Status চেক</button>` : ''}
+        </div>
+      `;
+      $('modal-content').innerHTML = successHtml;
+      $('modal-overlay').classList.add('show');
+    } catch(e){
+      toast('❌ Steadfast Error: ' + e.message, 'error');
+    }
+    finally {
+      hideLoader();
+      delete this._sfInFlight[orderId];
+    }
+  },
+
+  // ✅ v11.5: Live status check from Steadfast (by invoice/orderId)
+  async checkSteadfastStatus(orderId){
+    showLoader('Steadfast থেকে status আনছি...');
+    try {
+      const o = state.data.websiteOrders.find(x=>x.orderId===orderId);
+      const courierField = o?.courier || '';
+      // Try tracking first (more reliable), fall back to invoice
+      const trackMatch = courierField.match(/\|\s*([A-Z0-9]{6,})/i);
+      const tracking = trackMatch ? trackMatch[1] : '';
+      const payload = tracking ? { trackingCode: tracking } : { invoice: orderId };
+      const res = await appsPost('steadfastStatus', payload);
+      if(!res || res.ok === false) throw new Error(res?.msg || 'Failed');
+      const status = (res.data && (res.data.delivery_status || res.data.status)) || 'unknown';
+      const html = `
+        <div class="modal-header">
+          <h3>📦 Steadfast Status — ${esc(orderId)}</h3>
+          <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div style="padding:16px;border-radius:12px;background:var(--surface-1);border:1px solid var(--line);margin-bottom:14px">
+          <div style="font-size:13px;color:var(--ink-3);margin-bottom:6px">Current Steadfast Status:</div>
+          <div style="font-size:22px;font-weight:800;color:var(--brand);text-transform:capitalize">${esc(status.replace(/_/g,' '))}</div>
+        </div>
+        <div class="modal-section-title">Full Response</div>
+        <pre style="background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:11px;overflow:auto;max-height:50vh;font-family:monospace;color:var(--ink)">${esc(JSON.stringify(res.data, null, 2))}</pre>
+        <div class="modal-actions">
+          <button class="btn btn-primary" onclick="YARZ.closeModal()">OK</button>
+        </div>
+      `;
+      $('modal-content').innerHTML = html;
+      $('modal-overlay').classList.add('show');
+    } catch(e){
+      toast('Status Error: ' + e.message, 'error');
+    }
+    finally { hideLoader(); }
+  },
+
+  // ✅ v11.6: Bulk send all "new" orders to Steadfast — with per-order failure breakdown
+  async bulkSendToSteadfast(){
+    const newOrders = state.data.websiteOrders.filter(o => {
+      const s = (o.status || 'Pending').trim();
+      return ['Pending','Processing','Confirmed',''].includes(s);
+    });
+    if(!newOrders.length){ toast('কোনো নতুন অর্ডার নেই','warning'); return; }
+    // ✅ v11.7: Styled confirm modal (replaces native confirm)
+    const previewItems = newOrders.slice(0, 5);
+    const confirmHtml = `
+      <div class="modal-header">
+        <h3><i class="ri-flashlight-fill" style="color:#10B981"></i> Bulk Steadfast পাঠাবেন?</h3>
+        <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
+      </div>
+      <div style="padding:16px;background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(5,150,105,0.04));border:1px solid rgba(16,185,129,0.3);border-radius:12px;margin-bottom:14px;text-align:center">
+        <div style="font-size:36px;font-weight:800;color:#10B981;line-height:1">${toBn(newOrders.length)}</div>
+        <div style="font-size:12px;color:var(--ink-3);font-weight:600;margin-top:4px">টি Pending অর্ডার Steadfast Courier-এ পাঠানো হবে</div>
+      </div>
+      <div style="font-size:11.5px;color:var(--ink-3);margin-bottom:8px;font-weight:600">প্রথম ${Math.min(5, newOrders.length)} টি:</div>
+      <div style="border:1px solid var(--line);border-radius:8px;max-height:160px;overflow-y:auto;font-size:11.5px">
+        ${previewItems.map(o=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line)">
+            <span><b>${esc(o.customer||'—')}</b> — ${esc(o.phone||'—')}</span>
+            <span style="color:var(--ink-3);font-family:monospace;font-size:10px">${esc(o.orderId)}</span>
+          </div>
+        `).join('')}
+        ${newOrders.length > 5 ? `<div style="padding:6px 10px;color:var(--ink-3);font-style:italic;font-size:11px">...আরও ${toBn(newOrders.length - 5)} টি</div>` : ''}
+      </div>
+      <div style="font-size:11px;color:var(--ink-3);margin-top:10px;padding:8px;background:rgba(245,158,11,0.06);border-radius:6px">⚠️ Invalid phone বা missing data থাকলে সেই orders skip হবে — শেষে list দেখাবে।</div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="YARZ.closeModal()">বাতিল</button>
+        <button class="btn btn-primary" style="background:linear-gradient(135deg,#10B981,#059669);border:none" onclick="YARZ.closeModal();YARZ.ord._bulkSendToSteadfastConfirmed()"><i class="ri-flashlight-fill"></i> পাঠানো শুরু করুন</button>
+      </div>
+    `;
+    $('modal-content').innerHTML = confirmHtml;
+    $('modal-overlay').classList.add('show');
+  },
+
+  async _bulkSendToSteadfastConfirmed(){
+    const newOrders = state.data.websiteOrders.filter(o => {
+      const s = (o.status || 'Pending').trim();
+      return ['Pending','Processing','Confirmed',''].includes(s);
+    });
+    if(!newOrders.length){ toast('কোনো নতুন অর্ডার নেই','warning'); return; }
+    showLoader(`${newOrders.length} টি অর্ডার পাঠাচ্ছি...`);
+    try {
+      const orderIds = newOrders.map(o => o.orderId);
+      const res = await appsPost('steadfastBulk', { orderIds });
+      if(!res || res.ok === false) throw new Error(res?.msg || 'Bulk failed');
+      const succeeded = res.succeeded || 0;
+      const failed = res.failed || ((res.total || 0) - succeeded);
+      const failures = res.failures || [];
+      // Update local state for successful ones
+      (res.results || []).forEach(r => {
+        if(r.ok){
+          const o = state.data.websiteOrders.find(x=>x.orderId===r.orderId);
+          if(o){
+            o.status = 'Picked Up';
+            const tc = r.trackingCode || r.consignmentId || '';
+            o.courier = 'Steadfast' + (tc ? ' | ' + tc : '');
+          }
+        }
+      });
+      this.updateCounts();
+      this.renderWebsite();
+      YARZ.updateBadges();
+
+      // Show detailed result modal
+      const failureRows = failures.length ? failures.map(f =>
+        `<tr><td style="padding:6px 8px;font-family:monospace;font-size:11px">${esc(f.orderId||'?')}</td><td style="padding:6px 8px;color:var(--danger);font-size:12px">${esc(f.msg||f.error||'Unknown')}</td></tr>`
+      ).join('') : '';
+      const resultHtml = `
+        <div class="modal-header">
+          <h3>📦 Steadfast Bulk Send Result</h3>
+          <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="grid grid-2" style="gap:12px;margin-bottom:14px">
+          <div style="padding:14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:10px;text-align:center">
+            <div style="font-size:32px;font-weight:800;color:#10B981">${succeeded}</div>
+            <div style="font-size:12px;color:var(--ink-3);font-weight:600">সফল</div>
+          </div>
+          <div style="padding:14px;background:${failed>0?'rgba(239,68,68,0.08)':'rgba(0,0,0,0.04)'};border:1px solid ${failed>0?'rgba(239,68,68,0.3)':'var(--line)'};border-radius:10px;text-align:center">
+            <div style="font-size:32px;font-weight:800;color:${failed>0?'var(--danger)':'var(--ink-3)'}">${failed}</div>
+            <div style="font-size:12px;color:var(--ink-3);font-weight:600">ব্যর্থ</div>
+          </div>
+        </div>
+        ${failureRows ? `
+          <div style="margin-bottom:14px">
+            <div style="font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:6px">❌ ব্যর্থ অর্ডারের লিস্ট:</div>
+            <div style="border:1px solid var(--line);border-radius:8px;max-height:200px;overflow-y:auto">
+              <table style="width:100%;font-size:12px">
+                <thead><tr style="background:var(--surface-1)"><th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--ink-3)">Order ID</th><th style="text-align:left;padding:6px 8px;font-size:11px;color:var(--ink-3)">কারণ</th></tr></thead>
+                <tbody>${failureRows}</tbody>
+              </table>
+            </div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:6px">💡 ব্যর্থ অর্ডারগুলো ম্যানুয়ালি ঠিক করে আবার চেষ্টা করুন (যেমন: ফোন নাম্বার ঠিক করা, কাস্টমার নাম যোগ করা)</div>
+          </div>
+        ` : ''}
+        <div class="modal-actions">
+          <button class="btn btn-primary" onclick="YARZ.closeModal()">OK</button>
+        </div>
+      `;
+      $('modal-content').innerHTML = resultHtml;
+      $('modal-overlay').classList.add('show');
+    } catch(e){
+      toast('❌ Bulk Error: ' + e.message, 'error');
+    }
     finally { hideLoader(); }
   },
 
@@ -6480,6 +7262,53 @@ Team YARZ`;
       try{ document.execCommand('copy'); showOk(); }catch(e){ toast('কপি ব্যর্থ','error'); }
       document.body.removeChild(ta);
     }
+  },
+
+  // ✅ v11.3: Generic copy helper with visual feedback (used for all order fields)
+  _copy(text, btn, label){
+    if(!text){ toast('কিছু কপি করার নেই','warning'); return; }
+    const showOk = ()=>{
+      toast((label||'কপি হয়েছে'),'success');
+      if(btn){
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="ri-check-line" style="color:#059669"></i>';
+        setTimeout(()=>{ btn.innerHTML = orig; }, 1100);
+      }
+    };
+    if(navigator.clipboard?.writeText){
+      navigator.clipboard.writeText(text).then(showOk).catch(()=>this._copyFallback(text, showOk));
+    } else { this._copyFallback(text, showOk); }
+  },
+  _copyFallback(text, ok){
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); ok(); }catch(e){ toast('কপি ব্যর্থ','error'); }
+    document.body.removeChild(ta);
+  },
+
+  // ✅ v11.3: Format BD phone for display: +8801817667212 → 01817-667212
+  _fmtBdPhoneDisplay(raw){
+    const e164 = this._normalizeBdPhone(raw);
+    if(!e164) return raw || '—';
+    const local = '0' + e164.slice(4);
+    return local.slice(0,5) + '-' + local.slice(5);
+  },
+
+  // ✅ v11.3: Build a clean multi-line block to copy into courier service forms
+  _courierBlock(orderId){
+    const o = state.data.websiteOrders.find(x=>x.orderId===orderId);
+    if(!o) return '';
+    const phone = this._normalizeBdPhone(o.phone) || (o.phone||'');
+    const prods = (o.products || [{product:o.product,size:o.size,qty:o.qty,price:o.price}]);
+    const productLines = prods.map(p=>`Product: ${p.product||''} (Size: ${p.size||'-'}, Qty: ${p.qty||1})`).join('\n');
+    const total = parseFloat(o.totalAmount||o.total||0);
+    return [
+      `Name: ${o.customer||''}`,
+      `Phone: ${phone}`,
+      `Address: ${o.address||''}${o.location?', '+o.location:''}`,
+      productLines,
+      `Amount: ৳${total}`
+    ].join('\n');
   },
 
   deleteWebOrder(orderId){
@@ -7024,6 +7853,13 @@ YARZ.webControl = {
 
   render() {
     const s = state.data.settings || {};
+    // ✅ v11.3: Robust parseBool — handles "TRUE" / true / "yes" / 1 / etc.
+    const parseBool = (val) => {
+      if (val === true || val === 1) return true;
+      if (val === false || val === 0 || val == null || val === '') return false;
+      const str = String(val).toLowerCase().trim();
+      return ['true','yes','1','on','enabled','enable','chalu','চালু'].includes(str);
+    };
     
     // --- General & Promo ---
     const storeStatus = s['Store Status'];
@@ -7032,7 +7868,7 @@ YARZ.webControl = {
 
     const b2bMode = s['B2B Mode'];
     const cbB2B = $('wc-b2b-mode');
-    if(cbB2B) cbB2B.checked = (b2bMode === 'true' || b2bMode === true);
+    if(cbB2B) cbB2B.checked = parseBool(b2bMode);
 
     const currency = $('wc-currency');
     if(currency) currency.value = s['Currency'] || '৳';
@@ -7042,7 +7878,7 @@ YARZ.webControl = {
 
     const active = s['Announcement Active'];
     const checkbox = $('wc-announcement-active');
-    if(checkbox) checkbox.checked = (active === 'true' || active === true);
+    if(checkbox) checkbox.checked = parseBool(active);
     
     const textEl = $('wc-announcement-text');
     if(textEl) textEl.value = s['Announcement Text'] || '';
@@ -7051,7 +7887,7 @@ YARZ.webControl = {
 
     const popupActive = s['Promo Popup Active'];
     const cbPopup = $('wc-popup-active');
-    if(cbPopup) cbPopup.checked = (popupActive === 'true' || popupActive === true);
+    if(cbPopup) cbPopup.checked = parseBool(popupActive);
 
     const popupImg = $('wc-popup-img');
     if(popupImg) {
@@ -7112,19 +7948,19 @@ YARZ.webControl = {
     if(sContainer) sContainer.innerHTML = sectionsHtml;
 
     // --- Product Page ---
-    const qv = $('wc-quick-view'); if(qv) qv.checked = (String(s['Quick View']) === 'true');
-    const sb = $('wc-stock-bar'); if(sb) sb.checked = (String(s['Stock Bar']) === 'true');
-    const rp = $('wc-related-prod'); if(rp) rp.checked = (String(s['Related Prod']) === 'true');
-    const ls = $('wc-live-search'); if(ls) ls.checked = (String(s['Live Search']) === 'true');
+    const qv = $('wc-quick-view'); if(qv) qv.checked = parseBool(s['Quick View']);
+    const sb = $('wc-stock-bar'); if(sb) sb.checked = parseBool(s['Stock Bar']);
+    const rp = $('wc-related-prod'); if(rp) rp.checked = parseBool(s['Related Prod']);
+    const ls = $('wc-live-search'); if(ls) ls.checked = parseBool(s['Live Search']);
     const he = $('wc-hover-effect'); if(he) he.value = s['Hover Effect'] || 'zoom';
     const ac = $('wc-add-cart-text'); if(ac) ac.value = s['Add Cart Text'] || '';
     const mq = $('wc-max-qty'); if(mq) mq.value = s['Max Qty'] || '';
     const ed = $('wc-exp-delivery'); if(ed) ed.value = s['Exp Delivery'] || '';
 
     // --- Cart & Checkout ---
-    const cod = $('wc-enable-cod'); if(cod) cod.checked = (String(s['Enable COD']).toLowerCase() !== 'false'); // Defaults to true
-    const cd = $('wc-cart-drawer'); if(cd) cd.checked = (String(s['Cart Drawer']) === 'true');
-    const on = $('wc-order-notes'); if(on) on.checked = (String(s['Order Notes']) === 'true');
+    const cod = $('wc-enable-cod'); if(cod) cod.checked = (s['Enable COD'] == null || s['Enable COD'] === '') ? true : parseBool(s['Enable COD']); // Default true
+    const cd = $('wc-cart-drawer'); if(cd) cd.checked = parseBool(s['Cart Drawer']);
+    const on = $('wc-order-notes'); if(on) on.checked = parseBool(s['Order Notes']);
     const cm = $('wc-checkout-mode'); if(cm) cm.value = s['Checkout Mode'] || 'website';
     const cf = $('wc-custom-field'); if(cf) cf.value = s['Custom Field'] || '';
     const z1 = $('wc-zone-1-name'); if(z1) z1.value = s['Zone 1 Name'] || '';
@@ -7136,9 +7972,9 @@ YARZ.webControl = {
     this.renderDeliveryRows();
 
     // --- Marketing ---
-    const ep = $('wc-exit-popup'); if(ep) ep.checked = (String(s['Exit Popup']) === 'true');
-    const ly = $('wc-loyalty'); if(ly) ly.checked = (String(s['Loyalty System']) === 'true');
-    const tb = $('wc-trust-badges'); if(tb) tb.checked = (String(s['Trust Badges']) === 'true');
+    const ep = $('wc-exit-popup'); if(ep) ep.checked = parseBool(s['Exit Popup']);
+    const ly = $('wc-loyalty'); if(ly) ly.checked = parseBool(s['Loyalty System']);
+    const tb = $('wc-trust-badges'); if(tb) tb.checked = parseBool(s['Trust Badges']);
     const am = $('wc-abandon-msg'); if(am) am.value = s['Abandon Msg'] || '';
 
     // --- SEO Tracking Fields ---
@@ -7151,12 +7987,21 @@ YARZ.webControl = {
     const ttpx = $('wc-tt-pixel'); if(ttpx) ttpx.value = s['TT Pixel'] || '';
     const pinpx = $('wc-pin-pixel'); if(pinpx) pinpx.value = s['Pinterest Pixel'] || '';
     const snappx = $('wc-snap-pixel'); if(snappx) snappx.value = s['Snapchat Pixel'] || '';
+    // ✅ v11.7: Server-side CAPI + Domain Verification fields
+    const fbCapiTest = $('wc-fb-capi-test-code'); if(fbCapiTest) fbCapiTest.value = s['FB CAPI Test Code'] || '';
+    const fbDomVerify = $('wc-fb-domain-verify'); if(fbDomVerify) fbDomVerify.value = s['FB Domain Verify'] || '';
+    const ttTok = $('wc-tt-token'); if(ttTok) ttTok.value = s['TT Access Token'] || '';
+    const ttAdv = $('wc-tt-advertiser-id'); if(ttAdv) ttAdv.value = s['TT Advertiser ID'] || '';
+    const aov = $('wc-avg-order-value'); if(aov) aov.value = s['Avg Order Value'] || '';
     const feedUrlDisp = $('fb-feed-url-display'); if(feedUrlDisp) feedUrlDisp.value = DEFAULT_APPS_URL + "?action=fb_feed&key=" + DEFAULT_API_KEY;
     const ogimg = $('wc-og-img'); if(ogimg) { ogimg.value = s['OG Image'] || ''; this._previewImg(ogimg, 'wc-og-preview'); }
     const gsct = $('wc-gsc-tag'); if(gsct) gsct.value = s['GSC Tag'] || '';
     const ccss = $('wc-custom-css'); if(ccss) ccss.value = s['Custom CSS'] || '';
     const tgt = $('wc-tg-token'); if(tgt) tgt.value = s['Telegram Bot Token'] || '';
     const tgc = $('wc-tg-chat'); if(tgc) tgc.value = s['Telegram Chat ID'] || '';
+
+    // ✅ v14.0: Render Pixel Toggle states from saved settings
+    try { if (YARZ.pixelToggles) YARZ.pixelToggles.render(); } catch(e) { console.warn('Pixel toggles render error', e); }
 
     // ✅ v11: Extras tab fields
     try { this._renderExtras(); } catch(e) { console.warn('Extras render error', e); }
@@ -7365,6 +8210,43 @@ YARZ.webControl = {
      ✅ v11 EXTRAS TAB (PREMIUM) — render + save helpers
      ============================================================ */
 
+  // ✅ v11.3: Apply premium fashion theme preset
+  applyThemePreset(name){
+    const presets = {
+      luxe: {
+        primary: '#1A1A1A', accent: '#C9A23F', bg: '#FBF8F1', card: '#FFFFFF',
+        text: '#1A1A1A', border: '#E8E4DC', link: '#1A1A1A',
+        sale: '#C0392B', footer: '#0A0A0A'
+      },
+      editorial: {
+        primary: '#0F172A', accent: '#94633A', bg: '#FFFFFF', card: '#FAFAFA',
+        text: '#0F172A', border: '#E5E7EB', link: '#0F172A',
+        sale: '#DC2626', footer: '#0F172A'
+      },
+      reset: {
+        primary: '#634A8E', accent: '#D4910A', bg: '#FBF8F1', card: '#FFFFFF',
+        text: '#1A1A2E', border: '#E8E4DC', link: '#634A8E',
+        sale: '#C0392B', footer: '#1A1A2E'
+      }
+    };
+    const p = presets[name];
+    if(!p){ toast('Preset পাওয়া যায়নি','error'); return; }
+    const setPair = (txtId, pickId, val) => {
+      const t = $(txtId), pk = $(pickId);
+      if(t) t.value = val; if(pk) pk.value = val;
+    };
+    setPair('wc-theme-primary', 'wc-theme-primary-pick', p.primary);
+    setPair('wc-theme-accent',  'wc-theme-accent-pick',  p.accent);
+    setPair('wc-theme-bg',      'wc-theme-bg-pick',      p.bg);
+    setPair('wc-theme-card',    'wc-theme-card-pick',    p.card);
+    setPair('wc-theme-text',    'wc-theme-text-pick',    p.text);
+    setPair('wc-theme-border',  'wc-theme-border-pick',  p.border);
+    setPair('wc-theme-link',    'wc-theme-link-pick',    p.link);
+    setPair('wc-theme-sale',    'wc-theme-sale-pick',    p.sale);
+    setPair('wc-theme-footer',  'wc-theme-footer-pick',  p.footer);
+    toast(`${name === 'luxe' ? 'Classic Luxe' : name === 'editorial' ? 'Modern Editorial' : 'Default'} প্রিসেট লোড হয়েছে — Save All Changes ক্লিক করুন।`, 'success');
+  },
+
   // FAQ rows
   _buildFaqRowHTML(idx, q, a){
     return `
@@ -7459,9 +8341,16 @@ YARZ.webControl = {
   renderPopupSlots(){
     const list = $('wc-popup-slots'); if(!list) return;
     const s = state.data.settings || {};
+    // ✅ v11.3: Robust parseBool
+    const parseBool = (val) => {
+      if (val === true || val === 1) return true;
+      if (val === false || val === 0 || val == null || val === '') return false;
+      const str = String(val).toLowerCase().trim();
+      return ['true','yes','1','on','enabled','enable','chalu','চালু'].includes(str);
+    };
     let html = '';
     for(let i=1;i<=3;i++){
-      const a = String(s[`Popup ${i} Active`] || '') === 'true';
+      const a = parseBool(s[`Popup ${i} Active`]);
       const img = s[`Popup ${i} Image`] || '';
       const link = s[`Popup ${i} Link`] || '';
       const st = s[`Popup ${i} Start`] || '';
@@ -7475,14 +8364,27 @@ YARZ.webControl = {
   // Render all extras fields from settings
   _renderExtras(){
     const s = state.data.settings || {};
+    // ✅ v11.3: Robust parseBool — handles "TRUE", true, "true", "yes", 1, etc.
+    const parseBool = (val) => {
+      if (val === true || val === 1) return true;
+      if (val === false || val === 0 || val == null || val === '') return false;
+      const str = String(val).toLowerCase().trim();
+      return ['true','yes','1','on','enabled','enable','chalu','চালু'].includes(str);
+    };
     const setVal = (id, v, fb='') => { const el = $(id); if(el) el.value = v != null && v !== '' ? v : fb; };
-    const setChk = (id, v) => { const el = $(id); if(el) el.checked = (String(v) === 'true' || v === true); };
+    const setChk = (id, v) => { const el = $(id); if(el) el.checked = parseBool(v); };
     const setPair = (txtId, pickId, v, fb) => { const t=$(txtId), p=$(pickId); if(t) t.value = v||fb||''; if(p) p.value = v||fb||'#000000'; };
 
     // 1. Theme Palette
     setPair('wc-theme-primary', 'wc-theme-primary-pick', s['Theme Primary'], '#634A8E');
+    setPair('wc-theme-accent',  'wc-theme-accent-pick',  s['Theme Accent'],  '#D4910A');
     setPair('wc-theme-bg',      'wc-theme-bg-pick',      s['Theme BG'],      '#FBF8F1');
+    setPair('wc-theme-card',    'wc-theme-card-pick',    s['Theme Card BG'], '#FFFFFF');
     setPair('wc-theme-text',    'wc-theme-text-pick',    s['Theme Text'],    '#1A1A2E');
+    setPair('wc-theme-border',  'wc-theme-border-pick',  s['Theme Border'],  '#E8E4DC');
+    setPair('wc-theme-link',    'wc-theme-link-pick',    s['Theme Link'],    '#634A8E');
+    setPair('wc-theme-sale',    'wc-theme-sale-pick',    s['Theme Sale Price'], '#1A1A1A');
+    setPair('wc-theme-footer',  'wc-theme-footer-pick',  s['Theme Footer BG'],  '#1A1A2E');
     // 2. Typography
     setVal('wc-heading-font', s['Heading Font']);
     setVal('wc-body-font',    s['Body Font']);
@@ -7495,9 +8397,27 @@ YARZ.webControl = {
     setVal('wc-countdown-end',    s['Countdown End']);
     setVal('wc-countdown-title',  s['Countdown Title']);
     setVal('wc-countdown-style',  s['Countdown Style'] || 'red');
+    setVal('wc-countdown-bg',     s['Countdown BG']);
+    setVal('wc-countdown-text',   s['Countdown Text']);
+    // Sync color picker values too
+    try {
+      var cdBg = (s['Countdown BG'] || '').toString().trim();
+      var cdTx = (s['Countdown Text'] || '').toString().trim();
+      if (/^#[0-9a-f]{3,8}$/i.test(cdBg)) { var p1 = $('wc-countdown-bg-pick'); if (p1) p1.value = cdBg; }
+      if (/^#[0-9a-f]{3,8}$/i.test(cdTx)) { var p2 = $('wc-countdown-text-pick'); if (p2) p2.value = cdTx; }
+    } catch(e) {}
     // 5. Free Shipping
     setChk('wc-freeship-active', s['Free Ship Bar Active']);
     setVal('wc-freeship-text',   s['Free Ship Bar Text'] || '🚚 Free shipping on orders over ৳{amount}');
+    setVal('wc-freeship-bg',         s['Free Ship Bar BG']);
+    setVal('wc-freeship-text-color', s['Free Ship Bar Text Color']);
+    setVal('wc-freeship-thickness',  s['Free Ship Bar Thickness'] || 'slim');
+    try {
+      var fsBg = (s['Free Ship Bar BG'] || '').toString().trim();
+      var fsTx = (s['Free Ship Bar Text Color'] || '').toString().trim();
+      if (/^#[0-9a-f]{3,8}$/i.test(fsBg)) { var f1 = $('wc-freeship-bg-pick'); if (f1) f1.value = fsBg; }
+      if (/^#[0-9a-f]{3,8}$/i.test(fsTx)) { var f2 = $('wc-freeship-text-color-pick'); if (f2) f2.value = fsTx; }
+    } catch(e) {}
     // 6. Best Sellers / New Arrivals / Recently Viewed / Wishlist
     setChk('wc-bestseller-active', s['Best Sellers Active']);
     setVal('wc-bestseller-title',  s['Best Sellers Title'] || '🔥 Best Sellers');
@@ -7532,6 +8452,54 @@ YARZ.webControl = {
     setVal('wc-float-offset', s['Float Chat Offset']   || 20);
     // 13. Popup Slots
     this.renderPopupSlots();
+
+    // ✅ v11.8: Advanced (Royal) tab fields
+    // A1. Marquee
+    setChk('wc-marquee-active', s['Marquee Active']);
+    setVal('wc-marquee-text',   s['Marquee Text'] || '');
+    setVal('wc-marquee-bg',     s['Marquee BG']   || '');
+    setVal('wc-marquee-text-color', s['Marquee Text Color'] || '');
+    setVal('wc-marquee-speed',  s['Marquee Speed'] || 'slow');
+    try {
+      var mqBg = (s['Marquee BG'] || '').toString().trim();
+      var mqTx = (s['Marquee Text Color'] || '').toString().trim();
+      if (/^#[0-9a-f]{3,8}$/i.test(mqBg)) { var mp1 = $('wc-marquee-bg-pick'); if(mp1) mp1.value = mqBg; }
+      if (/^#[0-9a-f]{3,8}$/i.test(mqTx)) { var mp2 = $('wc-marquee-text-color-pick'); if(mp2) mp2.value = mqTx; }
+    } catch(e) {}
+    // A2. Trust strip
+    setChk('wc-trust-strip-active', s['Trust Strip Active']);
+    for (var ti = 1; ti <= 4; ti++) {
+      setVal('wc-trust-' + ti + '-icon',  s['Trust ' + ti + ' Icon']  || '');
+      setVal('wc-trust-' + ti + '-label', s['Trust ' + ti + ' Label'] || '');
+    }
+    // A3. Royal frame
+    setChk('wc-royal-frame-active', s['Royal Frame Active']);
+    setVal('wc-royal-accent',       s['Royal Accent'] || '');
+    setVal('wc-royal-frame-style',  s['Royal Frame Style'] || 'corners');
+    try {
+      var raAcc = (s['Royal Accent'] || '').toString().trim();
+      if (/^#[0-9a-f]{3,8}$/i.test(raAcc)) { var rp = $('wc-royal-accent-pick'); if(rp) rp.value = raAcc; }
+    } catch(e) {}
+    // A4. Editorial story
+    setChk('wc-editorial-active', s['Editorial Active']);
+    setVal('wc-editorial-img',    s['Editorial Image'] || '');
+    setVal('wc-editorial-title',  s['Editorial Title'] || '');
+    setVal('wc-editorial-body',   s['Editorial Body']  || '');
+    setVal('wc-editorial-cta',    s['Editorial CTA']   || '');
+    setVal('wc-editorial-link',   s['Editorial Link']  || '');
+    try {
+      var edImg = (s['Editorial Image'] || '').toString().trim();
+      if (edImg) {
+        var edI = $('wc-editorial-img'); if (edI) this._previewImg(edI, 'wc-editorial-preview');
+      }
+    } catch(e) {}
+    // A5. Instagram gallery
+    setChk('wc-iggrid-active', s['IG Grid Active']);
+    setVal('wc-iggrid-title',  s['IG Grid Title']  || '');
+    for (var gi = 1; gi <= 6; gi++) {
+      setVal('wc-iggrid-' + gi, s['IG Grid Image ' + gi] || '');
+    }
+    setVal('wc-iggrid-link', s['IG Grid Link'] || '');
   },
 
   async save() {
@@ -7609,6 +8577,12 @@ YARZ.webControl = {
       'TT Pixel': $('wc-tt-pixel')?.value.trim() || '',
       'Pinterest Pixel': $('wc-pin-pixel')?.value.trim() || '',
       'Snapchat Pixel': $('wc-snap-pixel')?.value.trim() || '',
+      // ✅ v11.7: Server-side CAPI + Domain Verification
+      'FB CAPI Test Code': $('wc-fb-capi-test-code')?.value.trim() || '',
+      'FB Domain Verify': $('wc-fb-domain-verify')?.value.trim() || '',
+      'TT Access Token': $('wc-tt-token')?.value.trim() || '',
+      'TT Advertiser ID': $('wc-tt-advertiser-id')?.value.trim() || '',
+      'Avg Order Value': $('wc-avg-order-value')?.value.trim() || '',
       'OG Image': $('wc-og-img')?.value.trim() || '',
       'GSC Tag': $('wc-gsc-tag')?.value.trim() || '',
       'Custom CSS': $('wc-custom-css')?.value.trim() || '',
@@ -7664,8 +8638,14 @@ YARZ.webControl = {
 
     // 1. Theme Palette
     updates['Theme Primary'] = v('wc-theme-primary');
+    updates['Theme Accent']  = v('wc-theme-accent');
     updates['Theme BG']      = v('wc-theme-bg');
+    updates['Theme Card BG'] = v('wc-theme-card');
     updates['Theme Text']    = v('wc-theme-text');
+    updates['Theme Border']  = v('wc-theme-border');
+    updates['Theme Link']    = v('wc-theme-link');
+    updates['Theme Sale Price'] = v('wc-theme-sale');
+    updates['Theme Footer BG']  = v('wc-theme-footer');
     // 2. Typography
     updates['Heading Font']  = v('wc-heading-font');
     updates['Body Font']     = v('wc-body-font');
@@ -7678,9 +8658,14 @@ YARZ.webControl = {
     updates['Countdown End']    = v('wc-countdown-end');
     updates['Countdown Title']  = v('wc-countdown-title');
     updates['Countdown Style']  = v('wc-countdown-style') || 'red';
+    updates['Countdown BG']     = v('wc-countdown-bg');
+    updates['Countdown Text']   = v('wc-countdown-text');
     // 5. Free Shipping
     updates['Free Ship Bar Active'] = c('wc-freeship-active');
     updates['Free Ship Bar Text']   = v('wc-freeship-text');
+    updates['Free Ship Bar BG']         = v('wc-freeship-bg');
+    updates['Free Ship Bar Text Color'] = v('wc-freeship-text-color');
+    updates['Free Ship Bar Thickness']  = v('wc-freeship-thickness') || 'slim';
     // 6. Best Sellers / New Arrivals / Recently Viewed / Wishlist
     updates['Best Sellers Active'] = c('wc-bestseller-active');
     updates['Best Sellers Title']  = v('wc-bestseller-title');
@@ -7765,6 +8750,38 @@ YARZ.webControl = {
       });
     }
 
+    // ✅ v11.8: Advanced (Royal) tab — A1-A5
+    // A1. Royal Marquee
+    updates['Marquee Active']     = c('wc-marquee-active');
+    updates['Marquee Text']       = v('wc-marquee-text');
+    updates['Marquee BG']         = v('wc-marquee-bg');
+    updates['Marquee Text Color'] = v('wc-marquee-text-color');
+    updates['Marquee Speed']      = v('wc-marquee-speed') || 'slow';
+    // A2. Trust strip
+    updates['Trust Strip Active'] = c('wc-trust-strip-active');
+    for (let ti = 1; ti <= 4; ti++) {
+      updates['Trust ' + ti + ' Icon']  = v('wc-trust-' + ti + '-icon');
+      updates['Trust ' + ti + ' Label'] = v('wc-trust-' + ti + '-label');
+    }
+    // A3. Royal frame
+    updates['Royal Frame Active'] = c('wc-royal-frame-active');
+    updates['Royal Accent']       = v('wc-royal-accent');
+    updates['Royal Frame Style']  = v('wc-royal-frame-style') || 'corners';
+    // A4. Editorial story
+    updates['Editorial Active'] = c('wc-editorial-active');
+    updates['Editorial Image']  = v('wc-editorial-img');
+    updates['Editorial Title']  = v('wc-editorial-title');
+    updates['Editorial Body']   = v('wc-editorial-body');
+    updates['Editorial CTA']    = v('wc-editorial-cta');
+    updates['Editorial Link']   = v('wc-editorial-link');
+    // A5. Instagram gallery
+    updates['IG Grid Active'] = c('wc-iggrid-active');
+    updates['IG Grid Title']  = v('wc-iggrid-title');
+    for (let gi = 1; gi <= 6; gi++) {
+      updates['IG Grid Image ' + gi] = v('wc-iggrid-' + gi);
+    }
+    updates['IG Grid Link']   = v('wc-iggrid-link');
+
     showLoader('ওয়েবসাইট ডাটা সেভ হচ্ছে...');
     try {
       const res = await appsPost('updateSettings', { settings: updates });
@@ -7812,6 +8829,156 @@ YARZ.webControl = {
 };
 
 /* ============================================================
+   ============ PIXEL TOGGLES MODULE (v14.0) ============
+   Lets admin enable/disable each pixel event individually.
+   - Reads current state from `state.storeInfo` (refreshed on load)
+   - Writes to SETTINGS sheet via `updatesettings` action
+   - Critical events (Purchase, ViewContent, etc.) stay locked ON regardless
+============================================================ */
+YARZ.pixelToggles = {
+  // Map: HTML element ID → SETTINGS sheet key
+  _NETWORK_KEYS: {
+    'pix_net_fb':        'pixel_net_fb',
+    'pix_net_fb_capi':   'pixel_net_fb_capi',
+    'pix_net_ga4':       'pixel_net_ga4',
+    'pix_net_tiktok':    'pixel_net_tiktok',
+    'pix_net_snap':      'pixel_net_snap',
+    'pix_net_pinterest': 'pixel_net_pinterest'
+  },
+  _EVENT_KEYS: {
+    // Locked (always ON)
+    'pix_evt_pageview':            'pixel_evt_pageview',
+    'pix_evt_view_content':        'pixel_evt_view_content',
+    'pix_evt_add_to_cart':         'pixel_evt_add_to_cart',
+    'pix_evt_initiate_checkout':   'pixel_evt_initiate_checkout',
+    'pix_evt_purchase':            'pixel_evt_purchase',
+    // Standard
+    'pix_evt_add_payment_info':    'pixel_evt_add_payment_info',
+    'pix_evt_add_to_wishlist':     'pixel_evt_add_to_wishlist',
+    'pix_evt_search':              'pixel_evt_search',
+    'pix_evt_lead':                'pixel_evt_lead',
+    'pix_evt_abandoned_checkout':  'pixel_evt_abandoned_checkout',
+    // Custom
+    'pix_evt_whatsapp_click':      'pixel_evt_whatsapp_click',
+    'pix_evt_time_on_page':        'pixel_evt_time_on_page',
+    'pix_evt_size_selected':       'pixel_evt_size_selected',
+    'pix_evt_viewed_many_products':'pixel_evt_viewed_many_products',
+    // Engagement milestones
+    'pix_evt_engaged_session':     'pixel_evt_engaged_session',
+    'pix_evt_session_end':         'pixel_evt_session_end',
+    'pix_evt_tos_15':              'pixel_evt_tos_15',
+    'pix_evt_tos_30':              'pixel_evt_tos_30',
+    'pix_evt_tos_60':              'pixel_evt_tos_60',
+    'pix_evt_tos_120':             'pixel_evt_tos_120',
+    'pix_evt_tos_180':             'pixel_evt_tos_180',
+    'pix_evt_tos_300':             'pixel_evt_tos_300',
+    'pix_evt_scroll_25':           'pixel_evt_scroll_25',
+    'pix_evt_scroll_50':           'pixel_evt_scroll_50',
+    'pix_evt_scroll_75':           'pixel_evt_scroll_75',
+    'pix_evt_scroll_100':          'pixel_evt_scroll_100',
+    // Server-side delivery flow (default OFF)
+    'pix_evt_order_delivered':     'pixel_evt_order_delivered',
+    'pix_evt_order_cancelled':     'pixel_evt_order_cancelled',
+    'pix_evt_order_returned':      'pixel_evt_order_returned'
+  },
+  // Read truthy: empty/undefined = ON (default), 'false'/'0'/'no'/'off' = OFF
+  _isOn(value, defaultOn) {
+    if (value === undefined || value === null) return defaultOn !== false;
+    var s = String(value).toLowerCase().trim();
+    if (s === 'false' || s === '0' || s === 'no' || s === 'off' || s === 'n') return false;
+    if (s === '') return defaultOn !== false;
+    return true;
+  },
+  // Default state per key (some events default OFF — order status events)
+  _defaultOn(key) {
+    if (key === 'pixel_evt_order_delivered') return false;
+    if (key === 'pixel_evt_order_cancelled') return false;
+    if (key === 'pixel_evt_order_returned')  return false;
+    return true;
+  },
+  // Render: load current values from saved settings into the checkboxes.
+  // ✅ v14.0 fix: read from state.data.settings (populated by loadSettings())
+  // — NOT state.storeInfo which doesn't exist in admin context. Without this fix,
+  // every page reload would show defaults and "Save" would silently overwrite
+  // previously-saved toggle state.
+  render() {
+    var settings = (state && state.data && state.data.settings) ? state.data.settings : {};
+    var self = this;
+    function setEl(elId, sheetKey) {
+      var el = document.getElementById(elId);
+      if (!el) return;
+      el.checked = self._isOn(settings[sheetKey], self._defaultOn(sheetKey));
+    }
+    Object.keys(this._NETWORK_KEYS).forEach(function(elId) {
+      setEl(elId, self._NETWORK_KEYS[elId]);
+    });
+    Object.keys(this._EVENT_KEYS).forEach(function(elId) {
+      setEl(elId, self._EVENT_KEYS[elId]);
+    });
+  },
+  // Save: collect all toggle states and write to SETTINGS sheet
+  async save() {
+    var self = this;
+    var settings = {};
+    function readEl(elId, sheetKey) {
+      var el = document.getElementById(elId);
+      if (!el) return;
+      // Locked events are always disabled in UI but stored as TRUE
+      var val = el.disabled ? true : !!el.checked;
+      settings[sheetKey] = val ? 'true' : 'false';
+    }
+    Object.keys(this._NETWORK_KEYS).forEach(function(elId) {
+      readEl(elId, self._NETWORK_KEYS[elId]);
+    });
+    Object.keys(this._EVENT_KEYS).forEach(function(elId) {
+      readEl(elId, self._EVENT_KEYS[elId]);
+    });
+
+    var status = document.getElementById('pixel-toggles-status');
+    if (status) { status.textContent = 'সেভ করা হচ্ছে...'; status.style.color = 'var(--ink-3)'; }
+
+    try {
+      var res = await appsPost('updateSettings', { settings: settings });
+      if (res && (res.ok || res.success)) {
+        if (status) { status.textContent = '✅ সফলভাবে সেভ হয়েছে'; status.style.color = 'var(--success)'; }
+        // ✅ v14.0 fix: Update state.data.settings (the canonical admin store) so
+        //   next render() reads the just-saved values, not stale ones.
+        if (state && state.data && state.data.settings) {
+          Object.keys(settings).forEach(function(k) {
+            state.data.settings[k] = settings[k];
+          });
+        }
+        // Mark dirty so storefront refetches settings on next load
+        try { localStorage.setItem('yarz_settings_dirty', '1'); } catch(e) {}
+        toast('Pixel controls সেভ হয়েছে', 'success');
+        setTimeout(function() { if (status) status.textContent = ''; }, 4000);
+      } else {
+        throw new Error(res && res.msg ? res.msg : 'Save failed');
+      }
+    } catch (err) {
+      if (status) { status.textContent = '❌ ' + (err.message || 'Save failed'); status.style.color = 'var(--danger)'; }
+      toast('সেভ করতে সমস্যা: ' + (err.message || 'unknown'), 'error');
+    }
+  },
+  // Reset all to default ON
+  resetAll() {
+    if (!confirm('সব toggle ON করতে চান?\n\n(Order status events default OFF থাকবে)')) return;
+    var self = this;
+    Object.keys(this._NETWORK_KEYS).forEach(function(elId) {
+      var el = document.getElementById(elId);
+      if (el && !el.disabled) el.checked = true;
+    });
+    Object.keys(this._EVENT_KEYS).forEach(function(elId) {
+      var el = document.getElementById(elId);
+      if (el && !el.disabled) {
+        el.checked = self._defaultOn(self._EVENT_KEYS[elId]);
+      }
+    });
+    toast('Reset হয়েছে — Save Pixel Controls চেপে confirm করুন', 'info');
+  }
+};
+
+/* ============================================================
    ============ SETTINGS MODULE ============
 ============================================================ */
 YARZ.settings = {
@@ -7855,6 +9022,10 @@ YARZ.settings = {
         <input class="input" data-gh="${esc(k)}" type="${tp}" value="${esc(s[k]||'')}">
       </div>
     `).join('');
+
+    // ✅ v11.4: Populate Steadfast credentials
+    const sfApi = $('sf-api-key'); if(sfApi) sfApi.value = s['Steadfast API Key'] || '';
+    const sfSec = $('sf-secret'); if(sfSec) sfSec.value = s['Steadfast Secret Key'] || '';
   },
 
   saveConn(){
@@ -7947,6 +9118,57 @@ YARZ.settings = {
     try {
       const res = await appsPost('githubSyncNow',{});
       toast('Sync সফল','success');
+    } catch(e){ toast(e.message,'error'); }
+    finally { hideLoader(); }
+  },
+
+  // ✅ v11.4: Steadfast Courier API
+  async saveSteadfast(){
+    const apiKey = ($('sf-api-key')?.value || '').trim();
+    const secret = ($('sf-secret')?.value || '').trim();
+    if(!apiKey || !secret){ toast('API Key এবং Secret Key দুটোই দিন','error'); return; }
+    showLoader('Steadfast keys সেভ হচ্ছে...');
+    try {
+      const res = await appsPost('steadfastSaveKeys', { apiKey, secret });
+      if(res && res.ok===false) throw new Error(res.msg||'Failed');
+      // Update local cache
+      state.data.settings = state.data.settings || {};
+      state.data.settings['Steadfast API Key'] = apiKey;
+      state.data.settings['Steadfast Secret Key'] = secret;
+      toast('✅ Steadfast keys সেভ হয়েছে — এখন Test Connection ক্লিক করুন', 'success');
+    } catch(e){ toast(e.message,'error'); }
+    finally { hideLoader(); }
+  },
+
+  async testSteadfast(){
+    showLoader('Steadfast-এ connect হচ্ছে...');
+    try {
+      const res = await appsPost('steadfastBalance', {});
+      if(res && res.ok && res.data && res.data.current_balance !== undefined){
+        const bal = res.data.current_balance;
+        toast(`✅ Steadfast Connected! Balance: ৳${bal}`, 'success');
+        const disp = $('sf-balance-display');
+        if(disp) disp.innerHTML = `<i class="ri-wallet-3-line" style="color:#10B981"></i> Balance: <b>৳${bal}</b>`;
+      } else {
+        const msg = (res.data && (res.data.message || res.data.error)) || res.msg || 'Connection failed';
+        toast('❌ ' + msg, 'error');
+      }
+    } catch(e){ toast(e.message,'error'); }
+    finally { hideLoader(); }
+  },
+
+  async checkSteadfastBalance(){
+    showLoader('Balance চেক হচ্ছে...');
+    try {
+      const res = await appsPost('steadfastBalance', {});
+      if(res && res.ok && res.data){
+        const bal = res.data.current_balance;
+        const disp = $('sf-balance-display');
+        if(disp) disp.innerHTML = `<i class="ri-wallet-3-line" style="color:#10B981"></i> Balance: <b>৳${bal}</b>`;
+        toast(`Balance: ৳${bal}`, 'success');
+      } else {
+        toast('Balance পাওয়া যায়নি — keys সঠিক কিনা চেক করুন', 'error');
+      }
     } catch(e){ toast(e.message,'error'); }
     finally { hideLoader(); }
   },
