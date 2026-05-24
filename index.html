@@ -2595,11 +2595,6 @@ i[class^="ri-"] { display: inline-flex; align-items: center; vertical-align: -0.
 
         <div class="section">
           <div class="section-title"><h2><i class="ri-flashlight-line" style="color:var(--warn)"></i> Quick Actions</h2></div>
-          <div class="qa-grid">
-            <div class="qa-card" onclick="YARZ.openModal('add-product')">
-              <div class="qa-icon" style="YARZ.inv.showLowStock()">
-              <div class="qa-icon" style="YARZ.ord.setTab('website')">
-              <div class="qa-icon" style="margin-bottom:14px">
           <div class="flex-gap" style="flex-wrap:wrap;gap:8px">
             <button class="btn btn-primary btn-sm" onclick="YARZ.openModal('add-product')"><i class="ri-add-line"></i> Quick Add</button>
             <button class="btn btn-blue btn-sm" onclick="YARZ.openModal('sale-entry')"><i class="ri-cash-line"></i> বিক্রয় এন্ট্রি</button>
@@ -2610,6 +2605,11 @@ i[class^="ri-"] { display: inline-flex; align-items: center; vertical-align: -0.
             <button class="btn btn-ghost btn-sm" onclick="YARZ.inv.showAnalytics()"><i class="ri-bar-chart-line"></i> Analytics</button>
             <button class="btn btn-ghost btn-sm" onclick="YARZ.inv.diagnoseS3XL()" title="S/3XL save সমস্যা চেক করুন" style="border:1px dashed var(--warn);color:var(--warn)"><i class="ri-stethoscope-line"></i> S/3XL Diagnose</button>
           </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title"><h2><i class="ri-fire-line" style="color:var(--red)"></i> টপ সেলিং প্রোডাক্ট</h2></div>
+          <div class="list" id="top-sellers"></div>
         </div>
 
         <!-- <i class="ri-check-line"></i> v11.1: Inventory Summary Stats — products + stock per category -->
@@ -5443,14 +5443,17 @@ YARZ.home = {
       { icon: totalNet>=0?'purple':'red', ic:'ri-line-chart-line', label:'Net Profit', val:fmtBDT(totalNet), sub:totalNet>=0?'লাভ':'ক্ষতি' }
     ];
 
-    $('home-stats').innerHTML = stats.map(s=>`
-      <div class="stat-card ${s.onClick?'clickable':''}" ${s.onClick?`onclick="${s.onClick}"`:''}>
-        <div class="stat-icon ${s.icon}"><i class="${s.ic}"></i></div>
-        <div class="stat-label">${s.label}</div>
-        <div class="stat-value">${s.val}</div>
-        <div class="stat-sub">${s.sub}</div>
-      </div>
-    `).join('');
+    const elHomeStats = $('home-stats');
+    if(elHomeStats) {
+      elHomeStats.innerHTML = stats.map(s=>`
+        <div class="stat-card ${s.onClick?'clickable':''}" ${s.onClick?`onclick="${s.onClick}"`:''}>
+          <div class="stat-icon ${s.icon}"><i class="${s.ic}"></i></div>
+          <div class="stat-label">${s.label}</div>
+          <div class="stat-value">${s.val}</div>
+          <div class="stat-sub">${s.sub}</div>
+        </div>
+      `).join('');
+    }
 
     // Today's summary
     const today = new Date(); today.setHours(0,0,0,0);
@@ -5463,43 +5466,48 @@ YARZ.home = {
     const todaySpend = todayAd.reduce((s,t)=>s+t.amount,0) + todayExp.reduce((s,t)=>s+t.amount,0);
     const todayProfit = todayRev-todayCost-todaySpend;
 
-    $('today-summary').innerHTML = `
-      <div class="stat-card">
-        <div class="stat-icon blue"><i class="ri-shopping-cart-2-line"></i></div>
-        <div class="stat-label">আজকের বিক্রয়</div>
-        <div class="stat-value">${fmtBDT(todayRev)}</div>
-        <div class="stat-sub">${toBn(todayTx.length)} টি লেনদেন</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon red"><i class="ri-money-dollar-box-line"></i></div>
-        <div class="stat-label">আজকের খরচ</div>
-        <div class="stat-value">${fmtBDT(todaySpend)}</div>
-        <div class="stat-sub">Ad + Expense</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon ${todayProfit>=0?'green':'red'}"><i class="ri-coin-line"></i></div>
-        <div class="stat-label">আজকের লাভ</div>
-        <div class="stat-value">${fmtBDT(todayProfit)}</div>
-        <div class="stat-sub">Net</div>
-      </div>
-    `;
+    const elTodaySummary = $('today-summary');
+    if(elTodaySummary) {
+      elTodaySummary.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-icon blue"><i class="ri-shopping-cart-2-line"></i></div>
+          <div class="stat-label">আজকের বিক্রয়</div>
+          <div class="stat-value">${fmtBDT(todayRev)}</div>
+          <div class="stat-sub">${toBn(todayTx.length)} টি লেনদেন</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red"><i class="ri-money-dollar-box-line"></i></div>
+          <div class="stat-label">আজকের খরচ</div>
+          <div class="stat-value">${fmtBDT(todaySpend)}</div>
+          <div class="stat-sub">Ad + Expense</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon ${todayProfit>=0?'green':'red'}"><i class="ri-coin-line"></i></div>
+          <div class="stat-label">আজকের লাভ</div>
+          <div class="stat-value">${fmtBDT(todayProfit)}</div>
+          <div class="stat-sub">Net</div>
+        </div>
+      `;
+    }
 
     // Top sellers
     const sorted = [...inv].filter(p=>p.totalSold>0).sort((a,b)=>b.totalSold-a.totalSold).slice(0,3);
-    $('top-sellers').innerHTML = sorted.length ? sorted.map(p=>`
-      <div class="list-item" onclick="YARZ.inv.showDetails('${esc(p.name)}')">
-        <div class="thumb" style="${p.img1?`background-image:url('${esc(getImgSrc(p.img1))}')`:''}">${p.img1?'':'<i class=\"ri-shopping-bag-3-line\"></i>'}</div>
-        <div class="li-body">
-          <div class="li-title">${esc(p.name)}</div>
-          <div class="li-sub">${esc(p.category||'')} • ${fmtBDT(p.sale)}</div>
+    const elTopSellers = $('top-sellers');
+    if(elTopSellers) {
+      elTopSellers.innerHTML = sorted.length ? sorted.map(p=>`
+        <div class="list-item" onclick="YARZ.inv.showDetails('${esc(p.name)}')">
+          <div class="thumb" style="${p.img1?`background-image:url('${esc(getImgSrc(p.img1))}')`:''}">${p.img1?'':'<i class=\"ri-shopping-bag-3-line\"></i>'}</div>
+          <div class="li-body">
+            <div class="li-title">${esc(p.name)}</div>
+            <div class="li-sub">${esc(p.category||'')} • ${fmtBDT(p.sale)}</div>
+          </div>
+          <div class="li-right">
+            <span class="chip chip-green"><i class="ri-fire-line"></i> ${toBn(p.totalSold)}</span>
+            <div style="font-size:10px;opacity:0.6">${fmtBDT(p.revenue)}</div>
+          </div>
         </div>
-        <div class="li-right">
-          <span class="chip chip-green"><i class="ri-fire-line"></i> ${toBn(p.totalSold)}</span>
-          <div style="font-size:10px;opacity:0.6">${fmtBDT(p.revenue)}</div>
-        </div>
-      </div>
-    `).join('') : '<div class="empty-state"><i class="ri-trophy-line" style="font-size:32px;opacity:0.4"></i><p style="margin-top:10px">এখনো কোনো বিক্রয় নেই</p></div>';
-  },
+      `).join('') : '<div class="empty-state"><i class="ri-trophy-line" style="font-size:32px;opacity:0.4"></i><p style="margin-top:10px">এখনো কোনো বিক্রয় নেই</p></div>';
+    }
 
   showList(kind){
     const items = state.data.inventory.filter(p=> kind==='active' ? p.status==='Active' : p.status==='Draft');
