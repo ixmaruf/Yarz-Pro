@@ -5270,7 +5270,7 @@ function setupLogin(){
     try {
       if(p) {
         window._adminPass = p;
-        const res = await appsPost('verify_auth');
+        const res = await appsPost('verify_auth', { adminUser: u });
         if(res && res.success) {
           ok = true;
         } else {
