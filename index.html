@@ -10259,7 +10259,11 @@ async function publishToWebsiteAction() {
   toast('Publishing to website...', 'info');
 
   try {
-    const res = await appsPost('publish_to_cloudflare', {});
+    // 15-second timeout to completely prevent the button from freezing if the network hangs
+    const appsPostPromise = appsPost('publish_to_cloudflare', {});
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Network Timeout: সার্ভার রেসপন্স করছে না')), 15000));
+    
+    const res = await Promise.race([appsPostPromise, timeoutPromise]);
     
     if (res && res.ok === false) {
       throw new Error(res.msg || 'Apps Script Failed');
@@ -10268,7 +10272,7 @@ async function publishToWebsiteAction() {
     toast('Successfully published to website!', 'success');
   } catch (error) {
     console.error('Publish error:', error);
-    toast('Failed to publish website: ' + (error.message || 'Unknown error'), 'error');
+    toast('Failed to publish: ' + (error.message || 'Unknown error'), 'error');
   } finally {
     btn.disabled = false;
     btn.innerHTML = ogHtml;
