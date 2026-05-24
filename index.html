@@ -1,4 +1,4 @@
-all<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
@@ -10299,6 +10299,104 @@ window.publishToWebsiteAction = async function() {
     </div>
   </div>
 </div>
+
+<!-- ✅ v15.2: On-screen Debug Panel — visible only when ?debug=1 is in URL.
+     Bypasses DevTools blocker so admin owner can troubleshoot without
+     compromising security. Just append ?debug=1 to the admin URL. -->
+<script>
+(function(){
+  if (location.search.indexOf('debug=1') === -1) return;
+
+  var box = document.createElement('div');
+  box.id = '__yarz_debug_panel__';
+  box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:45vh;background:#0d1117;color:#c9d1d9;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.5;border-top:2px solid #1f6feb;padding:0;z-index:2147483647;display:flex;flex-direction:column;box-shadow:0 -8px 24px rgba(0,0,0,.5)';
+
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'background:#161b22;color:#58a6ff;padding:6px 12px;font-weight:700;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #30363d';
+  hdr.innerHTML = '<span>🔧 YARZ Debug Console (?debug=1)</span><span><button id="__dbg_clear" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Clear</button><button id="__dbg_check" style="background:#1f6feb;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Run Health Check</button><button id="__dbg_toggle" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer">_</button></span>';
+  box.appendChild(hdr);
+
+  var log = document.createElement('div');
+  log.id = '__yarz_debug_log__';
+  log.style.cssText = 'flex:1;overflow:auto;padding:8px 12px;white-space:pre-wrap;word-break:break-word';
+  box.appendChild(log);
+
+  function append(level, args) {
+    var line = document.createElement('div');
+    var color = level === 'error' ? '#ff7b72' : (level === 'warn' ? '#d29922' : (level === 'info' ? '#58a6ff' : '#c9d1d9'));
+    line.style.cssText = 'border-bottom:1px dashed #21262d;padding:2px 0;color:' + color;
+    var text = '';
+    try {
+      text = Array.from(args).map(function(a){
+        if (a instanceof Error) return a.message + (a.stack ? '\n' + a.stack : '');
+        if (typeof a === 'object') { try { return JSON.stringify(a, null, 2); } catch(e){ return String(a); } }
+        return String(a);
+      }).join(' ');
+    } catch(e){ text = '[unloggable]'; }
+    var ts = new Date().toLocaleTimeString();
+    line.textContent = '[' + ts + '] [' + level.toUpperCase() + '] ' + text;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // Wait until armor.js neutralizes console (it does after 3s), then patch
+  function patchConsole(){
+    var orig = window.__yc || { log: console.log, warn: console.warn, error: console.error, info: console.info };
+    window.__yc = orig; // keep reference
+    console.log = function(){ try{ orig.log.apply(console, arguments); }catch(e){} append('log', arguments); };
+    console.info = function(){ try{ (orig.info||orig.log).apply(console, arguments); }catch(e){} append('info', arguments); };
+    console.warn = function(){ try{ orig.warn.apply(console, arguments); }catch(e){} append('warn', arguments); };
+    console.error = function(){ try{ orig.error.apply(console, arguments); }catch(e){} append('error', arguments); };
+  }
+  // Patch immediately and again after 3.5s (after armor.js neutralizes)
+  patchConsole();
+  setTimeout(patchConsole, 3500);
+
+  // Capture uncaught errors
+  window.addEventListener('error', function(e){
+    append('error', ['UNCAUGHT:', e.message, '@', e.filename + ':' + e.lineno]);
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    append('error', ['PROMISE REJECTION:', (e.reason && e.reason.message) || e.reason]);
+  });
+
+  function appendInsert(){
+    if (document.body) document.body.appendChild(box);
+    else document.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(box); });
+  }
+  appendInsert();
+
+  // Wire buttons
+  setTimeout(function(){
+    var clr = document.getElementById('__dbg_clear');
+    var chk = document.getElementById('__dbg_check');
+    var tog = document.getElementById('__dbg_toggle');
+    if (clr) clr.onclick = function(){ log.innerHTML = ''; };
+    if (tog) tog.onclick = function(){
+      if (log.style.display === 'none') { log.style.display = 'block'; tog.textContent = '_'; box.style.maxHeight = '45vh'; }
+      else { log.style.display = 'none'; tog.textContent = '▢'; box.style.maxHeight = ''; }
+    };
+    if (chk) chk.onclick = function(){
+      append('info', ['======== HEALTH CHECK ========']);
+      try { append('info', ['admin pass set:', !!window._adminPass, '| length:', (window._adminPass||'').length]); } catch(e){ append('error', ['admin pass read failed:', e.message]); }
+      try {
+        var s = (window.state && state.data && state.data.settings) || {};
+        var keys = Object.keys(s);
+        append('info', ['settings keys count:', keys.length]);
+        append('info', ['Theme Color:', s['Theme Color'] || '(empty)']);
+        append('info', ['Announcement Text:', s['Announcement Text'] || '(empty)']);
+        append('info', ['Store Name:', s['Store Name'] || '(empty)']);
+        append('info', ['Currency:', s['Currency'] || '(empty)']);
+      } catch(e){ append('error', ['settings read failed:', e.message]); }
+      try { append('info', ['apps URL:', window.state && state.appsUrl]); } catch(e){}
+      try { append('info', ['api key length:', (window.state && state.apiKey || '').length]); } catch(e){}
+      try { append('info', ['origin:', location.origin]); } catch(e){}
+      try { append('info', ['SW controlled:', !!(navigator.serviceWorker && navigator.serviceWorker.controller)]); } catch(e){}
+      append('info', ['======== END ========']);
+    };
+  }, 500);
+})();
+</script>
 
 </body>
 </html>
