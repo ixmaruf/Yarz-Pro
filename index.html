@@ -1414,7 +1414,7 @@ body.dark .sidebar .brand-icon{ background:#FFFFFF !important; }
   color: var(--ink) !important;
 }
 .nav-item.active{
-  
+  background: linear-gradient(135deg, #1B6B3A, #22c55e) !important;
   color: #FFFFFF !important;
   box-shadow: 0 4px 12px rgba(27,107,58,0.3) !important;
 }
@@ -2611,8 +2611,12 @@ i[class^="ri-"] { display: inline-flex; align-items: center; vertical-align: -0.
           <div class="section-title"><h2><i class="ri-fire-line" style="color:var(--red)"></i> টপ সেলিং প্রোডাক্ট</h2></div>
           <div class="list" id="top-sellers"></div>
         </div>
+      </div>
 
-        <!-- <i class="ri-check-line"></i> v11.1: Inventory Summary Stats — products + stock per category -->
+      <!-- INVENTORY -->
+      <div class="page" data-page="inventory">
+
+        <!-- ✅ v11.1: Inventory Summary Stats — products + stock per category -->
         <div class="card" id="inv-summary-card" style="padding:14px;margin-bottom:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
             <div style="font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px"><i class="ri-pie-chart-2-line" style="color:var(--purple)"></i> ইনভেন্টরি সারসংক্ষেপ</div>
@@ -5007,7 +5011,7 @@ const YARZ = window.YARZ = {
       const sizes = [p.stkS-p.soldS, p.stkM-p.soldM, p.stkL-p.soldL, p.stkXL-p.soldXL, p.stkXXL-p.soldXXL, p.stk3XL-p.sold3XL];
       if(sizes.some(s=>s<=threshold)) low++;
     });
-    $('lowstock-count').textContent = low>0 ? toBn(low)+' Items' : 'সব ঠিক';
+    if($('lowstock-count')) $('lowstock-count').textContent = low>0 ? toBn(low)+' Items' : 'সব ঠিক';
 
     // If notification panel is open, re-render it
     if($('notif-panel') && $('notif-panel').classList.contains('show')){
@@ -5056,6 +5060,7 @@ const YARZ = window.YARZ = {
       finance:['হিসাব','আর্থিক এন্ট্রি'],
       reports:['রিপোর্ট','মাসিক ও বার্ষিক'],
       preview:['ওয়েবসাইট প্রিভিউ','ক্রেতা যেভাবে দেখবে'],
+      'web-control':['ওয়েবসাইট কন্ট্রোল','ফুল সাইট ম্যানেজ'],
       settings:['সেটিংস','কানেকশন ও কনফিগ']
     };
     const t = titles[page]||[page,''];
