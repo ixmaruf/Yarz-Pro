@@ -3401,7 +3401,6 @@ i[class^="ri-"] { display: inline-flex; align-items: center; vertical-align: -0.
               <textarea id="wc-custom-css" class="textarea" style="font-family:monospace; font-size:12px; min-height:80px; background:#1e1e1e; color:#d4d4d4" placeholder="/* Write custom CSS here */"></textarea>
             </div>
           </div>
-        </div>
 
         <!-- <i class="ri-check-line"></i> TAB: EXTRAS (PREMIUM) — v11 New: 15+ Shopify-grade controls -->
         <div id="wc-tab-extras" class="wc-tab-content hidden">
@@ -5508,6 +5507,7 @@ YARZ.home = {
         </div>
       `).join('') : '<div class="empty-state"><i class="ri-trophy-line" style="font-size:32px;opacity:0.4"></i><p style="margin-top:10px">এখনো কোনো বিক্রয় নেই</p></div>';
     }
+  },
 
   showList(kind){
     const items = state.data.inventory.filter(p=> kind==='active' ? p.status==='Active' : p.status==='Draft');
