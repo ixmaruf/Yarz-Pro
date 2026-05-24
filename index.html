@@ -10267,6 +10267,14 @@ window.publishToWebsiteAction = async function() {
   }
 };
 
+// ✅ v15.2: Expose state ONLY when ?debug=1 is in URL — for the debug panel
+// to inspect runtime data without breaking the IIFE encapsulation. Has no
+// effect in normal use (no debug flag = nothing exposed).
+if (location.search.indexOf('debug=1') !== -1) {
+  try { window.__yarz_state = state; } catch(e){}
+  try { window.__yarz_YARZ = YARZ; } catch(e){}
+}
+
 })();
 </script>
 
@@ -10379,10 +10387,14 @@ window.publishToWebsiteAction = async function() {
     if (chk) chk.onclick = function(){
       append('info', ['======== HEALTH CHECK ========']);
       try { append('info', ['admin pass set:', !!window._adminPass, '| length:', (window._adminPass||'').length]); } catch(e){ append('error', ['admin pass read failed:', e.message]); }
-      // ✅ v15.2 FIX: `state` is `const` so it doesn't bind to window. Access directly.
-      var s = {}, st = null;
-      try { st = (typeof state !== 'undefined') ? state : null; } catch(e){ append('error', ['state not in scope:', e.message]); }
-      try { s = (st && st.data && st.data.settings) || {}; } catch(e){ append('error', ['settings read failed:', e.message]); }
+      // ✅ v15.2 FIX: Use exposed __yarz_state from inside the IIFE.
+      var st = window.__yarz_state || null;
+      if (!st) {
+        append('error', ['__yarz_state not exposed — make sure URL has ?debug=1 AND page fully loaded']);
+        append('info', ['======== END ========']);
+        return;
+      }
+      var s = (st.data && st.data.settings) || {};
       try {
         var keys = Object.keys(s);
         append('info', ['settings keys count:', keys.length]);
@@ -10398,10 +10410,11 @@ window.publishToWebsiteAction = async function() {
           append('info', ['First 5 keys:', keys.slice(0, 5).join(', ')]);
         }
       } catch(e){ append('error', ['keys list failed:', e.message]); }
-      try { append('info', ['apps URL:', st && st.appsUrl ? st.appsUrl.slice(0, 60) + '...' : '(missing)']); } catch(e){}
-      try { append('info', ['api key length:', (st && st.apiKey || '').length]); } catch(e){}
-      try { append('info', ['inventory items:', (st && st.data && st.data.inventory || []).length]); } catch(e){}
-      try { append('info', ['data loaded flag:', st && st.loaded]); } catch(e){}
+      try { append('info', ['apps URL:', st.appsUrl ? st.appsUrl.slice(0, 70) + '...' : '(missing)']); } catch(e){}
+      try { append('info', ['api key length:', (st.apiKey || '').length]); } catch(e){}
+      try { append('info', ['inventory items:', (st.data && st.data.inventory || []).length]); } catch(e){}
+      try { append('info', ['orders items:', (st.data && st.data.orders || []).length]); } catch(e){}
+      try { append('info', ['data loaded flag:', st.loaded]); } catch(e){}
       try { append('info', ['origin:', location.origin]); } catch(e){}
       try { append('info', ['SW controlled:', !!(navigator.serviceWorker && navigator.serviceWorker.controller)]); } catch(e){}
       append('info', ['======== END ========']);
