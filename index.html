@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+all<!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
@@ -10379,17 +10379,29 @@ window.publishToWebsiteAction = async function() {
     if (chk) chk.onclick = function(){
       append('info', ['======== HEALTH CHECK ========']);
       try { append('info', ['admin pass set:', !!window._adminPass, '| length:', (window._adminPass||'').length]); } catch(e){ append('error', ['admin pass read failed:', e.message]); }
+      // ✅ v15.2 FIX: `state` is `const` so it doesn't bind to window. Access directly.
+      var s = {}, st = null;
+      try { st = (typeof state !== 'undefined') ? state : null; } catch(e){ append('error', ['state not in scope:', e.message]); }
+      try { s = (st && st.data && st.data.settings) || {}; } catch(e){ append('error', ['settings read failed:', e.message]); }
       try {
-        var s = (window.state && state.data && state.data.settings) || {};
         var keys = Object.keys(s);
         append('info', ['settings keys count:', keys.length]);
-        append('info', ['Theme Color:', s['Theme Color'] || '(empty)']);
-        append('info', ['Announcement Text:', s['Announcement Text'] || '(empty)']);
-        append('info', ['Store Name:', s['Store Name'] || '(empty)']);
-        append('info', ['Currency:', s['Currency'] || '(empty)']);
-      } catch(e){ append('error', ['settings read failed:', e.message]); }
-      try { append('info', ['apps URL:', window.state && state.appsUrl]); } catch(e){}
-      try { append('info', ['api key length:', (window.state && state.apiKey || '').length]); } catch(e){}
+        if (keys.length === 0) {
+          append('warn', ['No settings loaded yet — try clicking the refresh button or wait a few seconds, then run health check again']);
+        } else {
+          append('info', ['Theme Color:', s['Theme Color'] || '(empty)']);
+          append('info', ['Announcement Text:', s['Announcement Text'] || '(empty)']);
+          append('info', ['Announcement Active:', s['Announcement Active'] || '(empty)']);
+          append('info', ['Store Name:', s['Store Name'] || '(empty)']);
+          append('info', ['Currency:', s['Currency'] || '(empty)']);
+          append('info', ['Flash Date:', s['Flash Date'] || '(empty)']);
+          append('info', ['First 5 keys:', keys.slice(0, 5).join(', ')]);
+        }
+      } catch(e){ append('error', ['keys list failed:', e.message]); }
+      try { append('info', ['apps URL:', st && st.appsUrl ? st.appsUrl.slice(0, 60) + '...' : '(missing)']); } catch(e){}
+      try { append('info', ['api key length:', (st && st.apiKey || '').length]); } catch(e){}
+      try { append('info', ['inventory items:', (st && st.data && st.data.inventory || []).length]); } catch(e){}
+      try { append('info', ['data loaded flag:', st && st.loaded]); } catch(e){}
       try { append('info', ['origin:', location.origin]); } catch(e){}
       try { append('info', ['SW controlled:', !!(navigator.serviceWorker && navigator.serviceWorker.controller)]); } catch(e){}
       append('info', ['======== END ========']);
