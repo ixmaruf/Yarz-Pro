@@ -10321,7 +10321,7 @@ if (location.search.indexOf('debug=1') !== -1) {
 
   var hdr = document.createElement('div');
   hdr.style.cssText = 'background:#161b22;color:#58a6ff;padding:6px 12px;font-weight:700;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #30363d';
-  hdr.innerHTML = '<span>🔧 YARZ Debug Console (?debug=1)</span><span><button id="__dbg_clear" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Clear</button><button id="__dbg_bulk" style="background:#fb8500;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Test Bulk Save</button><button id="__dbg_diag" style="background:#a371f7;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Run Diagnostics</button><button id="__dbg_check" style="background:#1f6feb;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Health Check</button><button id="__dbg_toggle" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer">_</button></span>';
+  hdr.innerHTML = '<span>🔧 YARZ Debug Console (?debug=1)</span><span><button id="__dbg_clear" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Clear</button><button id="__dbg_sf" style="background:#dc2626;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Storefront Test</button><button id="__dbg_bulk" style="background:#fb8500;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Test Bulk Save</button><button id="__dbg_diag" style="background:#a371f7;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Run Diagnostics</button><button id="__dbg_check" style="background:#1f6feb;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Health Check</button><button id="__dbg_toggle" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer">_</button></span>';
   box.appendChild(hdr);
 
   var log = document.createElement('div');
@@ -10633,6 +10633,159 @@ if (location.search.indexOf('debug=1') !== -1) {
       }
 
       append('info', ['╚══════════ BULK TEST COMPLETE ══════════╝']);
+    };
+
+    // ============================================================
+    // ✅ v15.5: Storefront Pipeline Test — bypasses copy-paste problems.
+    // Uses the EXACT API key from state, fetches Worker as customer would,
+    // then prints relevant fields so we know if announcement / theme are
+    // arriving at the storefront correctly.
+    // ============================================================
+    var sf = document.getElementById('__dbg_sf');
+    if (sf) sf.onclick = async function(){
+      append('info', ['╔══════════ STOREFRONT PIPELINE TEST ══════════╗']);
+      var st = window.__yarz_state;
+      if (!st) { append('error', ['__yarz_state missing']); return; }
+      var key = st.apiKey;
+      append('info', ['Using API key (length:', key.length, ')']);
+
+      var workerBase = 'https://yarz.marufhasan80009.workers.dev/';
+
+      async function fetchAction(action, bypassCache) {
+        var url = workerBase + '?action=' + action + '&key=' + encodeURIComponent(key);
+        if (bypassCache) url += '&_t=' + Date.now();
+        try {
+          var resp = await fetch(url, { cache: 'no-store' });
+          var txt = await resp.text();
+          var parsed = null;
+          try { parsed = JSON.parse(txt); } catch(e){}
+          var hCache = resp.headers.get('x-yarz-cache') || '';
+          var hAge = resp.headers.get('x-yarz-age') || '';
+          var hSrc = resp.headers.get('x-yarz-source') || '';
+          return { ok: resp.ok, status: resp.status, parsed: parsed, txt: txt, cache: hCache, age: hAge, src: hSrc };
+        } catch(e) {
+          return { ok: false, error: e.message };
+        }
+      }
+
+      // 1. Cached store_info (what most customers see)
+      append('info', ['']);
+      append('info', ['【1】 GET store_info (CACHED — what customers actually see)']);
+      var r1 = await fetchAction('store_info', false);
+      append('info', ['  status:', r1.status, '| cache:', r1.cache, '| age:', r1.age + 's', '| src:', r1.src]);
+      if (r1.parsed && r1.parsed.success) {
+        var d1 = r1.parsed.data || r1.parsed.store || {};
+        append('info', ['  ✅ Worker returned data with', Object.keys(d1).length, 'fields']);
+        append('info', ['  announcement_text:', d1.announcement_text || d1['Announcement Text'] || '(empty)']);
+        append('info', ['  announcement_active:', d1.announcement_active || d1['Announcement Active'] || '(empty)']);
+        append('info', ['  announcement_bg:', d1.announcement_bg || d1['Announcement BG'] || '(empty)']);
+        append('info', ['  store_name:', d1.name || d1['Store Name'] || '(empty)']);
+        append('info', ['  theme_color:', d1['theme_color'] || d1['Theme Color'] || '(empty)']);
+      } else {
+        append('error', ['  ❌ Worker error:', r1.parsed ? (r1.parsed.error || r1.parsed.msg) : r1.txt.slice(0, 200)]);
+      }
+
+      // 2. Bypass cache — fresh from upstream
+      append('info', ['']);
+      append('info', ['【2】 GET store_info (BYPASS CACHE — direct from Sheet)']);
+      var r2 = await fetchAction('store_info', true);
+      append('info', ['  status:', r2.status, '| cache:', r2.cache, '| age:', r2.age + 's']);
+      if (r2.parsed && r2.parsed.success) {
+        var d2 = r2.parsed.data || r2.parsed.store || {};
+        append('info', ['  announcement_text:', d2.announcement_text || d2['Announcement Text'] || '(empty)']);
+        append('info', ['  announcement_active:', d2.announcement_active || d2['Announcement Active'] || '(empty)']);
+        append('info', ['  store_name:', d2.name || d2['Store Name'] || '(empty)']);
+      } else {
+        append('error', ['  ❌ Bypass error:', r2.parsed ? (r2.parsed.error || r2.parsed.msg) : r2.txt.slice(0, 200)]);
+      }
+
+      // 3. Compare cached vs fresh
+      append('info', ['']);
+      append('info', ['【3】 COMPARISON']);
+      var c1 = (r1.parsed && r1.parsed.data && (r1.parsed.data.announcement_text || r1.parsed.data['Announcement Text'])) || '';
+      var c2 = (r2.parsed && r2.parsed.data && (r2.parsed.data.announcement_text || r2.parsed.data['Announcement Text'])) || '';
+      if (c1 === c2 && c2) {
+        append('info', ['  ✅ Cache and fresh match: "' + c1 + '" — Worker pipeline is healthy']);
+      } else if (!c1 && c2) {
+        append('error', ['  ⚠️ Cached version is EMPTY but fresh version has: "' + c2 + '"']);
+        append('error', ['  → Worker has stale empty cache. Click "Publish to Website" then retry.']);
+      } else if (c1 !== c2) {
+        append('warn', ['  ⚠️ Cache differs from fresh:']);
+        append('warn', ['     CACHED:', JSON.stringify(c1)]);
+        append('warn', ['     FRESH :', JSON.stringify(c2)]);
+        append('warn', ['  → Click "Publish to Website" to align them.']);
+      } else {
+        append('error', ['  ❌ Both cached and fresh are EMPTY — settings are not reaching upstream']);
+      }
+
+      append('info', ['']);
+      append('info', ['╚══════════ STOREFRONT TEST COMPLETE ══════════╝']);
+    };
+
+    // ============================================================
+    // ✅ v15.5: Inspect All Sheets — read first 5 non-empty rows
+    // from each known sheet so user can see what's actually there.
+    // ============================================================
+    var ins = document.getElementById('__dbg_inspect');
+    if (ins) ins.onclick = async function(){
+      append('info', ['╔══════════ SHEET INSPECTOR ══════════╗']);
+      var st = window.__yarz_state;
+      if (!st) { append('error', ['__yarz_state missing']); return; }
+      var url = st.appsUrl, key = st.apiKey, pass = window._adminPass || '';
+
+      var sheets = [
+        { name: 'INVENTORY',       range: 'INVENTORY!A2:F10' },
+        { name: 'ORDERS',          range: 'ORDERS!A2:G10' },
+        { name: 'Website_Orders',  range: 'Website_Orders!A2:G10' },
+        { name: 'TRANSACTIONS',    range: 'TRANSACTIONS!A2:F10' },
+        { name: 'AD_TRACKER',      range: 'AD_TRACKER!A2:E10' },
+        { name: 'EXPENSES',        range: 'EXPENSES!A2:E10' },
+        { name: 'DELIVERY_CHARGES',range: 'DELIVERY_CHARGES!A2:D10' },
+        { name: 'SETTINGS',        range: 'SETTINGS!A2:B5' }
+      ];
+
+      for (var i = 0; i < sheets.length; i++) {
+        var s = sheets[i];
+        append('info', ['']);
+        append('info', ['📑 ' + s.name + '  (range ' + s.range + ')']);
+        try {
+          var resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'sheet_read', key: key, adminKey: pass, range: s.range }),
+            redirect: 'follow'
+          });
+          var txt = await resp.text();
+          var parsed = null;
+          try { parsed = JSON.parse(txt); } catch(e){}
+          if (!parsed || !parsed.success) {
+            append('error', ['  ❌ Read failed:', (parsed && (parsed.error || parsed.msg)) || txt.slice(0, 100)]);
+            continue;
+          }
+          var rows = parsed.data || [];
+          var nonEmpty = rows.filter(function(r){ return r && r.some(function(c){ return c !== '' && c != null; }); });
+          append('info', ['  rows returned:', rows.length, '| non-empty:', nonEmpty.length]);
+          if (nonEmpty.length === 0) {
+            append('warn', ['  ⚠️  Sheet is EMPTY in this range']);
+          } else {
+            // Show first 3 non-empty rows
+            nonEmpty.slice(0, 3).forEach(function(r, idx){
+              var preview = r.slice(0, 6).map(function(c){
+                var s = String(c == null ? '' : c);
+                return s.length > 30 ? s.slice(0, 30) + '…' : s;
+              }).join(' | ');
+              append('info', ['  row ' + (idx+1) + ': ' + preview]);
+            });
+          }
+        } catch(e) {
+          append('error', ['  ❌ Error:', e.message]);
+        }
+      }
+
+      append('info', ['']);
+      append('info', ['╚══════════ INSPECTOR COMPLETE ══════════╝']);
+      append('info', ['Empty sheets here = nothing in those tabs in your Google Sheet.']);
+      append('info', ['If INVENTORY shows non-empty rows but admin shows 0 products, that is the bug.']);
     };
   }, 500);
 })();
