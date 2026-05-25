@@ -10321,7 +10321,7 @@ if (location.search.indexOf('debug=1') !== -1) {
 
   var hdr = document.createElement('div');
   hdr.style.cssText = 'background:#161b22;color:#58a6ff;padding:6px 12px;font-weight:700;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #30363d';
-  hdr.innerHTML = '<span>🔧 YARZ Debug Console (?debug=1)</span><span><button id="__dbg_clear" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Clear</button><button id="__dbg_diag" style="background:#a371f7;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Run Diagnostics</button><button id="__dbg_check" style="background:#1f6feb;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Health Check</button><button id="__dbg_toggle" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer">_</button></span>';
+  hdr.innerHTML = '<span>🔧 YARZ Debug Console (?debug=1)</span><span><button id="__dbg_clear" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Clear</button><button id="__dbg_bulk" style="background:#fb8500;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Test Bulk Save</button><button id="__dbg_diag" style="background:#a371f7;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Run Diagnostics</button><button id="__dbg_check" style="background:#1f6feb;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Health Check</button><button id="__dbg_toggle" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer">_</button></span>';
   box.appendChild(hdr);
 
   var log = document.createElement('div');
@@ -10520,6 +10520,119 @@ if (location.search.indexOf('debug=1') !== -1) {
       append('info', ['']);
       append('info', ['╚══════════ DIAGNOSTICS COMPLETE ══════════╝']);
       append('info', ['Send this entire panel as a screenshot.']);
+    };
+
+    // ============================================================
+    // ✅ v15.4: Test Bulk Save — mimics what Website Control does.
+    // Sends 10+ real-world keys (Theme Color, Announcement Text, etc.),
+    // then re-reads to confirm each key landed in the sheet.
+    // ============================================================
+    var bulk = document.getElementById('__dbg_bulk');
+    if (bulk) bulk.onclick = async function(){
+      append('info', ['╔══════════ BULK SAVE TEST ══════════╗']);
+      var st = window.__yarz_state;
+      if (!st) { append('error', ['__yarz_state missing']); return; }
+      var url = st.appsUrl, key = st.apiKey, pass = window._adminPass || '';
+
+      var ts = Date.now();
+      var marker = String(ts).slice(-6);
+      var testPayload = {
+        'Theme Color':           '#FF00' + marker.slice(0, 2),
+        'Announcement Text':     'BULK_TEST_' + ts,
+        'Announcement Active':   'true',
+        'Announcement BG':       '#123456',
+        'Announcement Text Color': '#FFFFFF',
+        'Footer Text':           'Footer_' + marker,
+        'Theme Primary':         '#AA' + marker.slice(0, 4),
+        'Card Style':            'rounded',
+        'Heading Font':          'Inter',
+        'Body Font':             'Inter',
+        'Free Ship Amt':         '999',
+        'Min Order':             marker,
+        'Flash Title':           'Flash_' + marker,
+        'Hero Banner 1':         'https://test.com/banner_' + marker + '.jpg'
+      };
+      append('info', ['Sending ' + Object.keys(testPayload).length + ' keys with marker:', marker]);
+
+      // Send the bulk update
+      try {
+        var body = { action: 'updatesettings', key: key, adminKey: pass, settings: testPayload };
+        var resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(body),
+          redirect: 'follow'
+        });
+        var txt = await resp.text();
+        append('info', ['Save response status:', resp.status]);
+        append('info', ['Save response body:', txt.slice(0, 400)]);
+        var parsed = null;
+        try { parsed = JSON.parse(txt); } catch(e){ append('error', ['Response is NOT JSON!']); }
+        if (parsed) {
+          if (parsed.ok === false || parsed.success === false) {
+            append('error', ['❌ Apps Script reported error:', parsed.msg || parsed.error || 'unknown']);
+          } else {
+            append('info', ['✅ Apps Script reported success']);
+          }
+        }
+      } catch(e) {
+        append('error', ['❌ FETCH FAILED:', e.message]);
+        return;
+      }
+
+      // Wait 2s for GAS to commit
+      append('info', ['Waiting 2 seconds for sheet commit...']);
+      await new Promise(function(r){ setTimeout(r, 2000); });
+
+      // Re-read SETTINGS sheet
+      append('info', ['Re-reading SETTINGS sheet to verify...']);
+      try {
+        var rResp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'sheet_read', key: key, adminKey: pass, range: 'SETTINGS!A2:B2000' }),
+          redirect: 'follow'
+        });
+        var rTxt = await rResp.text();
+        var rParsed = JSON.parse(rTxt);
+        var rows = (rParsed && rParsed.data) || [];
+        var nonEmpty = rows.filter(function(r){ return r[0]; });
+        append('info', ['Total non-empty rows in sheet now:', nonEmpty.length]);
+
+        // Check each test key
+        var testKeys = Object.keys(testPayload);
+        var found = 0, missing = [];
+        testKeys.forEach(function(k){
+          var hit = rows.find(function(r){ return r[0] === k; });
+          if (hit) {
+            var matches = hit[1] === testPayload[k];
+            append(matches ? 'info' : 'warn', ['  ' + (matches ? '✅' : '⚠️ ') + ' ' + k + ': ' + JSON.stringify(hit[1]) + (matches ? '' : ' (expected: ' + JSON.stringify(testPayload[k]) + ')')]);
+            if (matches) found++;
+          } else {
+            append('error', ['  ❌ ' + k + ': NOT FOUND in sheet']);
+            missing.push(k);
+          }
+        });
+        append('info', ['']);
+        append(found === testKeys.length ? 'info' : 'error', [
+          'RESULT: ' + found + '/' + testKeys.length + ' keys saved correctly'
+        ]);
+        if (missing.length) {
+          append('error', ['Missing keys:', missing.join(', ')]);
+          append('error', ['→ This means bulk save IS broken on the Apps Script side.']);
+          append('error', ['→ Most likely cause: ADMIN_SECRET not set in Script Properties, OR']);
+          append('error', ['→ updateSettings function silently throws on bulk payload.']);
+        } else {
+          append('info', ['✅✅ All keys saved! The save flow itself works.']);
+          append('info', ['→ The reason settings appear empty in Website Control may be:']);
+          append('info', ['→   1. webControl.render() runs before settings finish loading']);
+          append('info', ['→   2. Some other UI bug — not a backend save problem']);
+        }
+      } catch(e) {
+        append('error', ['Re-read failed:', e.message]);
+      }
+
+      append('info', ['╚══════════ BULK TEST COMPLETE ══════════╝']);
     };
   }, 500);
 })();
