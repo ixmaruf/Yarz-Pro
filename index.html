@@ -10321,7 +10321,7 @@ if (location.search.indexOf('debug=1') !== -1) {
 
   var hdr = document.createElement('div');
   hdr.style.cssText = 'background:#161b22;color:#58a6ff;padding:6px 12px;font-weight:700;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #30363d';
-  hdr.innerHTML = '<span>🔧 YARZ Debug Console (?debug=1)</span><span><button id="__dbg_clear" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Clear</button><button id="__dbg_check" style="background:#1f6feb;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Run Health Check</button><button id="__dbg_toggle" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer">_</button></span>';
+  hdr.innerHTML = '<span>🔧 YARZ Debug Console (?debug=1)</span><span><button id="__dbg_clear" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Clear</button><button id="__dbg_diag" style="background:#a371f7;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Run Diagnostics</button><button id="__dbg_check" style="background:#1f6feb;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Health Check</button><button id="__dbg_toggle" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer">_</button></span>';
   box.appendChild(hdr);
 
   var log = document.createElement('div');
@@ -10418,6 +10418,108 @@ if (location.search.indexOf('debug=1') !== -1) {
       try { append('info', ['origin:', location.origin]); } catch(e){}
       try { append('info', ['SW controlled:', !!(navigator.serviceWorker && navigator.serviceWorker.controller)]); } catch(e){}
       append('info', ['======== END ========']);
+    };
+
+    // ============================================================
+    // ✅ v15.3: Run Diagnostics — comprehensive end-to-end test
+    // Performs raw fetch tests against Apps Script to find where the
+    // save/read pipeline breaks. Tests verify_auth, sheet_read,
+    // updateSettings (with a timestamped test key), and re-read to
+    // verify persistence.
+    // ============================================================
+    var dia = document.getElementById('__dbg_diag');
+    if (dia) dia.onclick = async function(){
+      append('info', ['╔══════════ FULL DIAGNOSTICS ══════════╗']);
+      var st = window.__yarz_state;
+      if (!st) { append('error', ['__yarz_state not exposed — page not loaded with ?debug=1']); return; }
+
+      var url = st.appsUrl;
+      var key = st.apiKey;
+      var pass = window._adminPass || '';
+      append('info', ['URL:', url ? url.slice(0, 80) + '...' : 'MISSING']);
+      append('info', ['API key length:', key.length, '| Admin pass length:', pass.length]);
+
+      async function rawCall(action, payload){
+        var body = Object.assign({ action: action.toLowerCase(), key: key, adminKey: pass }, payload || {});
+        try {
+          var resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(body),
+            redirect: 'follow'
+          });
+          var txt = await resp.text();
+          var firstChars = txt.slice(0, 200);
+          append('info', ['  ↳ status:', resp.status, '| body preview:', firstChars]);
+          var parsed = null;
+          try { parsed = JSON.parse(txt); } catch(e){ append('warn', ['  ↳ NOT JSON. type:', txt.startsWith('<!') ? 'HTML' : 'plain text']); }
+          return { ok: resp.ok, status: resp.status, txt: txt, parsed: parsed };
+        } catch (e) {
+          append('error', ['  ↳ FETCH FAILED:', e.message]);
+          return { ok: false, error: e.message };
+        }
+      }
+
+      // 1. VERIFY AUTH
+      append('info', ['']);
+      append('info', ['【1】 verify_auth — testing if admin password works']);
+      var r1 = await rawCall('verify_auth', { adminUser: 'admin' });
+      if (r1 && r1.parsed && r1.parsed.success) append('info', ['  ✅ Auth OK']);
+      else append('error', ['  ❌ Auth FAILED — admin password may be wrong or ADMIN_SECRET not set in Apps Script Properties']);
+
+      // 2. READ CURRENT SETTINGS
+      append('info', ['']);
+      append('info', ['【2】 sheet_read SETTINGS!A2:B2000 — reading current settings rows']);
+      var r2 = await rawCall('sheet_read', { range: 'SETTINGS!A2:B2000' });
+      var rowCount = (r2.parsed && Array.isArray(r2.parsed.data)) ? r2.parsed.data.length : 0;
+      append('info', ['  ↳ rows returned:', rowCount]);
+      if (rowCount === 0) append('error', ['  ❌ NO ROWS — sheet is empty OR sheet_read failed']);
+      else if (rowCount < 30) append('warn', ['  ⚠️ Only ' + rowCount + ' rows — should be 100+ if save was working']);
+      else append('info', ['  ✅ ' + rowCount + ' rows OK']);
+
+      // 3. ATTEMPT WRITE
+      append('info', ['']);
+      append('info', ['【3】 updateSettings — writing a test key to verify save works']);
+      var testKey = '__yarz_test_' + Date.now();
+      var testValue = 'TEST-' + Math.random().toString(36).slice(2, 8);
+      var r3 = await rawCall('updateSettings', { settings: { [testKey]: testValue } });
+      if (r3 && r3.parsed && (r3.parsed.success === true || r3.parsed.ok === true)) {
+        append('info', ['  ✅ Save returned success']);
+      } else if (r3 && r3.parsed) {
+        append('error', ['  ❌ Save returned error:', r3.parsed.msg || r3.parsed.error || JSON.stringify(r3.parsed)]);
+      } else {
+        append('error', ['  ❌ Save returned NON-JSON — Apps Script likely returning HTML or plain text. This is the bug!']);
+      }
+
+      // 4. RE-READ to confirm test key landed
+      append('info', ['']);
+      append('info', ['【4】 sheet_read again — verifying test key actually persisted']);
+      // brief delay to let GAS commit
+      await new Promise(function(r){ setTimeout(r, 1500); });
+      var r4 = await rawCall('sheet_read', { range: 'SETTINGS!A2:B2000' });
+      var rowsAfter = (r4.parsed && Array.isArray(r4.parsed.data)) ? r4.parsed.data : [];
+      var found = rowsAfter.find(function(row){ return row[0] === testKey; });
+      append('info', ['  ↳ rows after save:', rowsAfter.length]);
+      if (found) {
+        append('info', ['  ✅ Test key FOUND with value:', found[1]]);
+        if (found[1] === testValue) append('info', ['  ✅ VALUE MATCHES — save is working correctly!']);
+        else append('error', ['  ❌ Value mismatch. Expected:', testValue, 'Got:', found[1]]);
+      } else {
+        append('error', ['  ❌ Test key NOT FOUND in sheet — save SILENTLY failed!']);
+        append('error', ['  This is the root cause of "settings not saving".']);
+      }
+
+      // 5. INVENTORY CHECK
+      append('info', ['']);
+      append('info', ['【5】 sheet_read INVENTORY!A2:AW100 — checking inventory load']);
+      var r5 = await rawCall('sheet_read', { range: 'INVENTORY!A2:AW100' });
+      var invRows = (r5.parsed && Array.isArray(r5.parsed.data)) ? r5.parsed.data.filter(function(r){ return r[0]; }).length : 0;
+      append('info', ['  ↳ inventory rows with name:', invRows]);
+      if (invRows === 0) append('error', ['  ❌ NO inventory found — INVENTORY sheet may be empty or not accessible']);
+
+      append('info', ['']);
+      append('info', ['╚══════════ DIAGNOSTICS COMPLETE ══════════╝']);
+      append('info', ['Send this entire panel as a screenshot.']);
     };
   }, 500);
 })();
