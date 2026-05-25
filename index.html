@@ -1,4 +1,4 @@
-all<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
@@ -2580,6 +2580,36 @@ body.dark select.select option{
           <div class="grid grid-3" id="today-summary"></div>
         </div>
 
+        <!-- ✅ v15.28: Website Visitor Analytics — live data from Cloudflare KV
+             Tracks unique visitors per day via cookie deduplication. Updates
+             every 30s; admin sees near-real-time counts. -->
+        <div class="section">
+          <div class="section-title">
+            <h2><i class="ri-user-heart-line" style="color:var(--accent)"></i> ওয়েবসাইট ভিজিটর</h2>
+            <span class="hint" id="visitor-updated">লোড হচ্ছে…</span>
+          </div>
+          <div class="grid grid-3" id="visitor-stats">
+            <div class="stat-card">
+              <div class="stat-icon green"><i class="ri-eye-2-line"></i></div>
+              <div class="stat-label">আজকের ভিজিটর</div>
+              <div class="stat-value" id="vis-today">—</div>
+              <div class="stat-sub">Today</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon blue"><i class="ri-history-line"></i></div>
+              <div class="stat-label">গতকাল</div>
+              <div class="stat-value" id="vis-yesterday">—</div>
+              <div class="stat-sub">Yesterday</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon purple"><i class="ri-team-line"></i></div>
+              <div class="stat-label">সর্বমোট</div>
+              <div class="stat-value" id="vis-total">—</div>
+              <div class="stat-sub">All time</div>
+            </div>
+          </div>
+        </div>
+
         <div class="section">
           <div class="section-title"><h2><i class="ri-flashlight-line" style="color:var(--warn)"></i> Quick Actions</h2></div>
           <div class="qa-grid">
@@ -3416,7 +3446,6 @@ body.dark select.select option{
               <textarea id="wc-custom-css" class="textarea" style="font-family:monospace; font-size:12px; min-height:80px; background:#1e1e1e; color:#d4d4d4" placeholder="/* Write custom CSS here */"></textarea>
             </div>
           </div>
-        </div>
 
         <!-- ✅ TAB: EXTRAS (PREMIUM) — v11 New: 15+ Shopify-grade controls -->
         <div id="wc-tab-extras" class="wc-tab-content hidden">
@@ -5387,6 +5416,13 @@ function showApp(){
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState === 'visible' && state.loaded){
       YARZ.silentRefresh();
+      // ✅ v15.28: Also refresh visitor stats when tab becomes visible.
+      try {
+        const homePage = document.querySelector('.page[data-page="home"]');
+        if (homePage && homePage.classList.contains('active') && YARZ.home && YARZ.home.loadVisitorStats) {
+          YARZ.home.loadVisitorStats();
+        }
+      } catch(e) {}
     }
   });
 }
@@ -5465,6 +5501,74 @@ YARZ.home = {
         </div>
       </div>
     `).join('') : '<div class="empty-state"><i class="ri-trophy-line" style="font-size:32px;opacity:0.4"></i><p style="margin-top:10px">এখনো কোনো বিক্রয় নেই</p></div>';
+
+    // ✅ v15.28: Fire visitor stats fetch in background — non-blocking.
+    //   Errors are silenced so the home page never breaks if KV is missing.
+    try { this.loadVisitorStats(); } catch(e) {}
+  },
+
+  // ─── Website Visitor Analytics (Cloudflare KV) ────────────────────
+  // Endpoint: GET https://yarz.marufhasan80009.workers.dev/__analytics
+  // Returns: { success, today, yesterday, total, last7, pending }
+  // Auto-refresh: every 30s while admin is on Home page (visibility-aware).
+  _vis: { timer: null, lastFetch: 0 },
+  async loadVisitorStats(){
+    const WORKER = 'https://yarz.marufhasan80009.workers.dev/__analytics';
+    const upd = $('visitor-updated');
+    try {
+      // 6-second timeout so a slow Worker never freezes the dashboard.
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => { try { ctrl.abort(); } catch(e){} }, 6000);
+
+      const resp = await fetch(WORKER, { signal: ctrl.signal, cache: 'no-store' });
+      clearTimeout(tid);
+
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const j = await resp.json();
+      if (!j || !j.success) throw new Error(j && j.error || 'Bad payload');
+
+      const today = Number(j.today || 0);
+      const yest  = Number(j.yesterday || 0);
+      const total = Number(j.total || 0);
+      $('vis-today').textContent     = toBn(today);
+      $('vis-yesterday').textContent = toBn(yest);
+      $('vis-total').textContent     = toBn(total);
+
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2,'0');
+      const mm = String(now.getMinutes()).padStart(2,'0');
+      const ss = String(now.getSeconds()).padStart(2,'0');
+      if (upd) upd.textContent = 'আপডেট: ' + hh + ':' + mm + ':' + ss;
+      this._vis.lastFetch = Date.now();
+    } catch (e) {
+      // Distinguish KV-not-configured from network/timeout errors.
+      const msg = String(e && e.message || e);
+      if (upd) {
+        if (msg.indexOf('500') !== -1 || msg.indexOf('KV not') !== -1) {
+          upd.textContent = '⚠️ KV namespace সেটআপ করা নাই';
+        } else if (msg.indexOf('aborted') !== -1) {
+          upd.textContent = '⏱️ Timeout — পরে আবার চেষ্টা হবে';
+        } else {
+          upd.textContent = '⚠️ লোড হয়নি — ' + msg.slice(0, 40);
+        }
+      }
+      $('vis-today').textContent     = $('vis-today').textContent     === '—' ? '—' : $('vis-today').textContent;
+      $('vis-yesterday').textContent = $('vis-yesterday').textContent === '—' ? '—' : $('vis-yesterday').textContent;
+      $('vis-total').textContent     = $('vis-total').textContent     === '—' ? '—' : $('vis-total').textContent;
+    }
+
+    // Schedule next refresh — only while Home is visible & tab active.
+    if (this._vis.timer) clearTimeout(this._vis.timer);
+    this._vis.timer = setTimeout(() => {
+      // Re-render only if user is still on Home and tab is active
+      const homePage = document.querySelector('.page[data-page="home"]');
+      if (homePage && homePage.classList.contains('active') && document.visibilityState === 'visible') {
+        this.loadVisitorStats();
+      } else {
+        // Tab hidden / page changed → stop polling, restart on visibility
+        this._vis.timer = null;
+      }
+    }, 30000);
   },
 
   showList(kind){
@@ -7908,7 +8012,16 @@ YARZ.webControl = {
     const ytEl = $('wc-link-yt'); if(ytEl) ytEl.value = s['Link YouTube']||'';
 
     // --- Banners & Flash ---
-    const fdate = $('wc-flash-date'); if(fdate) fdate.value = s['Flash Date'] || '';
+    // ✅ v15.6: Flash Date is datetime-local — needs format normalization
+    const _flashToDtLocal = (v) => {
+      if (v == null || v === '') return '';
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return String(v);
+      const pad = n => String(n).padStart(2, '0');
+      return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate())
+           + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    };
+    const fdate = $('wc-flash-date'); if(fdate) fdate.value = _flashToDtLocal(s['Flash Date']);
     const ftitle = $('wc-flash-title'); if(ftitle) ftitle.value = s['Flash Title'] || '';
 
     // --- Hero Banners --- (delegated to renderBanners() so it runs even
@@ -8342,13 +8455,21 @@ YARZ.webControl = {
       const str = String(val).toLowerCase().trim();
       return ['true','yes','1','on','enabled','enable','chalu','চালু'].includes(str);
     };
+    // ✅ v15.6: Format date strings/Date objects for <input type="date"> (YYYY-MM-DD)
+    const _toDateOnly = (v) => {
+      if (v == null || v === '') return '';
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return String(v).slice(0, 10);
+      const pad = n => String(n).padStart(2, '0');
+      return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    };
     let html = '';
     for(let i=1;i<=3;i++){
       const a = parseBool(s[`Popup ${i} Active`]);
       const img = s[`Popup ${i} Image`] || '';
       const link = s[`Popup ${i} Link`] || '';
-      const st = s[`Popup ${i} Start`] || '';
-      const en = s[`Popup ${i} End`] || '';
+      const st = _toDateOnly(s[`Popup ${i} Start`]);
+      const en = _toDateOnly(s[`Popup ${i} End`]);
       const tr = s[`Popup ${i} Trigger`] || '10';
       html += this._buildPopupSlotHTML(i, a, img, link, st, en, tr);
     }
@@ -8369,6 +8490,29 @@ YARZ.webControl = {
     const setChk = (id, v) => { const el = $(id); if(el) el.checked = parseBool(v); };
     const setPair = (txtId, pickId, v, fb) => { const t=$(txtId), p=$(pickId); if(t) t.value = v||fb||''; if(p) p.value = v||fb||'#000000'; };
 
+    // ✅ v15.6: Convert any datetime value (ISO string, Date object, or already
+    // formatted YYYY-MM-DDTHH:MM) to the format that <input type="datetime-local">
+    // expects. Without this, dates from Google Sheets come back as Date objects /
+    // ISO strings which the input silently rejects, making the field appear empty.
+    const _toDtLocal = (v) => {
+      if (v == null || v === '') return '';
+      const d = new Date(v);
+      if (isNaN(d.getTime())) {
+        // Already a string but not a date → return as-is
+        return String(v);
+      }
+      const pad = n => String(n).padStart(2, '0');
+      return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate())
+           + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    };
+    // Date-only variant for <input type="date">
+    const _toDateOnly = (v) => {
+      const s = _toDtLocal(v);
+      return s ? s.slice(0, 10) : '';
+    };
+    const setDt = (id, v) => { const el = $(id); if(el) el.value = _toDtLocal(v); };
+    const setDate = (id, v) => { const el = $(id); if(el) el.value = _toDateOnly(v); };
+
     // 1. Theme Palette
     setPair('wc-theme-primary', 'wc-theme-primary-pick', s['Theme Primary'], '#634A8E');
     setPair('wc-theme-accent',  'wc-theme-accent-pick',  s['Theme Accent'],  '#D4910A');
@@ -8388,7 +8532,7 @@ YARZ.webControl = {
     setVal('wc-card-hover', s['Card Hover'] || 'zoom');
     // 4. Countdown
     setChk('wc-countdown-active', s['Countdown Active']);
-    setVal('wc-countdown-end',    s['Countdown End']);
+    setDt('wc-countdown-end',     s['Countdown End']);
     setVal('wc-countdown-title',  s['Countdown Title']);
     setVal('wc-countdown-style',  s['Countdown Style'] || 'red');
     setVal('wc-countdown-bg',     s['Countdown BG']);
@@ -10267,14 +10411,6 @@ window.publishToWebsiteAction = async function() {
   }
 };
 
-// ✅ v15.2: Expose state ONLY when ?debug=1 is in URL — for the debug panel
-// to inspect runtime data without breaking the IIFE encapsulation. Has no
-// effect in normal use (no debug flag = nothing exposed).
-if (location.search.indexOf('debug=1') !== -1) {
-  try { window.__yarz_state = state; } catch(e){}
-  try { window.__yarz_YARZ = YARZ; } catch(e){}
-}
-
 })();
 </script>
 
@@ -10308,488 +10444,7 @@ if (location.search.indexOf('debug=1') !== -1) {
   </div>
 </div>
 
-<!-- ✅ v15.2: On-screen Debug Panel — visible only when ?debug=1 is in URL.
-     Bypasses DevTools blocker so admin owner can troubleshoot without
-     compromising security. Just append ?debug=1 to the admin URL. -->
-<script>
-(function(){
-  if (location.search.indexOf('debug=1') === -1) return;
 
-  var box = document.createElement('div');
-  box.id = '__yarz_debug_panel__';
-  box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:45vh;background:#0d1117;color:#c9d1d9;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.5;border-top:2px solid #1f6feb;padding:0;z-index:2147483647;display:flex;flex-direction:column;box-shadow:0 -8px 24px rgba(0,0,0,.5)';
-
-  var hdr = document.createElement('div');
-  hdr.style.cssText = 'background:#161b22;color:#58a6ff;padding:6px 12px;font-weight:700;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #30363d';
-  hdr.innerHTML = '<span>🔧 YARZ Debug Console (?debug=1)</span><span><button id="__dbg_clear" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Clear</button><button id="__dbg_sf" style="background:#dc2626;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Storefront Test</button><button id="__dbg_bulk" style="background:#fb8500;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Test Bulk Save</button><button id="__dbg_diag" style="background:#a371f7;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Run Diagnostics</button><button id="__dbg_check" style="background:#1f6feb;color:#fff;border:none;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-right:6px">Health Check</button><button id="__dbg_toggle" style="background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:2px 8px;border-radius:4px;font-size:11px;cursor:pointer">_</button></span>';
-  box.appendChild(hdr);
-
-  var log = document.createElement('div');
-  log.id = '__yarz_debug_log__';
-  log.style.cssText = 'flex:1;overflow:auto;padding:8px 12px;white-space:pre-wrap;word-break:break-word';
-  box.appendChild(log);
-
-  function append(level, args) {
-    var line = document.createElement('div');
-    var color = level === 'error' ? '#ff7b72' : (level === 'warn' ? '#d29922' : (level === 'info' ? '#58a6ff' : '#c9d1d9'));
-    line.style.cssText = 'border-bottom:1px dashed #21262d;padding:2px 0;color:' + color;
-    var text = '';
-    try {
-      text = Array.from(args).map(function(a){
-        if (a instanceof Error) return a.message + (a.stack ? '\n' + a.stack : '');
-        if (typeof a === 'object') { try { return JSON.stringify(a, null, 2); } catch(e){ return String(a); } }
-        return String(a);
-      }).join(' ');
-    } catch(e){ text = '[unloggable]'; }
-    var ts = new Date().toLocaleTimeString();
-    line.textContent = '[' + ts + '] [' + level.toUpperCase() + '] ' + text;
-    log.appendChild(line);
-    log.scrollTop = log.scrollHeight;
-  }
-
-  // Wait until armor.js neutralizes console (it does after 3s), then patch
-  function patchConsole(){
-    var orig = window.__yc || { log: console.log, warn: console.warn, error: console.error, info: console.info };
-    window.__yc = orig; // keep reference
-    console.log = function(){ try{ orig.log.apply(console, arguments); }catch(e){} append('log', arguments); };
-    console.info = function(){ try{ (orig.info||orig.log).apply(console, arguments); }catch(e){} append('info', arguments); };
-    console.warn = function(){ try{ orig.warn.apply(console, arguments); }catch(e){} append('warn', arguments); };
-    console.error = function(){ try{ orig.error.apply(console, arguments); }catch(e){} append('error', arguments); };
-  }
-  // Patch immediately and again after 3.5s (after armor.js neutralizes)
-  patchConsole();
-  setTimeout(patchConsole, 3500);
-
-  // Capture uncaught errors
-  window.addEventListener('error', function(e){
-    append('error', ['UNCAUGHT:', e.message, '@', e.filename + ':' + e.lineno]);
-  });
-  window.addEventListener('unhandledrejection', function(e){
-    append('error', ['PROMISE REJECTION:', (e.reason && e.reason.message) || e.reason]);
-  });
-
-  function appendInsert(){
-    if (document.body) document.body.appendChild(box);
-    else document.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(box); });
-  }
-  appendInsert();
-
-  // Wire buttons
-  setTimeout(function(){
-    var clr = document.getElementById('__dbg_clear');
-    var chk = document.getElementById('__dbg_check');
-    var tog = document.getElementById('__dbg_toggle');
-    if (clr) clr.onclick = function(){ log.innerHTML = ''; };
-    if (tog) tog.onclick = function(){
-      if (log.style.display === 'none') { log.style.display = 'block'; tog.textContent = '_'; box.style.maxHeight = '45vh'; }
-      else { log.style.display = 'none'; tog.textContent = '▢'; box.style.maxHeight = ''; }
-    };
-    if (chk) chk.onclick = function(){
-      append('info', ['======== HEALTH CHECK ========']);
-      try { append('info', ['admin pass set:', !!window._adminPass, '| length:', (window._adminPass||'').length]); } catch(e){ append('error', ['admin pass read failed:', e.message]); }
-      // ✅ v15.2 FIX: Use exposed __yarz_state from inside the IIFE.
-      var st = window.__yarz_state || null;
-      if (!st) {
-        append('error', ['__yarz_state not exposed — make sure URL has ?debug=1 AND page fully loaded']);
-        append('info', ['======== END ========']);
-        return;
-      }
-      var s = (st.data && st.data.settings) || {};
-      try {
-        var keys = Object.keys(s);
-        append('info', ['settings keys count:', keys.length]);
-        if (keys.length === 0) {
-          append('warn', ['No settings loaded yet — try clicking the refresh button or wait a few seconds, then run health check again']);
-        } else {
-          append('info', ['Theme Color:', s['Theme Color'] || '(empty)']);
-          append('info', ['Announcement Text:', s['Announcement Text'] || '(empty)']);
-          append('info', ['Announcement Active:', s['Announcement Active'] || '(empty)']);
-          append('info', ['Store Name:', s['Store Name'] || '(empty)']);
-          append('info', ['Currency:', s['Currency'] || '(empty)']);
-          append('info', ['Flash Date:', s['Flash Date'] || '(empty)']);
-          append('info', ['First 5 keys:', keys.slice(0, 5).join(', ')]);
-        }
-      } catch(e){ append('error', ['keys list failed:', e.message]); }
-      try { append('info', ['apps URL:', st.appsUrl ? st.appsUrl.slice(0, 70) + '...' : '(missing)']); } catch(e){}
-      try { append('info', ['api key length:', (st.apiKey || '').length]); } catch(e){}
-      try { append('info', ['inventory items:', (st.data && st.data.inventory || []).length]); } catch(e){}
-      try { append('info', ['orders items:', (st.data && st.data.orders || []).length]); } catch(e){}
-      try { append('info', ['data loaded flag:', st.loaded]); } catch(e){}
-      try { append('info', ['origin:', location.origin]); } catch(e){}
-      try { append('info', ['SW controlled:', !!(navigator.serviceWorker && navigator.serviceWorker.controller)]); } catch(e){}
-      append('info', ['======== END ========']);
-    };
-
-    // ============================================================
-    // ✅ v15.3: Run Diagnostics — comprehensive end-to-end test
-    // Performs raw fetch tests against Apps Script to find where the
-    // save/read pipeline breaks. Tests verify_auth, sheet_read,
-    // updateSettings (with a timestamped test key), and re-read to
-    // verify persistence.
-    // ============================================================
-    var dia = document.getElementById('__dbg_diag');
-    if (dia) dia.onclick = async function(){
-      append('info', ['╔══════════ FULL DIAGNOSTICS ══════════╗']);
-      var st = window.__yarz_state;
-      if (!st) { append('error', ['__yarz_state not exposed — page not loaded with ?debug=1']); return; }
-
-      var url = st.appsUrl;
-      var key = st.apiKey;
-      var pass = window._adminPass || '';
-      append('info', ['URL:', url ? url.slice(0, 80) + '...' : 'MISSING']);
-      append('info', ['API key length:', key.length, '| Admin pass length:', pass.length]);
-
-      async function rawCall(action, payload){
-        var body = Object.assign({ action: action.toLowerCase(), key: key, adminKey: pass }, payload || {});
-        try {
-          var resp = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(body),
-            redirect: 'follow'
-          });
-          var txt = await resp.text();
-          var firstChars = txt.slice(0, 200);
-          append('info', ['  ↳ status:', resp.status, '| body preview:', firstChars]);
-          var parsed = null;
-          try { parsed = JSON.parse(txt); } catch(e){ append('warn', ['  ↳ NOT JSON. type:', txt.startsWith('<!') ? 'HTML' : 'plain text']); }
-          return { ok: resp.ok, status: resp.status, txt: txt, parsed: parsed };
-        } catch (e) {
-          append('error', ['  ↳ FETCH FAILED:', e.message]);
-          return { ok: false, error: e.message };
-        }
-      }
-
-      // 1. VERIFY AUTH
-      append('info', ['']);
-      append('info', ['【1】 verify_auth — testing if admin password works']);
-      var r1 = await rawCall('verify_auth', { adminUser: 'admin' });
-      if (r1 && r1.parsed && r1.parsed.success) append('info', ['  ✅ Auth OK']);
-      else append('error', ['  ❌ Auth FAILED — admin password may be wrong or ADMIN_SECRET not set in Apps Script Properties']);
-
-      // 2. READ CURRENT SETTINGS
-      append('info', ['']);
-      append('info', ['【2】 sheet_read SETTINGS!A2:B2000 — reading current settings rows']);
-      var r2 = await rawCall('sheet_read', { range: 'SETTINGS!A2:B2000' });
-      var rowCount = (r2.parsed && Array.isArray(r2.parsed.data)) ? r2.parsed.data.length : 0;
-      append('info', ['  ↳ rows returned:', rowCount]);
-      if (rowCount === 0) append('error', ['  ❌ NO ROWS — sheet is empty OR sheet_read failed']);
-      else if (rowCount < 30) append('warn', ['  ⚠️ Only ' + rowCount + ' rows — should be 100+ if save was working']);
-      else append('info', ['  ✅ ' + rowCount + ' rows OK']);
-
-      // 3. ATTEMPT WRITE
-      append('info', ['']);
-      append('info', ['【3】 updateSettings — writing a test key to verify save works']);
-      var testKey = '__yarz_test_' + Date.now();
-      var testValue = 'TEST-' + Math.random().toString(36).slice(2, 8);
-      var r3 = await rawCall('updateSettings', { settings: { [testKey]: testValue } });
-      if (r3 && r3.parsed && (r3.parsed.success === true || r3.parsed.ok === true)) {
-        append('info', ['  ✅ Save returned success']);
-      } else if (r3 && r3.parsed) {
-        append('error', ['  ❌ Save returned error:', r3.parsed.msg || r3.parsed.error || JSON.stringify(r3.parsed)]);
-      } else {
-        append('error', ['  ❌ Save returned NON-JSON — Apps Script likely returning HTML or plain text. This is the bug!']);
-      }
-
-      // 4. RE-READ to confirm test key landed
-      append('info', ['']);
-      append('info', ['【4】 sheet_read again — verifying test key actually persisted']);
-      // brief delay to let GAS commit
-      await new Promise(function(r){ setTimeout(r, 1500); });
-      var r4 = await rawCall('sheet_read', { range: 'SETTINGS!A2:B2000' });
-      var rowsAfter = (r4.parsed && Array.isArray(r4.parsed.data)) ? r4.parsed.data : [];
-      var found = rowsAfter.find(function(row){ return row[0] === testKey; });
-      append('info', ['  ↳ rows after save:', rowsAfter.length]);
-      if (found) {
-        append('info', ['  ✅ Test key FOUND with value:', found[1]]);
-        if (found[1] === testValue) append('info', ['  ✅ VALUE MATCHES — save is working correctly!']);
-        else append('error', ['  ❌ Value mismatch. Expected:', testValue, 'Got:', found[1]]);
-      } else {
-        append('error', ['  ❌ Test key NOT FOUND in sheet — save SILENTLY failed!']);
-        append('error', ['  This is the root cause of "settings not saving".']);
-      }
-
-      // 5. INVENTORY CHECK
-      append('info', ['']);
-      append('info', ['【5】 sheet_read INVENTORY!A2:AW100 — checking inventory load']);
-      var r5 = await rawCall('sheet_read', { range: 'INVENTORY!A2:AW100' });
-      var invRows = (r5.parsed && Array.isArray(r5.parsed.data)) ? r5.parsed.data.filter(function(r){ return r[0]; }).length : 0;
-      append('info', ['  ↳ inventory rows with name:', invRows]);
-      if (invRows === 0) append('error', ['  ❌ NO inventory found — INVENTORY sheet may be empty or not accessible']);
-
-      append('info', ['']);
-      append('info', ['╚══════════ DIAGNOSTICS COMPLETE ══════════╝']);
-      append('info', ['Send this entire panel as a screenshot.']);
-    };
-
-    // ============================================================
-    // ✅ v15.4: Test Bulk Save — mimics what Website Control does.
-    // Sends 10+ real-world keys (Theme Color, Announcement Text, etc.),
-    // then re-reads to confirm each key landed in the sheet.
-    // ============================================================
-    var bulk = document.getElementById('__dbg_bulk');
-    if (bulk) bulk.onclick = async function(){
-      append('info', ['╔══════════ BULK SAVE TEST ══════════╗']);
-      var st = window.__yarz_state;
-      if (!st) { append('error', ['__yarz_state missing']); return; }
-      var url = st.appsUrl, key = st.apiKey, pass = window._adminPass || '';
-
-      var ts = Date.now();
-      var marker = String(ts).slice(-6);
-      var testPayload = {
-        'Theme Color':           '#FF00' + marker.slice(0, 2),
-        'Announcement Text':     'BULK_TEST_' + ts,
-        'Announcement Active':   'true',
-        'Announcement BG':       '#123456',
-        'Announcement Text Color': '#FFFFFF',
-        'Footer Text':           'Footer_' + marker,
-        'Theme Primary':         '#AA' + marker.slice(0, 4),
-        'Card Style':            'rounded',
-        'Heading Font':          'Inter',
-        'Body Font':             'Inter',
-        'Free Ship Amt':         '999',
-        'Min Order':             marker,
-        'Flash Title':           'Flash_' + marker,
-        'Hero Banner 1':         'https://test.com/banner_' + marker + '.jpg'
-      };
-      append('info', ['Sending ' + Object.keys(testPayload).length + ' keys with marker:', marker]);
-
-      // Send the bulk update
-      try {
-        var body = { action: 'updatesettings', key: key, adminKey: pass, settings: testPayload };
-        var resp = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(body),
-          redirect: 'follow'
-        });
-        var txt = await resp.text();
-        append('info', ['Save response status:', resp.status]);
-        append('info', ['Save response body:', txt.slice(0, 400)]);
-        var parsed = null;
-        try { parsed = JSON.parse(txt); } catch(e){ append('error', ['Response is NOT JSON!']); }
-        if (parsed) {
-          if (parsed.ok === false || parsed.success === false) {
-            append('error', ['❌ Apps Script reported error:', parsed.msg || parsed.error || 'unknown']);
-          } else {
-            append('info', ['✅ Apps Script reported success']);
-          }
-        }
-      } catch(e) {
-        append('error', ['❌ FETCH FAILED:', e.message]);
-        return;
-      }
-
-      // Wait 2s for GAS to commit
-      append('info', ['Waiting 2 seconds for sheet commit...']);
-      await new Promise(function(r){ setTimeout(r, 2000); });
-
-      // Re-read SETTINGS sheet
-      append('info', ['Re-reading SETTINGS sheet to verify...']);
-      try {
-        var rResp = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'sheet_read', key: key, adminKey: pass, range: 'SETTINGS!A2:B2000' }),
-          redirect: 'follow'
-        });
-        var rTxt = await rResp.text();
-        var rParsed = JSON.parse(rTxt);
-        var rows = (rParsed && rParsed.data) || [];
-        var nonEmpty = rows.filter(function(r){ return r[0]; });
-        append('info', ['Total non-empty rows in sheet now:', nonEmpty.length]);
-
-        // Check each test key
-        var testKeys = Object.keys(testPayload);
-        var found = 0, missing = [];
-        testKeys.forEach(function(k){
-          var hit = rows.find(function(r){ return r[0] === k; });
-          if (hit) {
-            var matches = hit[1] === testPayload[k];
-            append(matches ? 'info' : 'warn', ['  ' + (matches ? '✅' : '⚠️ ') + ' ' + k + ': ' + JSON.stringify(hit[1]) + (matches ? '' : ' (expected: ' + JSON.stringify(testPayload[k]) + ')')]);
-            if (matches) found++;
-          } else {
-            append('error', ['  ❌ ' + k + ': NOT FOUND in sheet']);
-            missing.push(k);
-          }
-        });
-        append('info', ['']);
-        append(found === testKeys.length ? 'info' : 'error', [
-          'RESULT: ' + found + '/' + testKeys.length + ' keys saved correctly'
-        ]);
-        if (missing.length) {
-          append('error', ['Missing keys:', missing.join(', ')]);
-          append('error', ['→ This means bulk save IS broken on the Apps Script side.']);
-          append('error', ['→ Most likely cause: ADMIN_SECRET not set in Script Properties, OR']);
-          append('error', ['→ updateSettings function silently throws on bulk payload.']);
-        } else {
-          append('info', ['✅✅ All keys saved! The save flow itself works.']);
-          append('info', ['→ The reason settings appear empty in Website Control may be:']);
-          append('info', ['→   1. webControl.render() runs before settings finish loading']);
-          append('info', ['→   2. Some other UI bug — not a backend save problem']);
-        }
-      } catch(e) {
-        append('error', ['Re-read failed:', e.message]);
-      }
-
-      append('info', ['╚══════════ BULK TEST COMPLETE ══════════╝']);
-    };
-
-    // ============================================================
-    // ✅ v15.5: Storefront Pipeline Test — bypasses copy-paste problems.
-    // Uses the EXACT API key from state, fetches Worker as customer would,
-    // then prints relevant fields so we know if announcement / theme are
-    // arriving at the storefront correctly.
-    // ============================================================
-    var sf = document.getElementById('__dbg_sf');
-    if (sf) sf.onclick = async function(){
-      append('info', ['╔══════════ STOREFRONT PIPELINE TEST ══════════╗']);
-      var st = window.__yarz_state;
-      if (!st) { append('error', ['__yarz_state missing']); return; }
-      var key = st.apiKey;
-      append('info', ['Using API key (length:', key.length, ')']);
-
-      var workerBase = 'https://yarz.marufhasan80009.workers.dev/';
-
-      async function fetchAction(action, bypassCache) {
-        var url = workerBase + '?action=' + action + '&key=' + encodeURIComponent(key);
-        if (bypassCache) url += '&_t=' + Date.now();
-        try {
-          var resp = await fetch(url, { cache: 'no-store' });
-          var txt = await resp.text();
-          var parsed = null;
-          try { parsed = JSON.parse(txt); } catch(e){}
-          var hCache = resp.headers.get('x-yarz-cache') || '';
-          var hAge = resp.headers.get('x-yarz-age') || '';
-          var hSrc = resp.headers.get('x-yarz-source') || '';
-          return { ok: resp.ok, status: resp.status, parsed: parsed, txt: txt, cache: hCache, age: hAge, src: hSrc };
-        } catch(e) {
-          return { ok: false, error: e.message };
-        }
-      }
-
-      // 1. Cached store_info (what most customers see)
-      append('info', ['']);
-      append('info', ['【1】 GET store_info (CACHED — what customers actually see)']);
-      var r1 = await fetchAction('store_info', false);
-      append('info', ['  status:', r1.status, '| cache:', r1.cache, '| age:', r1.age + 's', '| src:', r1.src]);
-      if (r1.parsed && r1.parsed.success) {
-        var d1 = r1.parsed.data || r1.parsed.store || {};
-        append('info', ['  ✅ Worker returned data with', Object.keys(d1).length, 'fields']);
-        append('info', ['  announcement_text:', d1.announcement_text || d1['Announcement Text'] || '(empty)']);
-        append('info', ['  announcement_active:', d1.announcement_active || d1['Announcement Active'] || '(empty)']);
-        append('info', ['  announcement_bg:', d1.announcement_bg || d1['Announcement BG'] || '(empty)']);
-        append('info', ['  store_name:', d1.name || d1['Store Name'] || '(empty)']);
-        append('info', ['  theme_color:', d1['theme_color'] || d1['Theme Color'] || '(empty)']);
-      } else {
-        append('error', ['  ❌ Worker error:', r1.parsed ? (r1.parsed.error || r1.parsed.msg) : r1.txt.slice(0, 200)]);
-      }
-
-      // 2. Bypass cache — fresh from upstream
-      append('info', ['']);
-      append('info', ['【2】 GET store_info (BYPASS CACHE — direct from Sheet)']);
-      var r2 = await fetchAction('store_info', true);
-      append('info', ['  status:', r2.status, '| cache:', r2.cache, '| age:', r2.age + 's']);
-      if (r2.parsed && r2.parsed.success) {
-        var d2 = r2.parsed.data || r2.parsed.store || {};
-        append('info', ['  announcement_text:', d2.announcement_text || d2['Announcement Text'] || '(empty)']);
-        append('info', ['  announcement_active:', d2.announcement_active || d2['Announcement Active'] || '(empty)']);
-        append('info', ['  store_name:', d2.name || d2['Store Name'] || '(empty)']);
-      } else {
-        append('error', ['  ❌ Bypass error:', r2.parsed ? (r2.parsed.error || r2.parsed.msg) : r2.txt.slice(0, 200)]);
-      }
-
-      // 3. Compare cached vs fresh
-      append('info', ['']);
-      append('info', ['【3】 COMPARISON']);
-      var c1 = (r1.parsed && r1.parsed.data && (r1.parsed.data.announcement_text || r1.parsed.data['Announcement Text'])) || '';
-      var c2 = (r2.parsed && r2.parsed.data && (r2.parsed.data.announcement_text || r2.parsed.data['Announcement Text'])) || '';
-      if (c1 === c2 && c2) {
-        append('info', ['  ✅ Cache and fresh match: "' + c1 + '" — Worker pipeline is healthy']);
-      } else if (!c1 && c2) {
-        append('error', ['  ⚠️ Cached version is EMPTY but fresh version has: "' + c2 + '"']);
-        append('error', ['  → Worker has stale empty cache. Click "Publish to Website" then retry.']);
-      } else if (c1 !== c2) {
-        append('warn', ['  ⚠️ Cache differs from fresh:']);
-        append('warn', ['     CACHED:', JSON.stringify(c1)]);
-        append('warn', ['     FRESH :', JSON.stringify(c2)]);
-        append('warn', ['  → Click "Publish to Website" to align them.']);
-      } else {
-        append('error', ['  ❌ Both cached and fresh are EMPTY — settings are not reaching upstream']);
-      }
-
-      append('info', ['']);
-      append('info', ['╚══════════ STOREFRONT TEST COMPLETE ══════════╝']);
-    };
-
-    // ============================================================
-    // ✅ v15.5: Inspect All Sheets — read first 5 non-empty rows
-    // from each known sheet so user can see what's actually there.
-    // ============================================================
-    var ins = document.getElementById('__dbg_inspect');
-    if (ins) ins.onclick = async function(){
-      append('info', ['╔══════════ SHEET INSPECTOR ══════════╗']);
-      var st = window.__yarz_state;
-      if (!st) { append('error', ['__yarz_state missing']); return; }
-      var url = st.appsUrl, key = st.apiKey, pass = window._adminPass || '';
-
-      var sheets = [
-        { name: 'INVENTORY',       range: 'INVENTORY!A2:F10' },
-        { name: 'ORDERS',          range: 'ORDERS!A2:G10' },
-        { name: 'Website_Orders',  range: 'Website_Orders!A2:G10' },
-        { name: 'TRANSACTIONS',    range: 'TRANSACTIONS!A2:F10' },
-        { name: 'AD_TRACKER',      range: 'AD_TRACKER!A2:E10' },
-        { name: 'EXPENSES',        range: 'EXPENSES!A2:E10' },
-        { name: 'DELIVERY_CHARGES',range: 'DELIVERY_CHARGES!A2:D10' },
-        { name: 'SETTINGS',        range: 'SETTINGS!A2:B5' }
-      ];
-
-      for (var i = 0; i < sheets.length; i++) {
-        var s = sheets[i];
-        append('info', ['']);
-        append('info', ['📑 ' + s.name + '  (range ' + s.range + ')']);
-        try {
-          var resp = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'sheet_read', key: key, adminKey: pass, range: s.range }),
-            redirect: 'follow'
-          });
-          var txt = await resp.text();
-          var parsed = null;
-          try { parsed = JSON.parse(txt); } catch(e){}
-          if (!parsed || !parsed.success) {
-            append('error', ['  ❌ Read failed:', (parsed && (parsed.error || parsed.msg)) || txt.slice(0, 100)]);
-            continue;
-          }
-          var rows = parsed.data || [];
-          var nonEmpty = rows.filter(function(r){ return r && r.some(function(c){ return c !== '' && c != null; }); });
-          append('info', ['  rows returned:', rows.length, '| non-empty:', nonEmpty.length]);
-          if (nonEmpty.length === 0) {
-            append('warn', ['  ⚠️  Sheet is EMPTY in this range']);
-          } else {
-            // Show first 3 non-empty rows
-            nonEmpty.slice(0, 3).forEach(function(r, idx){
-              var preview = r.slice(0, 6).map(function(c){
-                var s = String(c == null ? '' : c);
-                return s.length > 30 ? s.slice(0, 30) + '…' : s;
-              }).join(' | ');
-              append('info', ['  row ' + (idx+1) + ': ' + preview]);
-            });
-          }
-        } catch(e) {
-          append('error', ['  ❌ Error:', e.message]);
-        }
-      }
-
-      append('info', ['']);
-      append('info', ['╚══════════ INSPECTOR COMPLETE ══════════╝']);
-      append('info', ['Empty sheets here = nothing in those tabs in your Google Sheet.']);
-      append('info', ['If INVENTORY shows non-empty rows but admin shows 0 products, that is the bug.']);
-    };
-  }, 500);
-})();
-</script>
 
 </body>
 </html>
