@@ -8977,16 +8977,20 @@ YARZ.webControl = {
       // ✅ v15.0 FIX: Direct Cloudflare cache purge — no waiting for GAS trigger.
       // This is the missing link that caused admin updates to never reflect on
       // the live website. Fire-and-forget, 3s timeout — does not block UI.
+      // ✅ v15.50: Purge BOTH the customer-facing domain and the workers.dev
+      // origin so neither colo serves stale cache slots. See Publish handler
+      // for the full rationale.
       try {
         const _purgeCtrl = new AbortController();
         setTimeout(function(){ try { _purgeCtrl.abort(); } catch(e){} }, 3000);
-        fetch('https://yarz.marufhasan80009.workers.dev/__purge', {
-          method: 'POST',
-          headers: { 'X-Purge-Key': 'yarz_xK9mP2nL8vR4qH7', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ actions: ['store_info', 'products', 'categories', 'delivery_charges'] }),
-          signal: _purgeCtrl.signal,
-          keepalive: true
-        }).catch(function(){ /* silent — GAS auto-purge is fallback */ });
+        const _pBody = JSON.stringify({ actions: ['store_info', 'products', 'categories', 'delivery_charges'] });
+        const _pHeaders = { 'X-Purge-Key': 'yarz_xK9mP2nL8vR4qH7', 'Content-Type': 'application/json' };
+        ['https://yarzclothing.xyz/__purge', 'https://yarz.marufhasan80009.workers.dev/__purge'].forEach(function (_u) {
+          fetch(_u, {
+            method: 'POST', headers: _pHeaders, body: _pBody,
+            signal: _purgeCtrl.signal, keepalive: true
+          }).catch(function(){ /* silent — GAS auto-purge is fallback */ });
+        });
       } catch(purgeErr) { /* silent */ }
       const _syncBoxOk = $('wc-delivery-sync-indicator');
       const _syncTxtOk = $('wc-delivery-sync-text');
@@ -10375,22 +10379,38 @@ window.publishToWebsiteAction = async function() {
     // on slow networks). If Worker CORS allows our origin, this is the fastest path.
     let directOk = false;
     let directErrMsg = '';
+    // ✅ v15.50 PURGE FIX: Hit BOTH the customer-facing domain AND the
+    // workers.dev domain in parallel. Cloudflare's edge cache is per-host:
+    // a purge call to workers.dev only deletes that host's cache slots,
+    // not yarzclothing.xyz. Without firing both, customers on the custom
+    // domain saw stale data until manual "Purge Everything" in dashboard.
     try {
       const ctrl = new AbortController();
       const tid = setTimeout(() => ctrl.abort(), 10000);
-      const resp = await fetch('https://yarz.marufhasan80009.workers.dev/__purge', {
-        method: 'POST',
-        headers: { 'X-Purge-Key': 'yarz_xK9mP2nL8vR4qH7', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ actions: ['products', 'store_info', 'categories', 'delivery_charges'] }),
-        signal: ctrl.signal
-      });
+      const purgeBody = JSON.stringify({ actions: ['products', 'store_info', 'categories', 'delivery_charges'] });
+      const purgeHeaders = { 'X-Purge-Key': 'yarz_xK9mP2nL8vR4qH7', 'Content-Type': 'application/json' };
+
+      // Fire both purge URLs in parallel — first one to succeed wins.
+      // Custom domain comes first because that's where customers actually
+      // browse, so its cache slot is the critical one to invalidate.
+      const purgeUrls = [
+        'https://yarzclothing.xyz/__purge',
+        'https://yarz.marufhasan80009.workers.dev/__purge'
+      ];
+      const purgeResults = await Promise.all(purgeUrls.map(function (u) {
+        return fetch(u, {
+          method: 'POST', headers: purgeHeaders, body: purgeBody, signal: ctrl.signal
+        }).then(function (r) { return { url: u, ok: r.ok, status: r.status }; })
+          .catch(function (e) { return { url: u, ok: false, err: (e && e.message) || 'fetch failed' }; });
+      }));
       clearTimeout(tid);
-      if (resp.ok) {
+      const anyOk = purgeResults.some(function (r) { return r.ok; });
+      if (anyOk) {
         directOk = true;
       } else {
-        // Worker reachable but returned non-2xx (e.g. 403 wrong secret)
-        directErrMsg = 'Worker responded ' + resp.status;
-        try { const txt = await resp.text(); if (txt) directErrMsg += ' — ' + txt.slice(0, 200); } catch(_) {}
+        // All purge URLs failed — surface the first error
+        const firstErr = purgeResults[0] || {};
+        directErrMsg = 'Worker responded ' + (firstErr.status || firstErr.err || 'unknown');
       }
     } catch (e) {
       directErrMsg = (e && e.message) || 'fetch failed';
