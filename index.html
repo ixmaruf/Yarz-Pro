@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+all<!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
@@ -3128,6 +3128,10 @@ body.dark select.select option{
               <div class="flex-gap">
                 <label class="ios-toggle"><input type="checkbox" id="wc-enable-cod" checked><span class="slider"></span></label>
                 <div><div style="font-weight:600">Enable Cash on Delivery (COD)</div><div style="font-size:11px;color:var(--ink-3)">Turn off to force bKash/Nagad only on website</div></div>
+              </div>
+              <div class="flex-gap">
+                <label class="ios-toggle"><input type="checkbox" id="wc-freeship-advance" checked><span class="slider"></span></label>
+                <div><div style="font-weight:600">Free-Ship Advance Charge (৳100)</div><div style="font-size:11px;color:var(--ink-3)">When COD is OFF and customer unlocks free shipping, take ৳100 advance via bKash/Nagad to prevent fake orders</div></div>
               </div>
             </div>
 
@@ -8076,6 +8080,7 @@ YARZ.webControl = {
 
     // --- Cart & Checkout ---
     const cod = $('wc-enable-cod'); if(cod) cod.checked = (s['Enable COD'] == null || s['Enable COD'] === '') ? true : parseBool(s['Enable COD']); // Default true
+    const fsa = $('wc-freeship-advance'); if(fsa) fsa.checked = (s['FreeShip Advance'] == null || s['FreeShip Advance'] === '') ? true : parseBool(s['FreeShip Advance']); // Default true (security ON)
     const cd = $('wc-cart-drawer'); if(cd) cd.checked = parseBool(s['Cart Drawer']);
     const on = $('wc-order-notes'); if(on) on.checked = parseBool(s['Order Notes']);
     const cm = $('wc-checkout-mode'); if(cm) cm.value = s['Checkout Mode'] || 'website';
@@ -8692,6 +8697,7 @@ YARZ.webControl = {
 
       // Checkout
       'Enable COD': $('wc-enable-cod')?.checked ? 'true' : 'false',
+      'FreeShip Advance': $('wc-freeship-advance')?.checked ? 'true' : 'false',
       'Cart Drawer': $('wc-cart-drawer')?.checked ? 'true' : 'false',
       'Order Notes': $('wc-order-notes')?.checked ? 'true' : 'false',
       'Checkout Mode': $('wc-checkout-mode')?.value,
