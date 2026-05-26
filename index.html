@@ -6992,15 +6992,21 @@ Team YARZ`;
       if (courier !== null) payload.courier = courier;
       const res = await appsPost('updateWebsiteOrderStatus', payload);
       if(res && res.success===false) throw new Error(res.error||'Failed');
-      const o = state.data.websiteOrders.find(x=>x.orderId===orderId);
-      if(o) {
+      // ✅ v15.51 MULTI-ITEM FIX: A multi-item cart writes ONE row per item
+      // to Website_Orders, sharing the same orderId. GAS updates EVERY row
+      // for this orderId, but the previous code only updated ONE local
+      // object via `find` — leaving the other rows visually stuck on the
+      // old status until a full refresh. Now we update ALL matching rows
+      // so the UI immediately matches the server.
+      const matched = state.data.websiteOrders.filter(x => x.orderId === orderId);
+      matched.forEach(o => {
         o.status = newStatus;
-        if(courier !== null) o.courier = courier;
-      }
+        if (courier !== null) o.courier = courier;
+      });
       this.updateCounts();
       this.renderWebsite();
       YARZ.updateBadges();
-      toast(`#${orderId} → ${newStatus}`,'success');
+      toast(`#${orderId} → ${newStatus}` + (matched.length > 1 ? ` (${matched.length} items)` : ''),'success');
     } catch(e){ toast(e.message,'error'); }
     finally { hideLoader(); }
   },
@@ -7065,11 +7071,13 @@ Team YARZ`;
       if(!res || res.ok === false) throw new Error(res?.msg || res?.error || 'Failed');
       const tc = res.trackingCode || '';
       const cid = res.consignmentId || '';
-      const o = state.data.websiteOrders.find(x=>x.orderId===orderId);
-      if(o){
+      // ✅ v15.51 MULTI-ITEM FIX: Update ALL rows sharing this orderId
+      // so the multi-item cart moves to "Picked Up" together in one click.
+      const matched = state.data.websiteOrders.filter(x => x.orderId === orderId);
+      matched.forEach(o => {
         o.status = 'Picked Up';
         o.courier = 'Steadfast' + (tc ? ' | ' + tc : '');
-      }
+      });
       this.updateCounts();
       this.renderWebsite();
       YARZ.updateBadges();
@@ -7197,12 +7205,14 @@ Team YARZ`;
       // Update local state for successful ones
       (res.results || []).forEach(r => {
         if(r.ok){
-          const o = state.data.websiteOrders.find(x=>x.orderId===r.orderId);
-          if(o){
+          // ✅ v15.51 MULTI-ITEM FIX: Update every row sharing this orderId
+          // so the entire cart moves to "Picked Up" instead of just one item.
+          const matched = state.data.websiteOrders.filter(x => x.orderId === r.orderId);
+          matched.forEach(o => {
             o.status = 'Picked Up';
             const tc = r.trackingCode || r.consignmentId || '';
             o.courier = 'Steadfast' + (tc ? ' | ' + tc : '');
-          }
+          });
         }
       });
       this.updateCounts();
@@ -7259,7 +7269,10 @@ Team YARZ`;
       const status = o ? o.status : 'Pending';
       const res = await appsPost('updateWebsiteOrderStatus', { orderId, status, courier });
       if(res && res.success===false) throw new Error(res.error||'Failed');
-      if(o) o.courier = courier;
+      // ✅ v15.51 MULTI-ITEM FIX: Apply courier to every row sharing this orderId
+      state.data.websiteOrders
+        .filter(x => x.orderId === orderId)
+        .forEach(o => { o.courier = courier; });
       this.renderWebsite();
       toast(`Courier Info Updated: ${courier}`,'success');
     } catch(e){ toast(e.message,'error'); }
@@ -7436,9 +7449,10 @@ Team YARZ`;
     try {
       const res = await appsPost('deleteWebsiteOrder', { orderId });
       if(res && res.success===false) throw new Error(res.error||res.msg||'Failed');
-      // Remove locally
-      const idx = state.data.websiteOrders.findIndex(x=>x.orderId===orderId);
-      if(idx!==-1) state.data.websiteOrders.splice(idx,1);
+      // ✅ v15.51 MULTI-ITEM FIX: A multi-item order has N rows sharing the
+      // same orderId — remove ALL of them locally so the cart disappears
+      // entirely instead of leaving 2 orphan items visible until refresh.
+      state.data.websiteOrders = state.data.websiteOrders.filter(x => x.orderId !== orderId);
       this.updateCounts();
       this.renderWebsite();
       YARZ.updateBadges();
