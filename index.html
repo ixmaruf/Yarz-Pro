@@ -94,6 +94,10 @@ body.dark{
 
 body{
   font-family:'Noto Sans Bengali','Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  /* ✅ v15.58: Force Latin numerals onto Inter so digits like "1" render
+     crisp instead of falling back to weak Noto Bengali Latin glyphs. */
+  font-feature-settings: 'tnum' 1;
+  font-variant-numeric: tabular-nums;
   background:var(--bg);color:var(--ink);
   font-size:14px;line-height:1.6;
   -webkit-font-smoothing:antialiased;
@@ -1102,6 +1106,14 @@ body.light .load-overlay p{color:var(--ink)}
   word-break:break-word;line-height:1.35;
 }
 .oc-info-cell .val.bn-num{font-family:'Inter',sans-serif}
+
+/* ✅ v15.58: Reusable Latin-numeral helper. Wrap digits with class="yarz-num"
+   wherever the surrounding font is Bengali to keep "1", "৳100", "%" crisp. */
+.yarz-num{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif !important;
+  font-feature-settings:'tnum' 1;
+  font-variant-numeric:tabular-nums;
+}
 .oc-info-cell.full{grid-column:1/-1}
 .oc-info-cell.copyable{cursor:pointer;transition:all .15s}
 .oc-info-cell.copyable:hover{background:rgba(99,74,142,0.06);border-color:var(--brand)}
@@ -3131,7 +3143,7 @@ body.dark select.select option{
               </div>
               <div class="flex-gap">
                 <label class="ios-toggle"><input type="checkbox" id="wc-freeship-advance" checked><span class="slider"></span></label>
-                <div><div style="font-weight:600">Free-Ship Advance Charge (৳100)</div><div style="font-size:11px;color:var(--ink-3)">When COD is OFF and customer unlocks free shipping, take ৳100 advance via bKash/Nagad to prevent fake orders</div></div>
+                <div><div style="font-weight:600">Free-Ship Advance Charge (<span class="yarz-num">৳100</span>)</div><div style="font-size:11px;color:var(--ink-3)">When COD is OFF and customer unlocks free shipping, take <span class="yarz-num">৳100</span> advance via bKash/Nagad to prevent fake orders</div></div>
               </div>
             </div>
 
@@ -3482,7 +3494,7 @@ body.dark select.select option{
                 <div style="display:flex;gap:8px"><input type="color" id="wc-theme-card-pick" oninput="document.getElementById('wc-theme-card').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-card" class="input" placeholder="#FFFFFF" oninput="document.getElementById('wc-theme-card-pick').value=this.value"></div>
               </div>
               <div class="field"><label>Heading / Body Text</label>
-                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-text-pick" oninput="document.getElementById('wc-theme-text').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-text" class="input" placeholder="#1A1A2E" oninput="document.getElementById('wc-theme-text-pick').value=this.value"></div>
+                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-text-pick" oninput="document.getElementById('wc-theme-text').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-text" class="input" placeholder="#FFFDF8" oninput="document.getElementById('wc-theme-text-pick').value=this.value"></div>
               </div>
               <div class="field"><label>Border / Divider</label>
                 <div style="display:flex;gap:8px"><input type="color" id="wc-theme-border-pick" oninput="document.getElementById('wc-theme-border').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-border" class="input" placeholder="#E8E4DC" oninput="document.getElementById('wc-theme-border-pick').value=this.value"></div>
@@ -3494,7 +3506,7 @@ body.dark select.select option{
                 <div style="display:flex;gap:8px"><input type="color" id="wc-theme-sale-pick" oninput="document.getElementById('wc-theme-sale').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-sale" class="input" placeholder="#1A1A1A" oninput="document.getElementById('wc-theme-sale-pick').value=this.value"></div>
               </div>
               <div class="field"><label>Footer Background</label>
-                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-footer-pick" oninput="document.getElementById('wc-theme-footer').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-footer" class="input" placeholder="#1A1A2E" oninput="document.getElementById('wc-theme-footer-pick').value=this.value"></div>
+                <div style="display:flex;gap:8px"><input type="color" id="wc-theme-footer-pick" oninput="document.getElementById('wc-theme-footer').value=this.value" style="width:38px;height:36px;border:none;border-radius:8px;background:none;cursor:pointer"><input type="text" id="wc-theme-footer" class="input" placeholder="#FFFDF8" oninput="document.getElementById('wc-theme-footer-pick').value=this.value"></div>
               </div>
             </div>
             <div style="margin-top:12px;padding:10px;background:var(--surface-2);border-radius:8px;font-size:11px;color:var(--ink-3);line-height:1.6">
@@ -8367,8 +8379,8 @@ YARZ.webControl = {
       },
       reset: {
         primary: '#634A8E', accent: '#D4910A', bg: '#FBF8F1', card: '#FFFFFF',
-        text: '#1A1A2E', border: '#E8E4DC', link: '#634A8E',
-        sale: '#C0392B', footer: '#1A1A2E'
+        text: '#FFFDF8', border: '#E8E4DC', link: '#634A8E',
+        sale: '#C0392B', footer: '#FFFDF8'
       }
     };
     const p = presets[name];
@@ -8553,11 +8565,11 @@ YARZ.webControl = {
     setPair('wc-theme-accent',  'wc-theme-accent-pick',  s['Theme Accent'],  '#D4910A');
     setPair('wc-theme-bg',      'wc-theme-bg-pick',      s['Theme BG'],      '#FBF8F1');
     setPair('wc-theme-card',    'wc-theme-card-pick',    s['Theme Card BG'], '#FFFFFF');
-    setPair('wc-theme-text',    'wc-theme-text-pick',    s['Theme Text'],    '#1A1A2E');
+    setPair('wc-theme-text',    'wc-theme-text-pick',    s['Theme Text'],    '#FFFDF8');
     setPair('wc-theme-border',  'wc-theme-border-pick',  s['Theme Border'],  '#E8E4DC');
     setPair('wc-theme-link',    'wc-theme-link-pick',    s['Theme Link'],    '#634A8E');
     setPair('wc-theme-sale',    'wc-theme-sale-pick',    s['Theme Sale Price'], '#1A1A1A');
-    setPair('wc-theme-footer',  'wc-theme-footer-pick',  s['Theme Footer BG'],  '#1A1A2E');
+    setPair('wc-theme-footer',  'wc-theme-footer-pick',  s['Theme Footer BG'],  '#FFFDF8');
     // 2. Typography
     setVal('wc-heading-font', s['Heading Font']);
     setVal('wc-body-font',    s['Body Font']);
