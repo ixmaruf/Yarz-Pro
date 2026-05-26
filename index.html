@@ -3170,12 +3170,12 @@ body.dark select.select option{
             <div class="grid grid-2" style="gap:16px; margin-bottom:16px;">
               <div class="field">
                 <label>Free Shipping Target Amount (৳)</label>
-                <input type="number" id="wc-free-ship-amt" class="input" placeholder="e.g. 5000">
+                <input type="number" id="wc-free-ship-amt" class="input" placeholder="e.g. 5000" min="0" step="1">
                 <div style="font-size:10px;margin-top:4px;color:var(--ink-3)">Leaves empty to disable progress bar</div>
               </div>
               <div class="field">
                 <label>Minimum Order Amount (৳)</label>
-                <input type="number" id="wc-min-order" class="input" placeholder="e.g. 500">
+                <input type="number" id="wc-min-order" class="input" placeholder="e.g. 500" min="0" step="1">
               </div>
             </div>
           </div>
@@ -3288,6 +3288,16 @@ body.dark select.select option{
                 <div class="field">
                   <label>FB CAPI Test Event Code <span style="font-size:10px;color:var(--ink-3)">(optional)</span></label>
                   <input type="text" id="wc-fb-capi-test-code" class="input" placeholder="TEST12345 (Events Manager → Test Events)">
+                  <!-- ✅ v15.44 SAFETY: Test Mode toggle. Without this, leaving
+                       a test code in the field above would route ALL production
+                       events to FB Test Events tab → events stop counting for
+                       ad campaigns. Admin must explicitly turn ON to test, OFF
+                       to ship. -->
+                  <label class="ios-toggle" style="margin-top:8px;display:inline-flex;align-items:center;gap:8px;">
+                    <input type="checkbox" id="wc-fb-capi-test-mode">
+                    <span class="slider"></span>
+                    <span style="font-size:11px;color:var(--ink-2);font-weight:600">Enable Test Mode <span style="color:var(--danger);font-weight:700">(Production OFF until ticked)</span></span>
+                  </label>
                 </div>
                 <div class="field">
                   <label>Facebook Domain Verification</label>
@@ -8096,6 +8106,12 @@ YARZ.webControl = {
     const snappx = $('wc-snap-pixel'); if(snappx) snappx.value = s['Snapchat Pixel'] || '';
     // ✅ v11.7: Server-side CAPI + Domain Verification fields
     const fbCapiTest = $('wc-fb-capi-test-code'); if(fbCapiTest) fbCapiTest.value = s['FB CAPI Test Code'] || '';
+    // ✅ v15.44: Test Mode toggle wires to "FB CAPI Test Mode" SETTINGS key
+    const fbCapiTestMode = $('wc-fb-capi-test-mode');
+    if (fbCapiTestMode) {
+      var _tmRaw = String(s['FB CAPI Test Mode'] || 'false').toLowerCase().trim();
+      fbCapiTestMode.checked = (_tmRaw === 'true' || _tmRaw === '1' || _tmRaw === 'yes' || _tmRaw === 'on');
+    }
     const fbDomVerify = $('wc-fb-domain-verify'); if(fbDomVerify) fbDomVerify.value = s['FB Domain Verify'] || '';
     const ttTok = $('wc-tt-token'); if(ttTok) ttTok.value = s['TT Access Token'] || '';
     const ttAdv = $('wc-tt-advertiser-id'); if(ttAdv) ttAdv.value = s['TT Advertiser ID'] || '';
@@ -8717,6 +8733,9 @@ YARZ.webControl = {
       'Snapchat Pixel': $('wc-snap-pixel')?.value.trim() || '',
       // ✅ v11.7: Server-side CAPI + Domain Verification
       'FB CAPI Test Code': $('wc-fb-capi-test-code')?.value.trim() || '',
+      // ✅ v15.44: Test Mode toggle — when OFF, the test code above is IGNORED
+      // by the Apps Script, so production events flow to your real ad campaigns.
+      'FB CAPI Test Mode': ($('wc-fb-capi-test-mode')?.checked ? 'true' : 'false'),
       'FB Domain Verify': $('wc-fb-domain-verify')?.value.trim() || '',
       'TT Access Token': $('wc-tt-token')?.value.trim() || '',
       'TT Advertiser ID': $('wc-tt-advertiser-id')?.value.trim() || '',
