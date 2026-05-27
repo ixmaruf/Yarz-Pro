@@ -20,8 +20,8 @@ all<!DOCTYPE html>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.1.0/fonts/remixicon.css">
 <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%23111827'/%3E%3Ctext x='60' y='76' font-family='Arial' font-size='36' font-weight='900' fill='%233FBFA5' text-anchor='middle'%3EPRO%3C/text%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%23111827'/%3E%3Ctext x='60' y='76' font-family='Arial' font-size='36' font-weight='900' fill='%233FBFA5' text-anchor='middle'%3EPRO%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%23111827'/%3E%3Ccircle cx='60' cy='60' r='42' fill='%236E1F2A' stroke='%23E8D9B8' stroke-width='2.4'/%3E%3Ccircle cx='60' cy='60' r='34.4' fill='none' stroke='%23FBF8F1' stroke-width='1.2' opacity='0.85'/%3E%3Ccircle cx='47.4' cy='47.4' r='8' fill='%23FBF8F1'/%3E%3Ccircle cx='72.6' cy='47.4' r='8' fill='%23FBF8F1'/%3E%3Ccircle cx='47.4' cy='72.6' r='8' fill='%23FBF8F1'/%3E%3Ccircle cx='72.6' cy='72.6' r='8' fill='%23FBF8F1'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%23111827'/%3E%3Ccircle cx='60' cy='60' r='42' fill='%236E1F2A' stroke='%23E8D9B8' stroke-width='2.4'/%3E%3Ccircle cx='60' cy='60' r='34.4' fill='none' stroke='%23FBF8F1' stroke-width='1.2' opacity='0.85'/%3E%3Ccircle cx='47.4' cy='47.4' r='8' fill='%23FBF8F1'/%3E%3Ccircle cx='72.6' cy='47.4' r='8' fill='%23FBF8F1'/%3E%3Ccircle cx='47.4' cy='72.6' r='8' fill='%23FBF8F1'/%3E%3Ccircle cx='72.6' cy='72.6' r='8' fill='%23FBF8F1'/%3E%3C/svg%3E">
 
 <style>
 /* ============================================================
@@ -1396,6 +1396,15 @@ body.dark .sidebar{
 }
 body.dark .sidebar .brand-icon{ background:#FFFFFF !important; }
 
+/* ✅ v15.61: When the brand-icon contains the YARZ shirt-button SVG (no <img>),
+   override the white background to dark navy so the burgundy disc + cream stroke
+   read as a sealed lapel chip rather than a glaring white tile. */
+.sidebar .brand-icon:has(svg){
+  background: #0F1623 !important;
+  padding: 6px;
+}
+body.dark .sidebar .brand-icon:has(svg){ background: #0F1623 !important; }
+
 .sidebar .brand-text{
   font-weight:800 !important; font-size:16px !important;
   font-family:'Inter',sans-serif !important;
@@ -2495,7 +2504,7 @@ body.dark select.select option{
     <div class="blob b3"></div>
   </div>
   <div class="login-card">
-    <div class="login-logo"><div style="width:64px;height:64px;background:#111827;color:#3FBFA5;border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;font-weight:900;font-size:24px;margin:0 auto 16px;">PRO</div></div>
+    <div class="login-logo" style="background:#0F1623 !important;border-radius:18px !important;padding:0 !important;"><svg viewBox="0 0 24 24" width="50" height="50" aria-hidden="true" style="width:50px;height:50px;display:block;"><circle cx="12" cy="12" r="10.25" fill="#6E1F2A" stroke="#E8D9B8" stroke-width="0.7"/><circle cx="12" cy="12" r="8.4" fill="none" stroke="#FBF8F1" stroke-width="0.5" opacity="0.85"/><circle cx="8.7" cy="8.7" r="2.0" fill="#FBF8F1"/><circle cx="15.3" cy="8.7" r="2.0" fill="#FBF8F1"/><circle cx="8.7" cy="15.3" r="2.0" fill="#FBF8F1"/><circle cx="15.3" cy="15.3" r="2.0" fill="#FBF8F1"/></svg></div>
     <h1>YARZ PRO</h1>
     <p>Private Business Dashboard</p>
     <form id="login-form" onsubmit="return false">
@@ -2529,7 +2538,7 @@ body.dark select.select option{
   <!-- Sidebar (Desktop) -->
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-icon" style="background:#111827; color:#3FBFA5; font-family:Arial, sans-serif; font-weight:900; font-size:14px; letter-spacing:1px; border-radius:8px;">PRO</div>
+      <div class="brand-icon"><svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><circle cx="12" cy="12" r="10.25" fill="#6E1F2A" stroke="#E8D9B8" stroke-width="0.7"/><circle cx="12" cy="12" r="8.4" fill="none" stroke="#FBF8F1" stroke-width="0.5" opacity="0.85"/><circle cx="8.7" cy="8.7" r="2.0" fill="#FBF8F1"/><circle cx="15.3" cy="8.7" r="2.0" fill="#FBF8F1"/><circle cx="8.7" cy="15.3" r="2.0" fill="#FBF8F1"/><circle cx="15.3" cy="15.3" r="2.0" fill="#FBF8F1"/></svg></div>
       <div>
         <div class="brand-text">YARZ Pro</div>
         <div class="brand-sub">Business OS</div>
@@ -5094,7 +5103,7 @@ const YARZ = window.YARZ = {
       if(typeof Notification !== 'undefined' && Notification.permission === 'granted'){
         new Notification('YARZ PRO — নতুন অর্ডার', {
           body: `${newOnes.length} টি নতুন ওয়েবসাইট অর্ডার এসেছে`,
-          icon: 'images/yarz-logo.webp'
+          icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='24' fill='%23111827'/%3E%3Ccircle cx='60' cy='60' r='42' fill='%236E1F2A' stroke='%23E8D9B8' stroke-width='2.4'/%3E%3Ccircle cx='60' cy='60' r='34.4' fill='none' stroke='%23FBF8F1' stroke-width='1.2' opacity='0.85'/%3E%3Ccircle cx='47.4' cy='47.4' r='8' fill='%23FBF8F1'/%3E%3Ccircle cx='72.6' cy='47.4' r='8' fill='%23FBF8F1'/%3E%3Ccircle cx='47.4' cy='72.6' r='8' fill='%23FBF8F1'/%3E%3Ccircle cx='72.6' cy='72.6' r='8' fill='%23FBF8F1'/%3E%3C/svg%3E"
         });
       }
     }
