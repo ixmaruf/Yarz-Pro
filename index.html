@@ -4753,6 +4753,11 @@ const STATUS_COLORS = {
 const BN_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const BN_DIGITS = ["0","1","2","3","4","5","6","7","8","9"];
 function toBn(n){ return String(n).replace(/\d/g, d=>BN_DIGITS[d]); }
+// ✅ v16.1 ONE-SIZE: friendly label for the canonical "ONE" size token used by
+// sizeless products (caps/watches/etc.). Everything else passes through as-is.
+function _ordSize(s){ return (String(s||'').trim().toUpperCase()==='ONE') ? 'One Size' : s; }
+// ✅ v16.1 ONE-SIZE: true when an inventory product object is sizeless.
+function _isOneSizeP(p){ return p && String(p.hiddenSizes||'').trim().toUpperCase()==='__ONESIZE__'; }
 
 /* ============================================================
  ✅ TRACKING / COURIER PARSING HELPERS
@@ -5415,12 +5420,14 @@ const YARZ = window.YARZ = {
 
  _updateStkBadge: function(prefix){
  const pName = $(prefix+'-product').value;
- const size = $(prefix+'-size').value;
+ let size = $(prefix+'-size').value;
  const badge = $(prefix+'-stk-badge');
  if(!badge) return;
  if(!pName || !size) { badge.style.display = 'none'; return; }
  const p = state.data.inventory.find(x=>x.name===pName);
  if(!p) { badge.style.display = 'none'; return; }
+ // ✅ v16.1 ONE-SIZE: the "ONE" token's stock lives in the M slot.
+ if(String(size).toUpperCase() === 'ONE') size = 'M';
  const stk = (p['stk'+size]||0) - (p['sold'+size]||0);
  badge.style.display = 'inline-block';
  badge.innerHTML = `Stock: ${stk}`;
@@ -5644,7 +5651,7 @@ const YARZ = window.YARZ = {
    ${o.products.map(p => `
    <div style="display:flex; justify-content:space-between; font-size:11.5px; margin-bottom:3px; color:var(--ink-2); line-height:1.4;">
    <span style="flex:1; padding-right:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-    <b style="color:var(--ink-1)">${toBn(p.qty||1)}x</b> ${esc(p.product)} <span style="opacity:0.7">${p.size ? `(${esc(p.size)})` : ''}</span>
+    <b style="color:var(--ink-1)">${toBn(p.qty||1)}x</b> ${esc(p.product)} <span style="opacity:0.7">${p.size ? `(${esc(_ordSize(p.size))})` : ''}</span>
    </span>
    <span style="font-weight:600; flex-shrink:0;">${fmtBDT((parseFloat(p.price)||0)*(parseInt(p.qty)||1))}</span>
    </div>
@@ -6108,7 +6115,7 @@ YARZ.inv = {
   ${lowStock?`<span class="chip chip-red">Low</span>`:''}
   <span style="opacity:0.7">${esc(p.category||'—')}</span>
   </div>
-  <div class="li-sub">S:${toBn(p.stkS-p.soldS)} M:${toBn(p.stkM-p.soldM)} L:${toBn(p.stkL-p.soldL)} XL:${toBn(p.stkXL-p.soldXL)} XXL:${toBn(p.stkXXL-p.soldXXL)} 3XL:${toBn(p.stk3XL-p.sold3XL)} • Sold: ${toBn(p.totalSold)}</div>
+  <div class="li-sub">${_isOneSizeP(p)?('One Size: '+toBn(p.stkM-p.soldM)):('S:'+toBn(p.stkS-p.soldS)+' M:'+toBn(p.stkM-p.soldM)+' L:'+toBn(p.stkL-p.soldL)+' XL:'+toBn(p.stkXL-p.soldXL)+' XXL:'+toBn(p.stkXXL-p.soldXXL)+' 3XL:'+toBn(p.stk3XL-p.sold3XL))} • Sold: ${toBn(p.totalSold)}</div>
   </div>
   <div class="li-right">
   <div class="price">${fmtBDT(p.sale)}</div>
@@ -6248,9 +6255,10 @@ YARZ.inv = {
   <table style="width:100%;font-size:12.5px">
   <thead><tr style="opacity:0.7"><th style="text-align:left;padding:4px">Size</th><th style="padding:4px">Stock</th><th style="padding:4px">Sold</th><th style="padding:4px">Left</th></tr></thead>
   <tbody>
-  ${['S','M','L','XL','XXL','3XL'].map(sz=>{
+  ${(_isOneSizeP(p)?['M']:['S','M','L','XL','XXL','3XL']).map(sz=>{
    const s=p['stk'+sz], so=p['sold'+sz], l=s-so;
-   return `<tr><td style="padding:5px"><b>${sz}</b></td><td style="text-align:center">${toBn(s)}</td><td style="text-align:center">${toBn(so)}</td><td style="text-align:center;color:${l<=0?'#F87171':'#34D399'};font-weight:700">${toBn(l)}</td></tr>`;
+   const lbl=_isOneSizeP(p)?'One Size':sz;
+   return `<tr><td style="padding:5px"><b>${lbl}</b></td><td style="text-align:center">${toBn(s)}</td><td style="text-align:center">${toBn(so)}</td><td style="text-align:center;color:${l<=0?'#F87171':'#34D399'};font-weight:700">${toBn(l)}</td></tr>`;
   }).join('')}
   </tbody>
   </table>
@@ -6323,6 +6331,10 @@ YARZ.inv = {
  const threshold = int(state.data.settings['Low Stock Threshold']||5);
  const items = state.data.inventory.filter(p=>{
  if(p.status!=='Active') return false;
+ // ✅ v16.1 ONE-SIZE: sizeless products only have the M slot — check just
+ // that one, otherwise the 5 always-zero size slots falsely flag every
+ // one-size product as "low stock".
+ if(_isOneSizeP(p)) return (p.stkM-p.soldM) <= threshold;
  const sizes = [p.stkS-p.soldS, p.stkM-p.soldM, p.stkL-p.soldL, p.stkXL-p.soldXL, p.stkXXL-p.soldXXL, p.stk3XL-p.sold3XL];
  return sizes.some(s=>s<=threshold);
  });
@@ -6335,10 +6347,11 @@ YARZ.inv = {
  <div class="list" style="max-height:60vh;overflow-y:auto">
   ${items.length ? items.map(p=>{
   const alerts = [];
-  ['S','M','L','XL','XXL','3XL'].forEach(sz=>{
+  (_isOneSizeP(p)?['M']:['S','M','L','XL','XXL','3XL']).forEach(sz=>{
   const left = p['stk'+sz]-p['sold'+sz];
-  if(left<=0) alerts.push(`<span class="chip chip-red">${sz}:⛔</span>`);
-  else if(left<=threshold) alerts.push(`<span class="chip chip-amber">${sz}:${toBn(left)}</span>`);
+  const lbl = _isOneSizeP(p)?'One Size':sz;
+  if(left<=0) alerts.push(`<span class="chip chip-red">${lbl}:⛔</span>`);
+  else if(left<=threshold) alerts.push(`<span class="chip chip-amber">${lbl}:${toBn(left)}</span>`);
   });
   return `<div class="list-item">
   <div class="thumb" style="${p.img1?`background-image:url('${esc(getImgSrc(p.img1))}')`:''}">${p.img1?'':'<i class=\"fas fa-triangle-exclamation\"></i>'}</div>
@@ -6400,15 +6413,16 @@ YARZ.inv = {
   <span class="chip ${p.status==='Active'?'chip-green':'chip-amber'}" style="font-size:10px">${esc(p.status)}</span>
   </div>
   <div class="grid grid-4" style="gap:6px">
-  ${['S','M','L','XL','XXL','3XL'].map(sz=>{
+  ${(_isOneSizeP(p)?['M']:['S','M','L','XL','XXL','3XL']).map(sz=>{
   const left = p['stk'+sz]-p['sold'+sz];
+  const szLbl = _isOneSizeP(p)?'One Size':sz;
   const pendVal = pend[sz];
   const previewLeft = (pendVal !== undefined && pendVal !== null && pendVal !== '')
    ? (parseInt(pendVal,10) || 0) - p['sold'+sz]
    : left;
   const colorVal = (pendVal !== undefined && pendVal !== null && pendVal !== '') ? previewLeft : left;
   return `<div style="text-align:center;padding:6px;background:rgba(255,255,255,0.04);border-radius:10px">
-   <div style="font-size:10px;opacity:0.6">${sz} <span style="opacity:0.5">(${toBn(left)})</span></div>
+   <div style="font-size:10px;opacity:0.6">${szLbl} <span style="opacity:0.5">(${toBn(left)})</span></div>
    <input type="number" inputmode="numeric" min="0" 
    class="input sm-stock-input" 
    data-product="${esc(p.name)}" data-size="${sz}" 
@@ -6881,8 +6895,12 @@ YARZ.inv = {
   if(cAct)  p.couponActive = cAct;
   if(cCode)   p.couponCode = cCode;
   if(cDisc !== null) p.couponDisc = cDisc;
-  if(hiddenSizes === '__CLEAR__') p.hiddenSizes = '';
-  else if(hiddenSizes !== null) p.hiddenSizes = hiddenSizes;
+  // ✅ v16.1 ONE-SIZE GUARD: don't wipe a sizeless product's sentinel via
+  // a Size-Visibility bulk edit (mirrors the server guard in applyBulkEdit).
+  if(String(p.hiddenSizes||'').trim().toUpperCase() !== '__ONESIZE__'){
+   if(hiddenSizes === '__CLEAR__') p.hiddenSizes = '';
+   else if(hiddenSizes !== null) p.hiddenSizes = hiddenSizes;
+  }
  });
 
  toast(`${toBn(names.length)} items Product Success Update happens ✅`,'success');
@@ -7041,7 +7059,7 @@ Thank you for choosing YARZ! We are excited to let you know that your order has 
 
 🏷️ Order Details:
 - Product: ${o.product||''}
-- Size: ${o.size||'N/A'}
+- Size: ${_ordSize(o.size)||'N/A'}
 - Quantity: ${qty}
 - Order ID: ${o.orderId}
 
@@ -7372,7 +7390,7 @@ Team YARZ`;
   <div class="oc-product-info">
   <a class="oc-product-name" onclick="event.stopPropagation();YARZ.inv.showDetails('${esc(p.product||'')}')">${esc(p.product||'No product name')}</a>
   <div class="oc-product-attrs">
-   ${p.size ? `<span class="attr"><i class="ri-shirt-line"></i>Size: <b>${esc(p.size)}</b></span>` : ''}
+   ${p.size ? `<span class="attr"><i class="ri-shirt-line"></i>Size: <b>${esc(_ordSize(p.size))}</b></span>` : ''}
    <span class="attr"><i class="ri-stack-line"></i>Quantity: <b class="bn-num">${toBn(pQty)}</b></span>
    <span class="attr"><i class="ri-price-tag-3-line"></i>Per piece: <b class="bn-num">${fmtBDT(pPrice)}</b></span>
   </div>
@@ -7965,7 +7983,7 @@ Team YARZ`;
  if(!o) return '';
  const phone = this._normalizeBdPhone(o.phone) || (o.phone||'');
  const prods = (o.products || [{product:o.product,size:o.size,qty:o.qty,price:o.price}]);
- const productLines = prods.map(p=>`Product: ${p.product||''} (Size: ${p.size||'-'}, Qty: ${p.qty||1})`).join('\n');
+ const productLines = prods.map(p=>`Product: ${p.product||''} (Size: ${_ordSize(p.size)||'-'}, Qty: ${p.qty||1})`).join('\n');
  const total = parseFloat(o.totalAmount||o.total||0);
  return [
  `Name: ${o.customer||''}`,
@@ -8082,7 +8100,7 @@ Team YARZ`;
   <div class="thumb"><i class="ri-shopping-bag-3-line"></i></div>
   <div class="li-body" style="min-width:0;flex:1">
   <div class="li-title">#${esc(o.orderId)} — ${esc(o.customer)}</div>
-  <div class="li-sub"><i class="ri-phone-line"></i> <span class="bn-num">${esc(o.phone)}</span> · <span style="cursor:pointer;color:var(--brand);font-weight:700;text-decoration:underline;font-size:13.5px;" onclick="YARZ.inv.showDetails('${esc(o.product)}')"><i class="ri-shopping-bag-line"></i> ${esc(o.product)}</span> (${esc(o.size)}×<span class="bn-num">${toBn(o.qty)}</span>)</div>
+  <div class="li-sub"><i class="ri-phone-line"></i> <span class="bn-num">${esc(o.phone)}</span> · <span style="cursor:pointer;color:var(--brand);font-weight:700;text-decoration:underline;font-size:13.5px;" onclick="YARZ.inv.showDetails('${esc(o.product)}')"><i class="ri-shopping-bag-line"></i> ${esc(o.product)}</span> (${esc(_ordSize(o.size))}×<span class="bn-num">${toBn(o.qty)}</span>)</div>
   <div class="li-sub bn-num">${fmtDateTime(o.date)} · ${esc(o.payment)}</div>
   ${trackingHtml}
   <div class="li-actions" style="margin-top:8px;flex-wrap:wrap;gap:6px">
@@ -8242,7 +8260,7 @@ Team YARZ`;
  return `
  <div class="list-item">
   <div class="li-body">
-  <div class="li-title" style="font-size:13.5px">${esc(o.product||'—')} <span style="opacity:0.6;font-weight:500">${o.size?('• '+esc(o.size)):''} ${o.qty?('× '+toBn(o.qty)):''}</span></div>
+  <div class="li-title" style="font-size:13.5px">${esc(o.product||'—')} <span style="opacity:0.6;font-weight:500">${o.size?('• '+esc(_ordSize(o.size))):''} ${o.qty?('× '+toBn(o.qty)):''}</span></div>
   <div class="li-sub"><i class="ri-hashtag"></i>${esc(o.orderId||'—')} • ${o.date?fmtDateBn(o.date):'—'} ${src?('• '+esc(src)):''}</div>
   </div>
   <div class="li-right" style="text-align:right">
@@ -8266,7 +8284,7 @@ Team YARZ`;
   <div class="stat-card glass" style="padding:10px"><div class="stat-label">Total Spent</div><div class="stat-value text-green" style="font-size:16px">${fmtBDT(totalSpent)}</div></div>
   <div class="stat-card glass" style="padding:10px"><div class="stat-label">Total Orders</div><div class="stat-value" style="font-size:16px">${toBn(all.length)}</div></div>
   <div class="stat-card glass" style="padding:10px"><div class="stat-label">Avg Order Value</div><div class="stat-value text-blue" style="font-size:16px">${fmtBDT(avgValue)}</div></div>
-  <div class="stat-card glass" style="padding:10px"><div class="stat-label">Favourite Size</div><div class="stat-value text-purple" style="font-size:16px">${esc(favSize)}</div></div>
+  <div class="stat-card glass" style="padding:10px"><div class="stat-label">Favourite Size</div><div class="stat-value text-purple" style="font-size:16px">${esc(_ordSize(favSize))}</div></div>
  </div>
  <div class="flex-gap mb-3" style="gap:6px;flex-wrap:wrap">
   <span class="chip chip-green">✓ Delivered: ${toBn(delivered)}</span>
@@ -10371,6 +10389,25 @@ YARZ._onComboChange = function(id){
  } else {
  wrap.classList.remove('show-custom');
  }
+ // ✅ v16.1 ONE-SIZE: when the chosen Category is a typically-sizeless one
+ // (cap, watch, wallet, etc.), auto-enable the "One Size" toggle so the owner
+ // doesn't have to think about which size box to use. Only auto-applies while
+ // the toggle hasn't been manually touched (data-touched flag), so the owner
+ // can always override. Fires for both add + edit product modals.
+ if(id === 'f-cat'){
+ try {
+  const tog = $('f-onesize');
+  if(tog && !tog.dataset.touched){
+  const ONE_SIZE_CATS = ['cap','hat','watch','wallet','sunglasses','belt','accessories'];
+  const catVal = (readComboValue('f-cat')||'').trim().toLowerCase();
+  const shouldOne = ONE_SIZE_CATS.indexOf(catVal) !== -1;
+  if(tog.checked !== shouldOne){
+   tog.checked = shouldOne;
+   if(typeof YARZ._toggleOneSize === 'function') YARZ._toggleOneSize(shouldOne);
+  }
+  }
+ } catch(e){}
+ }
 };
 
 const modalBuilders = {
@@ -10455,13 +10492,26 @@ const modalBuilders = {
  </div>
 
  <div class="modal-section-title">📊 Stock</div>
- <div class="row">
+ <div class="field" style="margin-bottom:10px;display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px">
+  <label class="ios-toggle" style="margin:0">
+   <input type="checkbox" id="f-onesize" onchange="this.dataset.touched='1'; YARZ._toggleOneSize(this.checked)">
+   <span class="slider"></span>
+  </label>
+  <div style="line-height:1.3">
+   <div style="font-size:12.5px;font-weight:700;color:var(--ink)">One Size / No Size</div>
+   <div style="font-size:10.5px;color:var(--ink-3)">Cap, watch, blanket etc. — sells as single piece, no S/M/L</div>
+  </div>
+ </div>
+ <div class="row" id="f-size-grid">
   <div class="field"><label>S</label><input id="f-sS" type="number" class="input" value="0"></div>
   <div class="field"><label>M</label><input id="f-sM" type="number" class="input" value="0"></div>
   <div class="field"><label>L</label><input id="f-sL" type="number" class="input" value="0"></div>
   <div class="field"><label>XL</label><input id="f-sXL" type="number" class="input" value="0"></div>
   <div class="field"><label>XXL</label><input id="f-sXXL" type="number" class="input" value="0"></div>
   <div class="field"><label>3XL</label><input id="f-s3XL" type="number" class="input" value="0"></div>
+ </div>
+ <div class="row" id="f-onesize-qty-wrap" style="display:none">
+  <div class="field" style="flex:1"><label>Quantity (pieces in stock)</label><input id="f-onesize-qty" type="number" class="input" value="0" placeholder="e.g. 25"></div>
  </div>
 
  <div class="modal-actions">
@@ -10534,13 +10584,26 @@ const modalBuilders = {
   <div class="field"><label>${esc(z2)}</label><input id="f-dout" type="number" class="input" value="${p.deliveryOutside||0}"></div>
  </div>
  <div class="modal-section-title">📊 Stock</div>
- <div class="row">
+ <div class="field" style="margin-bottom:10px;display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px">
+  <label class="ios-toggle" style="margin:0">
+   <input type="checkbox" id="f-onesize" ${String(p.hiddenSizes||'').trim().toUpperCase()==='__ONESIZE__'?'checked':''} onchange="this.dataset.touched='1'; YARZ._toggleOneSize(this.checked)">
+   <span class="slider"></span>
+  </label>
+  <div style="line-height:1.3">
+   <div style="font-size:12.5px;font-weight:700;color:var(--ink)">One Size / No Size</div>
+   <div style="font-size:10.5px;color:var(--ink-3)">Cap, watch, blanket etc. — sells as single piece, no S/M/L</div>
+  </div>
+ </div>
+ <div class="row" id="f-size-grid" style="display:${String(p.hiddenSizes||'').trim().toUpperCase()==='__ONESIZE__'?'none':'flex'}">
   <div class="field"><label>S</label><input id="f-sS" type="number" class="input" value="${p.stkS}"></div>
   <div class="field"><label>M</label><input id="f-sM" type="number" class="input" value="${p.stkM}"></div>
   <div class="field"><label>L</label><input id="f-sL" type="number" class="input" value="${p.stkL}"></div>
   <div class="field"><label>XL</label><input id="f-sXL" type="number" class="input" value="${p.stkXL}"></div>
   <div class="field"><label>XXL</label><input id="f-sXXL" type="number" class="input" value="${p.stkXXL}"></div>
   <div class="field"><label>3XL</label><input id="f-s3XL" type="number" class="input" value="${p.stk3XL}"></div>
+ </div>
+ <div class="row" id="f-onesize-qty-wrap" style="display:${String(p.hiddenSizes||'').trim().toUpperCase()==='__ONESIZE__'?'flex':'none'}">
+  <div class="field" style="flex:1"><label>Quantity (pieces in stock)</label><input id="f-onesize-qty" type="number" class="input" value="${p.stkM}" placeholder="e.g. 25"></div>
  </div>
  <div class="modal-actions">
   <button class="btn btn-ghost" onclick="YARZ.closeModal()">Cancel</button>
@@ -10758,6 +10821,28 @@ window.calcDisc = function(){
  }
 };
 
+YARZ._toggleOneSize = function(on){
+ // ✅ v16.1 ONE-SIZE: toggle between the 6-size grid and a single Quantity
+ // input in the add/edit product modal. Pure UI — the save functions read
+ // the visible control. When switching ON, seed the qty from the M field so
+ // an existing value isn't lost; when OFF, push the qty back into M.
+ try {
+ const grid = $('f-size-grid');
+ const qtyWrap = $('f-onesize-qty-wrap');
+ if(!grid || !qtyWrap) return;
+ if(on){
+  const cur = $('f-onesize-qty');
+  const mVal = $('f-sM') ? (parseInt($('f-sM').value,10)||0) : 0;
+  if(cur && (!cur.value || cur.value==='0') && mVal>0) cur.value = mVal;
+  grid.style.display = 'none';
+  qtyWrap.style.display = 'flex';
+ } else {
+  grid.style.display = 'flex';
+  qtyWrap.style.display = 'none';
+ }
+ } catch(e){}
+};
+
 YARZ._saveNewProduct = async function(){
  const name = $('f-name').value.trim();
  if(!name){ toast('Name required','error'); return; }
@@ -10780,6 +10865,16 @@ YARZ._saveNewProduct = async function(){
  sS:int($('f-sS')?$('f-sS').value:0), sM:int($('f-sM').value), sL:int($('f-sL').value),
  sXL:int($('f-sXL').value), sXXL:int($('f-sXXL').value), s3XL:int($('f-s3XL')?$('f-s3XL').value:0)
  };
+ // ✅ v16.1 ONE-SIZE: if the "One Size" toggle is on, store the single qty in
+ // the M slot, zero every other size, and flag the product sizeless.
+ const _oneSizeNew = $('f-onesize') && $('f-onesize').checked;
+ if(_oneSizeNew){
+ const _q = $('f-onesize-qty') ? int($('f-onesize-qty').value) : 0;
+ d.oneSize = true;
+ d.sS=0; d.sM=_q; d.sL=0; d.sXL=0; d.sXXL=0; d.s3XL=0;
+ } else {
+ d.oneSize = false;
+ }
  const btn = $('save-product'); btn.disabled = true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
  try {
  // ✅ INSTANT UI SERVER: Close modal and update UI immediately (Zero latency)
@@ -10792,7 +10887,8 @@ YARZ._saveNewProduct = async function(){
  stkS: d.sS, stkM: d.sM, stkL: d.sL, stkXL: d.sXL, stkXXL: d.sXXL, stk3XL: d.s3XL,
  soldS: 0, soldM: 0, soldL: 0, soldXL: 0, soldXXL: 0, sold3XL: 0,
  deliveryDhaka: d.din, deliveryOutside: d.dout,
- couponActive: d.cAct, couponCode: d.cCode, couponDisc: d.cDisc
+ couponActive: d.cAct, couponCode: d.cCode, couponDisc: d.cDisc,
+ hiddenSizes: d.oneSize ? '__ONESIZE__' : ''
  });
  YARZ.render();
  toast('Saving (Background)...', 'info');
@@ -10844,6 +10940,17 @@ YARZ._saveEditProduct = async function(){
  sS:int($('f-sS')?$('f-sS').value:0), sM:int($('f-sM').value), sL:int($('f-sL').value),
  sXL:int($('f-sXL').value), sXXL:int($('f-sXXL').value), s3XL:int($('f-s3XL')?$('f-s3XL').value:0)
  };
+ // ✅ v16.1 ONE-SIZE: mirror the add-form logic. Toggle on → qty into M slot,
+ // others zeroed, oneSize:true (GAS writes the "__ONESIZE__" sentinel). Toggle
+ // off → oneSize:false (GAS clears the sentinel if it was set).
+ const _oneSizeEdit = $('f-onesize') && $('f-onesize').checked;
+ if(_oneSizeEdit){
+ const _q = $('f-onesize-qty') ? int($('f-onesize-qty').value) : 0;
+ d.oneSize = true;
+ d.sS=0; d.sM=_q; d.sL=0; d.sXL=0; d.sXXL=0; d.s3XL=0;
+ } else {
+ d.oneSize = false;
+ }
  const btn = $('save-edit'); btn.disabled = true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>';
  try {
  // ✅ INSTANT UI SERVER: Update state instantly (Zero latency)
@@ -10856,6 +10963,9 @@ YARZ._saveEditProduct = async function(){
  p.stkS = d.sS; p.stkM = d.sM; p.stkL = d.sL; p.stkXL = d.sXL; p.stkXXL = d.sXXL; p.stk3XL = d.s3XL;
  p.deliveryDhaka = d.din; p.deliveryOutside = d.dout;
  p.couponActive = d.cAct; p.couponCode = d.cCode; p.couponDisc = d.cDisc;
+ // ✅ v16.1 ONE-SIZE: reflect the sizeless flag in memory so the inventory
+ // list + a re-open of the edit modal show the correct state immediately.
+ p.hiddenSizes = d.oneSize ? '__ONESIZE__' : (String(p.hiddenSizes||'').trim().toUpperCase()==='__ONESIZE__' ? '' : (p.hiddenSizes||''));
  }
  YARZ.render();
  toast('Updating (Background)...', 'info');
@@ -10894,7 +11004,10 @@ YARZ._saveSale = async function(){
  const qty = int($('se-qty').value)||1;
  const pData = state.data.inventory.find(x=>x.name === product);
  if(pData) {
- const left = pData['stk'+size] - pData['sold'+size];
+ // ✅ v16.1 ONE-SIZE: "ONE" stock lives in the M slot — normalize for the
+ // oversell check + optimistic update so the guard isn't bypassed (NaN).
+ const _sk = (String(size).toUpperCase()==='ONE') ? 'M' : size;
+ const left = pData['stk'+_sk] - pData['sold'+_sk];
  if(left < qty) {
  if(left <= 0) { toast(`Out of stock! (${size} Size end)`, 'error'); return; }
  else if(!confirm(`Warning: Stock just ${left} pcs ! You ${qty} pcs to want?`)) return;
@@ -10904,7 +11017,7 @@ YARZ._saveSale = async function(){
  try {
  // ✅ INSTANT UI SERVER
  YARZ.closeModal();
- if(pData) pData['sold'+size] += qty; // Optimistic stock update
+ if(pData) { const _sk2 = (String(size).toUpperCase()==='ONE') ? 'M' : size; pData['sold'+_sk2] += qty; } // Optimistic stock update
  YARZ.render();
  toast('Saving sale (Background)...', 'info');
 
@@ -10942,8 +11055,27 @@ YARZ._showProductPreview = function(prefix){
  $(pfx+'-prod-name').textContent = p.name;
  $(pfx+'-prod-cat').textContent = (p.category||'') + (p.fabric?' · '+p.fabric:'') + (p.badge?' · '+p.badge:'');
  $(pfx+'-prod-price').textContent = fmtBDT(p.sale) + (p.regular>p.sale ? ' (MRP: '+fmtBDT(p.regular)+')' : '');
+ // ✅ v16.1 ONE-SIZE: if the picked product is sizeless, collapse the size
+ // dropdown to a single "One Size" option (value "ONE", maps to the M slot
+ // server-side) and show one stock chip. Otherwise restore the 6-size list.
+ const _isOne = String(p.hiddenSizes||'').trim().toUpperCase() === '__ONESIZE__';
+ const sizeSel = $(pfx+'-size');
+ if(sizeSel){
+ if(_isOne){
+  sizeSel.innerHTML = '<option value="ONE">One Size</option>';
+ } else if(sizeSel.options.length !== 6 || sizeSel.options[0].value === 'ONE'){
+  // Rebuild the standard 6-size list (only if it was previously collapsed)
+  sizeSel.innerHTML = ['S','M','L','XL','XXL','3XL'].map(function(s){return '<option>'+s+'</option>';}).join('');
+ }
+ }
+ if(_isOne){
+ var oneLeft = Math.max(0, (p.stkM||0) - (p.soldM||0));
+ $(pfx+'-prod-stock').innerHTML = '<span class="chip '+(oneLeft>0?'chip-green':'chip-red')+'" style="font-size:10px">One Size: '+toBn(oneLeft)+'</span>';
+ } else {
  const sizes = [['S',p.stkS-p.soldS],['M',p.stkM-p.soldM],['L',p.stkL-p.soldL],['XL',p.stkXL-p.soldXL],['XXL',p.stkXXL-p.soldXXL],['3XL',p.stk3XL-p.sold3XL]];
  $(pfx+'-prod-stock').innerHTML = sizes.map(([sz,qty])=>`<span class="chip ${qty>0?'chip-green':'chip-red'}" style="font-size:10px">${sz}: ${toBn(Math.max(0,qty))}</span>`).join('');
+ }
+ if(typeof YARZ._updateStkBadge==='function') { try{ YARZ._updateStkBadge(pfx); }catch(e){} }
 };
 
 YARZ._calcOrder = function(){
@@ -10980,7 +11112,9 @@ YARZ._saveOrder = async function(){
  };
  const pData = state.data.inventory.find(x=>x.name === prod);
  if(pData) {
- const left = pData['stk'+d.sz] - pData['sold'+d.sz];
+ // ✅ v16.1 ONE-SIZE: normalize "ONE" → M slot for the oversell guard.
+ const _osk = (String(d.sz).toUpperCase()==='ONE') ? 'M' : d.sz;
+ const left = pData['stk'+_osk] - pData['sold'+_osk];
  if(left < d.qty) {
  if(left <= 0) { toast(`Out of stock! (${d.sz} Size end)`, 'error'); return; }
  else if(!confirm(`Warning: Stock just ${left} pcs ! You ${d.qty} pcs Orders to take want?`)) return;
@@ -10990,7 +11124,7 @@ YARZ._saveOrder = async function(){
  try {
  // ✅ INSTANT UI SERVER
  YARZ.closeModal();
- if(pData) pData['sold'+d.sz] += d.qty; // Optimistic stock decrease
+ if(pData) { const _osk2 = (String(d.sz).toUpperCase()==='ONE') ? 'M' : d.sz; pData['sold'+_osk2] += d.qty; } // Optimistic stock decrease
  
  // Optimistic Order Injection
  if (!state.data.orders) state.data.orders = [];
