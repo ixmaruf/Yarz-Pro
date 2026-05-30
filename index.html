@@ -2530,6 +2530,29 @@ body.dark select.select option{
 .stat-value, .price, .preview-price, .order-total, .qa-sub { word-break: break-all; overflow-wrap: break-word; }
 
 /* ============================================================
+ Builder — collapsible Target Links list
+ When a section has many links (20-30+), the list gets very long and
+ pushes everything else down. Collapsed state caps the visible height
+ (~3 rows) and scrolls; the "Show all / Collapse" button toggles it.
+ IMPORTANT: collapse uses max-height + overflow (NOT display:none), so
+ every <input class="wc-sec-link-input"> stays in the DOM and is still
+ read on Save — no data is ever hidden from the save routine.
+============================================================ */
+.wc-sec-links-list{
+ transition: max-height .28s ease;
+}
+.wc-sec-links-list.wc-collapsed{
+ max-height: 132px;        /* ~3 link rows */
+ overflow-y: auto;
+ padding-right: 2px;
+ -webkit-overflow-scrolling: touch;
+ mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
+ -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
+}
+.wc-sec-links-list.wc-collapsed::-webkit-scrollbar{ width:6px; }
+.wc-sec-links-list.wc-collapsed::-webkit-scrollbar-thumb{ background:var(--line-2); border-radius:999px; }
+
+/* ============================================================
  ✨ v2.1 PROFESSIONAL POLISH (visual-only, additive)
  ────────────────────────────────────────────────────────────
  Pure cosmetic upgrades layered on top of existing classes to give
@@ -4546,6 +4569,13 @@ table tbody tr:hover{ background:var(--surface-2); }
  }
 
  // Size-based detection (works on desktop)
+ // ✅ v15.99 DISABLED: This falsely triggered a full-screen "Access Restricted"
+ // block for the LEGITIMATE owner on browser zoom, OS display scaling, a
+ // docked side panel, or a restored/narrow window — locking them out of their
+ // own dashboard. Client-side code is always inspectable anyway (real security
+ // is the server-side ADMIN_SECRET), so this guard added risk without real
+ // protection. Kept the function defined (no-op call removed) to avoid touching
+ // the rest of the IIFE.
  var checkDevTools = function(){
  var threshold = 160;
  var widthDiff = window.outerWidth - window.innerWidth;
@@ -4556,12 +4586,12 @@ table tbody tr:hover{ background:var(--surface-2); }
  hideDevToolsBlock();
  }
  };
- // Only on desktop-like screens (>900px) to avoid false positives on mobile browser toolbars
- if(window.innerWidth > 900){
- setInterval(checkDevTools, 1000);
- }
+ // (v15.99) Interval intentionally NOT started — see note above.
+ // if(window.innerWidth > 900){ setInterval(checkDevTools, 1000); }
 
- // Console detection via getter trick
+ // Console detection via getter trick (DISABLED v15.99 — same reason as the
+ // size detection + debugger trap: it blocked the owner the moment they
+ // opened DevTools to troubleshoot. No real protection, only owner risk.)
  var __devCheckElement = new Image();
  Object.defineProperty(__devCheckElement, 'id', {
  get: function(){
@@ -4569,12 +4599,8 @@ table tbody tr:hover{ background:var(--surface-2); }
  return '';
  }
  });
- setInterval(function(){
- try {
- console.log(__devCheckElement);
- console.clear();
- } catch(e){}
- }, 2000);
+ // (v15.99) Interval intentionally NOT started.
+ // setInterval(function(){ try { console.log(__devCheckElement); console.clear(); } catch(e){} }, 2000);
 
  // ========== 5. Clear console periodically & silence it ==========
  setInterval(function(){ try{ console.clear(); }catch(e){} }, 1500);
@@ -4597,21 +4623,12 @@ table tbody tr:hover{ background:var(--surface-2); }
  // ========== 7. Disable copy of sensitive areas (optional light guard) ==========
  // We don't disable copy globally — user needs to copy order IDs etc.
 
- // ========== 8. Debugger trap (slows down if DevTools open) ==========
- setInterval(function(){
- (function(){
- try {
-  var start = new Date().getTime();
-  // The debugger statement pauses when DevTools is open
-  // Wrapped in function constructor to prevent source visibility
-  (new Function('debugger'))();
-  var end = new Date().getTime();
-  if(end - start > 100){
-  showDevToolsBlock();
-  }
- } catch(e){}
- })();
- }, 3000);
+ // ========== 8. Debugger trap (DISABLED v15.99) ==========
+ // Removed the active `debugger` trap: it froze the page every 3s whenever
+ // the OWNER legitimately opened DevTools to troubleshoot, actively fighting
+ // their own repair work. Client code is inspectable regardless; the real
+ // protection is the server-side ADMIN_SECRET. No-op now.
+ // (left intentionally empty)
 
 })();
 </script>
@@ -5045,13 +5062,24 @@ async function appsPost(action, payload){
  const body = Object.assign({ action: normalizedAction, key: state.apiKey, adminKey: window._adminPass || '' }, payload||{});
  
  try {
- const res = await fetch(targetUrl, {
+ // ✅ v15.99: 30s timeout via AbortController. Previously a hung Apps Script
+ // request never rejected → the login button sat on "Processing..." forever
+ // and loadAll's spinner hung indefinitely. Now it fails cleanly after 30s.
+ const _ctrl = new AbortController();
+ const _tid = setTimeout(()=>{ try{ _ctrl.abort(); }catch(e){} }, 30000);
+ let res;
+ try {
+ res = await fetch(targetUrl, {
  method:'POST',
  // text/plain → CORS preflight (OPTIONS) for; Apps Script JSON parse to can
  headers: {'Content-Type':'text/plain;charset=utf-8'},
  body: JSON.stringify(body),
- redirect:'follow'
+ redirect:'follow',
+ signal: _ctrl.signal
  });
+ } finally {
+ clearTimeout(_tid);
+ }
  const txt = await res.text();
  let parsed;
  try { parsed = JSON.parse(txt); }
@@ -5071,6 +5099,10 @@ async function appsPost(action, payload){
  }
  return parsed;
  } catch(e){
+ if(e && e.name === 'AbortError'){
+ console.error('appsPost timed out for action='+action);
+ throw new Error('Request timed out — check your internet / Apps Script and try again.');
+ }
  console.error('appsPost failed for action='+action, e);
  throw e;
  }
@@ -5109,7 +5141,9 @@ async function loadInventory(){
  } catch(e) {
  console.error('loadInventory error:', e);
  state.data.inventory = [];
- throw e; // Rethrow to let loadAll catch it, but with better error details now
+ // ✅ v15.99: No longer rethrows. With loadAll() using Promise.allSettled,
+ // a failed inventory read just yields an empty list for this cycle while
+ // every other sheet (orders/finance/settings) still loads and renders.
  }
 }
 
@@ -5314,7 +5348,14 @@ const YARZ = window.YARZ = {
  async loadAll(showMsg){
  showLoader('Google Sheets from Loading...');
  try {
- await Promise.all([
+ // ✅ v15.99 RESILIENCE: Promise.allSettled (was Promise.all). Previously, if
+ // ANY single sheet read failed (e.g. INVENTORY rethrew on a transient 5xx /
+ // quota / auth hiccup), Promise.all rejected, render() never ran, and the
+ // WHOLE panel showed empty — even the sheets that loaded fine. allSettled
+ // lets every loader finish independently; each loader already defaults its
+ // own state.data.* to [] on failure, so the panel renders with whatever
+ // loaded and the owner is never staring at a blank dashboard.
+ await Promise.allSettled([
   loadInventory(),
   loadOrders(),
   loadWebsiteOrders(),
@@ -5323,7 +5364,7 @@ const YARZ = window.YARZ = {
   loadExpenses(),
   loadSettings()
  ]);
- await loadDeliveryCharges();
+ await loadDeliveryCharges().catch(()=>{});
  state.loaded = true;
  this.render();
  // Detect new orders (for notification)
@@ -5671,9 +5712,24 @@ function setupLogin(){
  const SESSION_MAX = 8 * 60 * 60 * 1000; // 8 hours
  if(saved === '1' && savedTime && (Date.now() - savedTime) < SESSION_MAX){
  // ✅ FIX: Restore adminPass from sessionStorage so write operations work after refresh
- try { window._adminPass = atob(sessionStorage.getItem('yarz_ak')||''); } catch(e){ window._adminPass = ''; }
+ // ✅ v15.99: UTF-8-safe decode (mirror of the encode below). Plain atob()
+ // throws on non-Latin1 chars, which previously left _adminPass=''.
+ try {
+ const raw = sessionStorage.getItem('yarz_ak') || '';
+ window._adminPass = raw ? decodeURIComponent(escape(atob(raw))) : '';
+ } catch(e){ window._adminPass = ''; }
+ // ✅ v15.99: If the stored password couldn't be restored (empty/corrupt —
+ // e.g. a non-ASCII password that failed to encode on a previous version),
+ // do NOT show the app in a half-dead "logged-in but every request 403s"
+ // state. Fall through to the login screen for a clean re-auth.
+ if(window._adminPass){
  showApp();
  return;
+ } else {
+ sessionStorage.removeItem('yarz_auth');
+ sessionStorage.removeItem('yarz_auth_time');
+ sessionStorage.removeItem('yarz_ak');
+ }
  } else if(saved === '1'){
  // Expired — clean up
  sessionStorage.removeItem('yarz_auth');
@@ -5721,7 +5777,12 @@ function setupLogin(){
  LOGIN_LOCK.attempts = 0;
  sessionStorage.setItem('yarz_auth','1');
  sessionStorage.setItem('yarz_auth_time', Date.now().toString());
- try { sessionStorage.setItem('yarz_ak', btoa(p)); } catch(e){} // Store for session restore
+ // ✅ v15.99: UTF-8-safe base64 so non-ASCII passwords (Bengali, emoji,
+ // accented chars) survive session restore. Plain btoa() throws on any
+ // char > U+00FF, which silently left yarz_ak unset → "logged in but
+ // everything 403s" after refresh. unescape(encodeURIComponent()) maps
+ // the string to a Latin1-safe byte string that btoa accepts.
+ try { sessionStorage.setItem('yarz_ak', btoa(unescape(encodeURIComponent(p)))); } catch(e){}
  showApp();
  } else {
  LOGIN_LOCK.attempts++;
@@ -7002,10 +7063,15 @@ Team YARZ`;
  },
 
  // Map a stage key to the list of matching status strings
+ // ✅ v15.99 FIX: 'In Transit' (written by Steadfast / allowed by the sheet's
+ // status validation) had NO bucket → such orders silently vanished from
+ // every website tab AND every count. Added to 'shipped'. A catch-all in
+ // renderWebsite()/updateCounts() now also guarantees no status can ever
+ // make an order disappear from the UI again.
  stageStatuses: {
  new:  ['Pending','Processing','Confirmed',''],
  picked: ['Picked Up'],
- shipped: ['Ready for Delivery','Handed to Courier','Shipped'],
+ shipped: ['Ready for Delivery','Handed to Courier','Shipped','In Transit'],
  delivered: ['Delivered']
  },
 
@@ -7070,9 +7136,17 @@ Team YARZ`;
  const stageList = this.stageStatuses[stage];
 
  let items = state.data.websiteOrders.slice();
- // Include Cancelled / Returned only inside "delivered" stage as closed orders
+ // Include Cancelled / Returned only inside "delivered" stage as closed orders.
+ // ✅ v15.99: Also include any order whose status doesn't match ANY known
+ // stage bucket (unknown/legacy/future status) here, so an order can never
+ // silently disappear from every tab. "delivered" acts as the catch-all.
  if(stage === 'delivered'){
- items = items.filter(o=> stageList.includes(o.status||'') || o.status==='Cancelled' || o.status==='Returned');
+ const known = []
+  .concat(this.stageStatuses['new'])
+  .concat(this.stageStatuses['picked'])
+  .concat(this.stageStatuses['shipped'])
+  .concat(this.stageStatuses['delivered']);
+ items = items.filter(o=> stageList.includes(o.status||'') || o.status==='Cancelled' || o.status==='Returned' || !known.includes(o.status||''));
  } else {
  items = items.filter(o=> stageList.includes(o.status||''));
  }
@@ -8648,6 +8722,11 @@ YARZ.webControl = {
  
  const sContainer = $('wc-sections-container');
  if(sContainer) sContainer.innerHTML = sectionsHtml;
+ // Initialize collapsible link-list UI (count badge + Show all/Collapse
+ // button) for every rendered section.
+ if(sContainer){
+ sContainer.querySelectorAll('.wc-sec-links-container').forEach(c => this._updateLinksUI(c));
+ }
 
  // --- Product Page ---
  const qv = $('wc-quick-view'); if(qv) qv.checked = parseBool(s['Quick View']);
@@ -8785,7 +8864,7 @@ YARZ.webControl = {
  const linksHtml = links.map(lnk => `
  <div class="wc-sec-link-row" style="display:flex;gap:8px;margin-bottom:8px">
   <input type="text" class="input wc-sec-link-input" placeholder="e.g. /product/shirt" value="${esc(lnk)}" style="flex:1">
-  <button type="button" class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()" style="color:var(--danger);padding:0 8px" title="Remove Link"><i class="ri-close-line"></i></button>
+  <button type="button" class="btn btn-ghost btn-sm" onclick="YARZ.webControl._removeLink(this)" style="color:var(--danger);padding:0 8px" title="Remove Link"><i class="ri-close-line"></i></button>
  </div>
  `).join('');
 
@@ -8823,11 +8902,14 @@ YARZ.webControl = {
    </div>
    </div>
    <div class="field wc-sec-links-container" style="margin:0;flex:1;min-width:150px">
-   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-   <label style="font-size:11px;margin:0">Target Links (Products)</label>
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px">
+   <label style="font-size:11px;margin:0">Target Links (Products) <span class="wc-sec-link-count" style="color:var(--ink-3);font-weight:600"></span></label>
+   <div style="display:flex;gap:6px;align-items:center">
+   <button type="button" class="btn btn-ghost btn-sm wc-sec-links-toggle" onclick="YARZ.webControl.toggleLinksList(this)" style="font-size:10px;padding:2px 6px;border:1px solid var(--line);color:var(--ink-2);border-radius:4px;display:none"><i class="ri-arrow-down-s-line"></i> Show all</button>
    <button type="button" class="btn btn-ghost btn-sm" onclick="YARZ.webControl.addLinkToSection(this)" style="font-size:10px;padding:2px 6px;border:1px solid var(--brand);color:var(--brand);border-radius:4px"><i class="ri-add-line"></i> Add Link</button>
    </div>
-   <div class="wc-sec-links-list">
+   </div>
+   <div class="wc-sec-links-list wc-collapsed">
    ${linksHtml}
    </div>
    </div>
@@ -8838,14 +8920,54 @@ YARZ.webControl = {
  },
 
  addLinkToSection(btn) {
- const list = btn.parentElement.nextElementSibling;
+ const container = btn.closest('.wc-sec-links-container');
+ const list = container ? container.querySelector('.wc-sec-links-list') : btn.parentElement.nextElementSibling;
  if(list.children.length >= 50) { toast('Maximum 50 links allowed','error'); return; }
  const div = document.createElement('div');
  div.className = 'wc-sec-link-row';
  div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px';
  div.innerHTML = `<input type="text" class="input wc-sec-link-input" placeholder="e.g. /product/shirt" style="flex:1">
-    <button type="button" class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()" style="color:var(--danger);padding:0 8px" title="Remove Link"><i class="ri-close-line"></i></button>`;
+    <button type="button" class="btn btn-ghost btn-sm" onclick="YARZ.webControl._removeLink(this)" style="color:var(--danger);padding:0 8px" title="Remove Link"><i class="ri-close-line"></i></button>`;
  list.appendChild(div);
+ // Expand so the newly added link is visible, then refresh count/toggle UI
+ if(container){
+ list.classList.remove('wc-collapsed');
+ const tgl = container.querySelector('.wc-sec-links-toggle');
+ if(tgl) tgl.innerHTML = '<i class="ri-arrow-up-s-line"></i> Collapse';
+ this._updateLinksUI(container);
+ }
+ list.lastElementChild.querySelector('input')?.focus();
+ },
+
+ // Remove a link row, then refresh the count + toggle visibility of its section.
+ _removeLink(btn){
+ const container = btn.closest('.wc-sec-links-container');
+ btn.closest('.wc-sec-link-row')?.remove();
+ if(container) this._updateLinksUI(container);
+ },
+
+ // Collapse/expand the long link list. Inputs stay in the DOM either way
+ // (collapse only limits visible height), so saving always reads every link.
+ toggleLinksList(btn){
+ const container = btn.closest('.wc-sec-links-container');
+ if(!container) return;
+ const list = container.querySelector('.wc-sec-links-list');
+ const collapsed = list.classList.toggle('wc-collapsed');
+ btn.innerHTML = collapsed
+  ? '<i class="ri-arrow-down-s-line"></i> Show all'
+  : '<i class="ri-arrow-up-s-line"></i> Collapse';
+ },
+
+ // Keep the "N links" badge + the Show all/Collapse button in sync. The
+ // toggle button only appears once there are enough links to overflow (>3).
+ _updateLinksUI(container){
+ if(!container) return;
+ const list = container.querySelector('.wc-sec-links-list');
+ const count = list ? list.querySelectorAll('.wc-sec-link-input').length : 0;
+ const badge = container.querySelector('.wc-sec-link-count');
+ if(badge) badge.textContent = count > 0 ? '(' + count + ')' : '';
+ const tgl = container.querySelector('.wc-sec-links-toggle');
+ if(tgl) tgl.style.display = count > 3 ? '' : 'none';
  },
 
  addSection() {
@@ -8855,6 +8977,8 @@ YARZ.webControl = {
  const div = document.createElement('div');
  div.innerHTML = this._buildSectionHTML('', '', true, '', '');
  container.appendChild(div.firstElementChild);
+ const newContainer = container.lastElementChild.querySelector('.wc-sec-links-container');
+ if(newContainer) this._updateLinksUI(newContainer);
  },
 
  _buildDeliveryRowHTML(loc = {}) {
