@@ -8791,12 +8791,30 @@ YARZ.webControl = {
  if(taHolidayMsg) taHolidayMsg.value = s['Holiday Custom Message'] || '';
  const dtHolidayReturn = $('wc-holiday-return-date');
  if(dtHolidayReturn) {
- // v15.74: backfill legacy YYYY-MM-DD → YYYY-MM-DDT00:00 so that
- // <input type="datetime-local"> accepts old values (it silently drops
- // date-only strings, which would let admin overwrite the saved value
- // with empty on next save → countdown disappears unexpectedly).
- var _hrd = String(s['Holiday Return Date'] || '');
- if (/^\d{4}-\d{2}-\d{2}$/.test(_hrd)) _hrd += 'T00:00';
+ // ✅ FIX: Google Sheets coerces the saved datetime into a Date, which comes
+ // back as a UTC ISO string (e.g. "2026-06-15T04:00:00.000Z"). A raw assign
+ // made <input type="datetime-local"> silently reject it → field looked empty
+ // → next Save wiped the value → countdown vanished. Normalise ANY form
+ // (date-only, bare datetime-local, or ISO/Z) into the "YYYY-MM-DDTHH:MM"
+ // Dhaka wall-clock the input expects (timezone-independent: always +6).
+ var _hrd = String(s['Holiday Return Date'] || '').trim();
+ if (_hrd) {
+   var _bare = _hrd.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?$/);
+   if (_bare) {
+     // Already Dhaka wall-clock as admin typed; ensure a time part exists.
+     _hrd = _bare[1] + '-' + _bare[2] + '-' + _bare[3] + 'T' + (_bare[4] || '00') + ':' + (_bare[5] || '00');
+   } else {
+     var _t = Date.parse(_hrd);
+     if (!isNaN(_t)) {
+       var _dh = new Date(_t + 6 * 3600 * 1000); // shift to Dhaka, read UTC fields
+       var _p = function(n){ return String(n).padStart(2,'0'); };
+       _hrd = _dh.getUTCFullYear() + '-' + _p(_dh.getUTCMonth()+1) + '-' + _p(_dh.getUTCDate())
+            + 'T' + _p(_dh.getUTCHours()) + ':' + _p(_dh.getUTCMinutes());
+     } else {
+       _hrd = '';
+     }
+   }
+ }
  dtHolidayReturn.value = _hrd;
  }
 
