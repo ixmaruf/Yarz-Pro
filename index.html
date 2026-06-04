@@ -5421,7 +5421,7 @@ const YARZ = window.YARZ = {
  state,
 
  // ----- Init / Load -----
-  YARZ._patchInventoryPendingOrders = function() {
+  _patchInventoryPendingOrders: function() {
     if (!state.data.rawInventoryStr) return;
     state.data.inventory = JSON.parse(state.data.rawInventoryStr);
     const allPending = [...(state.data.websiteOrders || []), ...(state.data.orders || [])].filter(o => !o.status || o.status.trim() === 'Pending' || o.status.trim() === '');
@@ -5441,7 +5441,7 @@ const YARZ = window.YARZ = {
         pData.net = pData.totalSold * ((pData.sale || 0) - (pData.cost || 0));
       }
     });
-  };
+  },
  async loadAll(showMsg){
  showLoader('Google Sheets from Loading...');
  try {
