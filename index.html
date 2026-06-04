@@ -5212,8 +5212,9 @@ async function loadInventory(){
   accessory: safeStr(r[COL.ACCESSORY-1])||''
  });
  }
- state.data.inventory = items;
- } catch(e) {
+ state.data.rawInventoryStr = JSON.stringify(items);
+   state.data.inventory = items;
+   } catch(e) {
  console.error('loadInventory error:', e);
  state.data.inventory = [];
  // ✅ v15.99: No longer rethrows. With loadAll() using Promise.allSettled,
@@ -5420,6 +5421,27 @@ const YARZ = window.YARZ = {
  state,
 
  // ----- Init / Load -----
+  YARZ._patchInventoryPendingOrders = function() {
+    if (!state.data.rawInventoryStr) return;
+    state.data.inventory = JSON.parse(state.data.rawInventoryStr);
+    const allPending = [...(state.data.websiteOrders || []), ...(state.data.orders || [])].filter(o => !o.status || o.status.trim() === 'Pending' || o.status.trim() === '');
+    allPending.forEach(o => {
+      const pData = state.data.inventory.find(p => p.name === o.product);
+      if (pData) {
+        const qty = parseInt(o.qty) || 1;
+        const oSize = o.sz || o.size || 'M';
+        const _sz = String(oSize).toUpperCase() === 'ONE' ? 'M' : oSize;
+        
+        pData.totalSold = Math.max(0, (pData.totalSold || 0) - qty);
+        if (pData['sold' + _sz] !== undefined) {
+           pData['sold' + _sz] = Math.max(0, pData['sold' + _sz] - qty);
+        }
+        pData.remaining = (pData.totalStock || 0) - pData.totalSold;
+        pData.revenue = pData.totalSold * (pData.sale || 0);
+        pData.net = pData.totalSold * ((pData.sale || 0) - (pData.cost || 0));
+      }
+    });
+  };
  async loadAll(showMsg){
  showLoader('Google Sheets from Loading...');
  try {
@@ -5440,7 +5462,8 @@ const YARZ = window.YARZ = {
   loadSettings()
  ]);
  await loadDeliveryCharges().catch(()=>{});
- state.loaded = true;
+   if(typeof YARZ._patchInventoryPendingOrders === 'function') YARZ._patchInventoryPendingOrders();
+   state.loaded = true;
  this.render();
  // Detect new orders (for notification)
  this.detectNewOrders();
@@ -5508,7 +5531,8 @@ const YARZ = window.YARZ = {
  async silentRefresh(){
  try {
  await loadWebsiteOrders();
- this.updateBadges();
+   if(typeof YARZ._patchInventoryPendingOrders === 'function') YARZ._patchInventoryPendingOrders();
+   this.updateBadges();
  this.detectNewOrders();
  } catch(e){ /* silent */ }
  },
@@ -8608,7 +8632,7 @@ YARZ.rep = {
  });
  ad.forEach(a=>{ const k=keyOf(a.date); if(!k)return; out[k]=out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0}; out[k].ad += a.amount; });
  ex.forEach(e=>{ const k=keyOf(e.date); if(!k)return; out[k]=out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0}; out[k].exp += e.amount; });
- ord.forEach(o=>{ const k=keyOf(o.date); if(!k)return; out[k]=out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0}; out[k].orders++; });
+ ord.forEach(o=>{ const k=keyOf(o.date); if(!k)return; if(['Cancelled', 'Returned'].includes(o.status)) return; out[k]=out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0}; out[k].orders++; });
  return Object.keys(out).sort().map(k=>{
  const r = out[k]; const net = r.rev-r.cost-r.ad-r.exp;
  const margin = r.rev>0 ? Math.round(net/r.rev*100) : 0;
@@ -11811,3 +11835,5 @@ window.publishToWebsiteAction = async function() {
 
 </body>
 </html>
+
+
