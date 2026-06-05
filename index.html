@@ -1,4 +1,4 @@
-all<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
@@ -5422,25 +5422,9 @@ const YARZ = window.YARZ = {
 
  // ----- Init / Load -----
   _patchInventoryPendingOrders: function() {
-    if (!state.data.rawInventoryStr) return;
-    state.data.inventory = JSON.parse(state.data.rawInventoryStr);
-    const allPending = [...(state.data.websiteOrders || []), ...(state.data.orders || [])].filter(o => !o.status || o.status.trim() === 'Pending' || o.status.trim() === '');
-    allPending.forEach(o => {
-      const pData = state.data.inventory.find(p => p.name === o.product);
-      if (pData) {
-        const qty = parseInt(o.qty) || 1;
-        const oSize = o.sz || o.size || 'M';
-        const _sz = String(oSize).toUpperCase() === 'ONE' ? 'M' : oSize;
-        
-        pData.totalSold = Math.max(0, (pData.totalSold || 0) - qty);
-        if (pData['sold' + _sz] !== undefined) {
-           pData['sold' + _sz] = Math.max(0, pData['sold' + _sz] - qty);
-        }
-        pData.remaining = (pData.totalStock || 0) - pData.totalSold;
-        pData.revenue = pData.totalSold * (pData.sale || 0);
-        pData.net = pData.totalSold * ((pData.sale || 0) - (pData.cost || 0));
-      }
-    });
+    // ✅ NEW LOGIC: Backend no longer deducts stock for Pending orders, 
+    // so we no longer need to manually patch/revert them here.
+    return;
   },
  async loadAll(showMsg){
  showLoader('Google Sheets from Loading...');
