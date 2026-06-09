@@ -1,4 +1,4 @@
-﻿/* =====================================================
+/* =====================================================
  YARZ PRO — Business Dashboard
  Single-file app. Connects to Google Sheets REST API (read)
  and Apps Script Web App (write).
@@ -1363,7 +1363,7 @@ function showApp(){
  // Theme restore (default: light; saved 'dark' enables dark mode)
   if(_ls('yarz_theme')==='dark'){
   document.body.classList.add('dark');
-  const cls = 'fas fa-sun';
+  const cls = 'ri-sun-line';
   const t1 = $('theme-icon'); if(t1) t1.className = cls;
   const t2 = $('theme-icon-side'); if(t2) t2.className = cls;
   // ✅ v17.4 FIX: update ALL theme-color metas (light + dark variants)
@@ -4195,6 +4195,8 @@ YARZ.pa = {
     }).join('');
   },
   showDetails(prod) {
+    YARZ.openModal('pa-modal');
+
     $('pa-modal-title').innerText = prod;
     
     const d = this.data.filter(x => x.product_name === prod);
@@ -4228,8 +4230,6 @@ YARZ.pa = {
         </tr>`).join('')}
       </table>
     `;
-    
-    openModal('pa-modal');
   }
 };
 
@@ -6523,6 +6523,16 @@ YARZ._onComboChange = function(id){
 };
 
 const modalBuilders = {
+  'pa-modal': () => {
+    return `
+    <div class="modal-header">
+     <h3><i class="ri-bar-chart-box-line" style="color:var(--brand)"></i> Product Analytics</h3>
+     <button class="modal-close" onclick="YARZ.closeModal()"><i class="ri-close-line"></i></button>
+    </div>
+    <div id="pa-modal-chart" style="margin-bottom:14px"></div>
+    <div id="pa-modal-table" style="max-height:250px;overflow-y:auto"></div>
+    `;
+  },
  'delete-confirm': (data)=>{
  return `
  <div class="modal-header">
@@ -7819,6 +7829,10 @@ window.publishToWebsiteAction = async function() {
         if (page === 'firewall') {
           YARZ.firewall.refresh();
           YARZ.firewall.startAutoRefresh();
+        } else if (page === 'customers') {
+          YARZ.cust.load();
+        } else if (page === 'product-analytics') {
+          YARZ.pa.load();
         }
       };
     })();
