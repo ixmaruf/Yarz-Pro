@@ -2696,6 +2696,7 @@ table tbody tr:hover{ background:var(--surface-2); }
  <div class="nav-item" data-page="preview"><i class="ri-global-line"></i><span>Website</span></div>
  <div class="nav-item" data-page="web-control"><i class="ri-layout-masonry-line"></i><span>Website Control</span></div>
  <div class="nav-item" data-page="settings"><i class="ri-settings-3-line"></i><span>Settings</span></div>
+ <div class="nav-item" data-page="firewall"><i class="ri-shield-keyhole-line"></i><span>Protection</span><span class="nav-badge hidden" id="nav-firewall-badge">0</span></div>
  <div class="sidebar-footer">
  <div class="nav-item" onclick="YARZ.toggleTheme()"><i class="ri-moon-line" id="theme-icon-side"></i><span>Theme</span></div>
  <div class="nav-item" onclick="YARZ.logout()"><i class="ri-logout-box-r-line"></i><span>Logout</span></div>
@@ -5372,7 +5373,7 @@ async function loadOrders(){
 
 async function loadWebsiteOrders(){
  try {
- const rows = await sheetReadFormatted('Website_Orders!A2:T2000');
+ const rows = await sheetReadFormatted('Website_Orders!A2:Z2000');
  // ✅ v4.6 CRITICAL FIX — Column mapping matches the actual sheet:
  // A=OrderID(0) B=Date(1) C=Customer(2) D=Phone(3) E=Address(4) F=Location(5)
  // G=Product(6) H=Size(7) I=Qty(8) J=Price(9) K=Delivery(10) L=Total(11)
@@ -5432,7 +5433,13 @@ async function loadWebsiteOrders(){
   // Backwards-compat aliases (some older render code uses these names)
   email: email,
   city:  city,
-  source: safeStr(r[18])
+  source: safeStr(r[18]),
+  // ✅ v17.6: Device info columns (T=19, U=20, V=21, W=22, X=23, Y=24)
+  deviceId: safeStr(r[19]),
+  ip: safeStr(r[20]),
+  deviceInfo: safeStr(r[22]),
+  riskScore: parseInt(r[23]) || 0,
+  riskSignals: safeStr(r[24])
  };
  });
  } catch(e){ state.data.websiteOrders = []; }
@@ -7873,6 +7880,51 @@ Team YARZ`;
   <div class="val">${esc(o.payment||'COD')}</div>
   </div>
   </div>
+
+  <!-- ✅ v17.6: Device Tracking Info (Firewall Integration) -->
+  ${o.deviceId || o.ip ? `
+  <div class="oc-info-grid" style="margin-top:12px; border-top:1px dashed var(--line); padding-top:12px;">
+    ${o.ip ? `
+    <div class="oc-info-cell">
+      <i class="ri-global-line"></i>
+      <div style="min-width:0;flex:1">
+        <div class="lbl">IP Address</div>
+        <div class="val" style="font-family:monospace;font-size:11.5px">${esc(o.ip)}</div>
+      </div>
+      <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.ip)}',this,'IP Copied')" title="Copy"><i class="ri-file-copy-line"></i></button>
+    </div>` : ''}
+    ${o.deviceId ? `
+    <div class="oc-info-cell">
+      <i class="ri-fingerprint-line"></i>
+      <div style="min-width:0;flex:1">
+        <div class="lbl">Device ID</div>
+        <div class="val" style="font-family:monospace;font-size:11.5px">${esc(o.deviceId)}</div>
+      </div>
+      <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.deviceId)}',this,'Device ID Copied')" title="Copy"><i class="ri-file-copy-line"></i></button>
+    </div>` : ''}
+    ${o.deviceInfo ? `
+    <div class="oc-info-cell full">
+      <i class="ri-macbook-line"></i>
+      <div style="min-width:0;flex:1">
+        <div class="lbl">Device Info</div>
+        <div class="val" style="font-size:11.5px;line-height:1.4">${esc(o.deviceInfo)}</div>
+      </div>
+    </div>` : ''}
+    ${o.riskScore > 0 || o.riskSignals ? `
+    <div class="oc-info-cell full" style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2)">
+      <i class="ri-shield-keyhole-line" style="color:var(--danger)"></i>
+      <div style="min-width:0;flex:1">
+        <div class="lbl" style="color:var(--danger)">Risk Analysis</div>
+        <div class="val">
+          <div style="font-weight:600;font-size:12px;color:var(--danger)">Risk Score: ${o.riskScore}/100</div>
+          ${o.riskSignals ? `<div style="font-size:11px;color:var(--ink-2);margin-top:2px">${esc(o.riskSignals)}</div>` : ''}
+        </div>
+      </div>
+      <button class="btn btn-red btn-xs" style="margin-left:auto" onclick="event.stopPropagation();YARZ.goPage('firewall');setTimeout(()=>{document.getElementById('firewall-search').value='${esc(o.deviceId)}';YARZ.firewall.filter();},200)" title="View in Firewall">Block</button>
+    </div>` : ''}
+  </div>
+  ` : ''}
+
   ${o.email ? `
   <div class="oc-info-cell">
   <i class="ri-mail-line"></i>
