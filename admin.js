@@ -1175,7 +1175,12 @@ function setupLogin(){
   // CSRF token generation
   (function(){
     var mt = document.querySelector('meta[name="csrf-token"]');
-    if(mt && !mt.getAttribute('content')){
+    if(!mt){
+      mt = document.createElement('meta');
+      mt.setAttribute('name', 'csrf-token');
+      document.head.appendChild(mt);
+    }
+    if(!mt.getAttribute('content')){
       var tok = Math.random().toString(36).substring(2,10)+'_'+Date.now().toString(36);
       mt.setAttribute('content', tok);
       window._csrfToken = tok;
