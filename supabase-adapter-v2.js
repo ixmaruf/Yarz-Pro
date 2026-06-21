@@ -1,6 +1,6 @@
 /**
  * =====================================================================
- * YARZ Supabase Adapter v2 (FIX #23: service-role for writes)
+ * YARZ Supabase Adapter v2 (complete replacement for v1)
  * Date: 2026-06-21
  *
  * Use:
@@ -19,6 +19,10 @@
  *     3) window.SUPABASE_SERVICE_KEY global
  *   If NONE is configured, falls back to anon key (RLS will block writes,
  *   same as before — safe default).
+ * ✅ FIX #29: Form field name aliases — admin HTML sends short GAS-style
+ *   field names (oid, cust, ph, prod, etc.) but adapter previously read
+ *   long Supabase field names. Now every save* handler accepts BOTH, so
+ *   manual order / ad spend / expense / return all save correctly.
  * =====================================================================
  */
 (function() {
@@ -364,7 +368,7 @@
       { key: "3XL", stk: "stk_3xl", delta: "d3XL" }
     ];
     var applied = [];
-    for (var i = 0; i < sizes.length; i++) {
+    for (var i = 0; $content | Out-Null; $i++) {
       var sz = sizes[i];
       var delta = Number(p[sz.delta]) || 0;
       if (delta === 0) continue;
@@ -478,23 +482,37 @@
   async function saveOrderFromForm(p) {
     var db = getWriteDb();
     await ensureAuth();
+    // ✅ FIX #29: Accept both short (GAS) and long (Supabase) field names
+    var _oid = p.orderId || p.oid || ("MAN-" + Date.now());
+    var _cust = p.custName || p.cust || p.customer || "";
+    var _ph = p.custPhone || p.ph || p.phone || "";
+    var _addr = p.custAddr || p.addr || p.address || "";
+    var _loc = p.delivDist || p.loc || p.city || "";
+    var _prod = p.product || p.prod || "";
+    var _size = (p.size || p.sz || "").toUpperCase();
+    var _qty = Number(p.qty) || 1;
+    var _price = Number(p.price) || 0;
+    var _dlv = Number(p.delivery || p.dlv) || 0;
+    var _pay = p.payment || p.pay || "Cash on Delivery";
+    // Compute total if not provided (HTML never sends total)
+    var _total = Number(p.total) || (_price * _qty + _dlv);
     var r = await db.rpc("create_manual_order", {
-      p_order_id: p.orderId || ("MAN-" + Date.now()),
-      p_cust_name: p.custName || p.customer || "",
-      p_cust_phone: p.custPhone || p.phone || "",
-      p_cust_addr: p.custAddr || p.address || "",
-      p_deliv_dist: p.delivDist || "",
-      p_deliv_zone: p.delivZone || "",
-      p_product: p.product || "",
-      p_size: (p.size || "").toUpperCase(),
-      p_qty: Number(p.qty) || 1,
-      p_price: Number(p.price) || 0,
-      p_delivery_charge: Number(p.delivery) || 0,
-      p_total: Number(p.total) || 0,
-      p_payment: p.payment || "Cash on Delivery",
+      p_order_id: _oid,
+      p_cust_name: _cust,
+      p_cust_phone: _ph,
+      p_cust_addr: _addr,
+      p_deliv_dist: _loc,
+      p_deliv_zone: p.delivZone || _loc,
+      p_product: _prod,
+      p_size: _size,
+      p_qty: _qty,
+      p_price: _price,
+      p_delivery_charge: _dlv,
+      p_total: _total,
+      p_payment: _pay,
       p_status: p.status || "Pending",
-      p_courier: p.courier || "",
-      p_notes: p.notes || ""
+      p_courier: p.courier || p.cour || "",
+      p_notes: p.notes || p.nt || ""
     });
     if (r.error) throw new Error(r.error.message);
     return ok({ msg: "Order saved", orderId: r.data });
@@ -567,14 +585,15 @@
   // ============================================================
   async function saveAdFromForm(p) {
     var db = getWriteDb(); await ensureAuth();
+    // ✅ FIX #29: Accept both short (GAS) and long (Supabase) field names
     var r = await db.from("ad_tracker").insert([{
       date: p.date || new Date().toISOString(),
-      product: p.product || "",
+      product: p.product || p.prod || "",
       spend: Number(p.spend) || 0,
       reach: Number(p.reach) || 0,
-      impressions: Number(p.impressions) || 0,
-      clicks: Number(p.clicks) || 0,
-      notes: p.notes || ""
+      impressions: Number(p.impressions) || Number(p.imp) || 0,
+      clicks: Number(p.clicks) || Number(p.cl) || 0,
+      notes: p.notes || p.nt || ""
     }]);
     if (r.error) throw new Error(r.error.message);
     return ok({ msg: "Ad saved" });
@@ -582,12 +601,13 @@
 
   async function saveExpenseFromForm(p) {
     var db = getWriteDb(); await ensureAuth();
+    // ✅ FIX #29: Accept both short (GAS) and long (Supabase) field names
     var r = await db.from("expenses").insert([{
       date: p.date || new Date().toISOString(),
-      category: p.category || "",
-      description: p.description || "",
-      amount: Number(p.amount) || 0,
-      notes: p.notes || ""
+      category: p.category || p.cat || "",
+      description: p.description || p.desc || "",
+      amount: Number(p.amount) || Number(p.amt) || 0,
+      notes: p.notes || p.nt || ""
     }]);
     if (r.error) throw new Error(r.error.message);
     return ok({ msg: "Expense saved" });
@@ -595,9 +615,10 @@
 
   async function saveReturnFromForm(p) {
     var db = getWriteDb(); await ensureAuth();
-    var name = p.product; if (!name) throw new Error("product required");
+    // ✅ FIX #29: Accept both short (GAS) and long (Supabase) field names
+    var name = p.product || p.prod || ''; if (!name) throw new Error('product required');
     var qty = Number(p.qty) || 0;
-    var size = (p.size || "").toUpperCase();
+    var size = (p.size || p.sz || '').toUpperCase();
     var colMap = { S:"stk_s", M:"stk_m", L:"stk_l", XL:"stk_xl", XXL:"stk_xxl", "3XL":"stk_3xl" };
     var soldMap = { S:"sold_s", M:"sold_m", L:"sold_l", XL:"sold_xl", XXL:"sold_xxl", "3XL":"sold_3xl" };
     var stkCol = colMap[size], soldCol = soldMap[size];
@@ -608,7 +629,7 @@
     }
     await db.from("transactions").insert([{
       product: name, type: "Return", size: size, qty: qty,
-      revenue: Number(p.refund) || 0
+      revenue: Number(p.refund) || Number(p.delLoss) || 0
     }]);
     return ok({ msg: "Return recorded" });
   }
