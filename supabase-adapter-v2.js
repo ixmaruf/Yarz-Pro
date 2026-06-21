@@ -1,7 +1,7 @@
 /**
  * =====================================================================
- * YARZ Supabase Adapter v2 (complete replacement for v1)
- * Date: 2026-06-20
+ * YARZ Supabase Adapter v2 (FIX #23: service-role for writes)
+ * Date: 2026-06-21
  *
  * Use:
  *   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -11,12 +11,14 @@
  *   window.supabaseClient = supabase.createClient(URL, ANON_KEY);
  *   window.supabaseAdapter.init({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
  *
- * The Admin Panel index.html already has supabaseClient. This adapter
- * exposes window.supabaseAdapter with the SAME handleAppsPost(action,payload)
- * signature as the v1 file -- so no callsite changes needed.
- *
- * Backwards-compat: every method returns { success:true, ok:true, ... }
- * shaped like GAS responses so admin panel code "just works".
+ * ✅ FIX #23: Bypass RLS for admin writes by using service-role key.
+ *   The service key is read at runtime from (in priority order):
+ *     1) document.getElementById('set-supabase-service').value
+ *     2) localStorage: yarz_sb_service, sb_service, supabaseServiceKey,
+ *        sb-service-key, yarz_service_key, YARZ_SERVICE_KEY
+ *     3) window.SUPABASE_SERVICE_KEY global
+ *   If NONE is configured, falls back to anon key (RLS will block writes,
+ *   same as before — safe default).
  * =====================================================================
  */
 (function() {
@@ -24,7 +26,52 @@
 
   var SESSION_KEY = "yarz_admin_session_v2";
 
-  function getDb() { return window.supabaseClient || null; }
+  // ✅ FIX #23: Smart db getter. Tries to use SERVICE ROLE key if available
+  // to bypass RLS for admin writes. Falls back to anon client otherwise.
+  var _writeDb = null; // memoized service-role client
+  function getDb() {
+    if (window.supabaseClient) return window.supabaseClient;
+    return null;
+  }
+  function getServiceKey() {
+    try {
+      // 1) From the admin's "Service Role Key" input field (#set-supabase-service)
+      var el = document.getElementById('set-supabase-service');
+      if (el && el.value && el.value.indexOf('eyJ') === 0) return el.value;
+      // 2) From localStorage (saved by YARZ.settings.saveConn)
+      var lsKeys = ['yarz_sb_service','sb_service','supabaseServiceKey','sb-service-key','yarz_service_key','YARZ_SERVICE_KEY'];
+      for (var i = 0; i < lsKeys.length; i++) {
+        var v = '';
+        try { v = localStorage.getItem(lsKeys[i]) || ''; } catch(e) {}
+        if (v && v.indexOf('eyJ') === 0) return v;
+      }
+      // 3) From a global var
+      if (typeof window.SUPABASE_SERVICE_KEY === 'string' && window.SUPABASE_SERVICE_KEY.indexOf('eyJ') === 0) {
+        return window.SUPABASE_SERVICE_KEY;
+      }
+    } catch(e) {}
+    return '';
+  }
+  function getWriteDb() {
+    if (!window.supabase || !window.supabase.createClient) return getDb();
+    var sk = getServiceKey();
+    if (!sk) return getDb(); // no service key configured -> fall back to anon (RLS will block writes, as before)
+    if (_writeDb) return _writeDb;
+    try {
+      // derive URL from existing anon client if possible
+      var url = '';
+      try { url = window.supabaseClient && window.supabaseClient.supabaseUrl; } catch(e) {}
+      if (!url) {
+        try { url = (window.SUPABASE_URL || ''); } catch(e) {}
+      }
+      if (!url) return getDb();
+      _writeDb = window.supabase.createClient(url, sk, {
+        auth: { persistSession: false, autoRefreshToken: false },
+        global: { headers: { 'X-Client-Info': 'yarz-admin-v2-write' } }
+      });
+      return _writeDb;
+    } catch(e) { return getDb(); }
+  }
 
   function getSessionToken() {
     try { return localStorage.getItem(SESSION_KEY) || ""; } catch(e) { return ""; }
@@ -44,7 +91,7 @@
   }
 
   async function ensureAuth() {
-    var db = getDb(); if (!db) throw new Error("Supabase not initialized");
+    var db = getWriteDb(); if (!db) throw new Error("Supabase not initialized");
     var tok = getSessionToken();
     if (!tok) throw new Error("Not signed in");
     var r = await db.rpc("verify_session", { p_token: tok });
@@ -57,7 +104,7 @@
   // READ HANDLERS
   // ============================================================
   async function sheetRead(p) {
-    var db = getDb();
+    var db = getWriteDb();
     var range = String(p.range || "").toUpperCase().trim();
 
     if (range.startsWith("INVENTORY")) {
@@ -214,7 +261,7 @@
   // AUTH
   // ============================================================
   async function adminLogin(p) {
-    var db = getDb();
+    var db = getWriteDb();
     var username = (p.adminUser || p.username || "").trim();
     var password = (p.adminPass || p.password || "");
     var userAgent = p.userAgent || (navigator && navigator.userAgent) || "";
@@ -236,7 +283,7 @@
   }
 
   async function adminLogout() {
-    var db = getDb();
+    var db = getWriteDb();
     var tok = getSessionToken();
     if (tok && db) {
       try { await db.rpc("admin_logout", { p_token: tok }); } catch(e){}
@@ -258,7 +305,7 @@
   // PRODUCT WRITES
   // ============================================================
   async function saveProductFromForm(p) {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     var data = productFormToRow(p);
     data.updated_at = new Date().toISOString();
@@ -271,7 +318,7 @@
   }
 
   async function saveProductEditFromForm(p) {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     var target = p.oldName || p.name;
     var data = productFormToRow(p);
@@ -282,7 +329,7 @@
   }
 
   async function deleteProduct(p) {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     if (!p.name) throw new Error("No product name provided");
     var r = await db.from("inventory").delete().eq("product", p.name);
@@ -291,7 +338,7 @@
   }
 
   async function updateProductStatus(p) {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     if (!p.name || !p.status) throw new Error("name and status required");
     var r = await db.from("inventory").update({
@@ -305,7 +352,7 @@
   }
 
   async function applyStockChange(p) {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     var name = p.name; if (!name) throw new Error("name required");
     var sizes = [
@@ -374,7 +421,7 @@
   // ORDER WRITES
   // ============================================================
   async function updateWebsiteOrderStatus(p) {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     if (!p.orderId) throw new Error("orderId required");
     var upd = {};
@@ -387,7 +434,7 @@
   }
 
   async function updateManualOrderStatus(p) {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     if (!p.orderId) throw new Error("orderId required");
     var upd = {};
@@ -399,7 +446,7 @@
   }
 
   async function deleteWebsiteOrder(p) {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     if (!p.orderId) throw new Error("orderId required");
     var r = await db.rpc("delete_website_order", { p_order_id: p.orderId });
@@ -409,7 +456,7 @@
   }
 
   async function deleteManualOrder(p) {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     if (!p.orderId) throw new Error("orderId required");
     var r = await db.from("orders").delete().eq("order_id", p.orderId);
@@ -418,7 +465,7 @@
   }
 
   async function archiveCompletedOrders() {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     var cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
     var r = await db.from("website_orders").update({ status: "Archived" })
@@ -429,7 +476,7 @@
   }
 
   async function saveOrderFromForm(p) {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     var r = await db.rpc("create_manual_order", {
       p_order_id: p.orderId || ("MAN-" + Date.now()),
@@ -454,7 +501,7 @@
   }
 
   async function recordSale(p) {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     var name = p.product; if (!name) throw new Error("product required");
     var size = (p.size || "").toUpperCase();
@@ -475,7 +522,7 @@
   }
 
   async function applyBulkEdit(p) {
-    var db = getDb();
+    var db = getWriteDb();
     await ensureAuth();
     var products = [];
     if (Array.isArray(p.products) && p.products.length > 0) {
@@ -519,7 +566,7 @@
   // FINANCE WRITES
   // ============================================================
   async function saveAdFromForm(p) {
-    var db = getDb(); await ensureAuth();
+    var db = getWriteDb(); await ensureAuth();
     var r = await db.from("ad_tracker").insert([{
       date: p.date || new Date().toISOString(),
       product: p.product || "",
@@ -534,7 +581,7 @@
   }
 
   async function saveExpenseFromForm(p) {
-    var db = getDb(); await ensureAuth();
+    var db = getWriteDb(); await ensureAuth();
     var r = await db.from("expenses").insert([{
       date: p.date || new Date().toISOString(),
       category: p.category || "",
@@ -547,7 +594,7 @@
   }
 
   async function saveReturnFromForm(p) {
-    var db = getDb(); await ensureAuth();
+    var db = getWriteDb(); await ensureAuth();
     var name = p.product; if (!name) throw new Error("product required");
     var qty = Number(p.qty) || 0;
     var size = (p.size || "").toUpperCase();
@@ -570,7 +617,7 @@
   // SETTINGS
   // ============================================================
   async function updateSettings(p) {
-    var db = getDb(); await ensureAuth();
+    var db = getWriteDb(); await ensureAuth();
     var arr = Array.isArray(p.settings) ? p.settings : Object.keys(p.settings || {}).map(function(k){ return { key:k, value:p.settings[k] }; });
     var r = await db.from("settings").upsert(arr, { onConflict: "key" });
     if (r.error) throw new Error(r.error.message);
@@ -578,7 +625,7 @@
   }
 
   async function updateDeliveryCharges(p) {
-    var db = getDb(); await ensureAuth();
+    var db = getWriteDb(); await ensureAuth();
     var locs = p.locations || [];
     if (!Array.isArray(locs)) throw new Error("locations[] required");
     await db.from("delivery_charges").delete().neq("id", "__never__");
@@ -603,7 +650,7 @@
   }
 
   async function saveGitHubSettings(p) {
-    var db = getDb(); await ensureAuth();
+    var db = getWriteDb(); await ensureAuth();
     var rows = [
       { key: "GitHub Token",  value: p.t || "" },
       { key: "GitHub Repo",   value: p.r || "" },
@@ -619,17 +666,17 @@
   // CLEANUP
   // ============================================================
   async function fullFactoryReset() {
-    var db = getDb(); await ensureAuth();
+    var db = getWriteDb(); await ensureAuth();
     await db.rpc("full_factory_reset");
     return ok({ msg: "All data deleted" });
   }
   async function clearFinancialsOnly() {
-    var db = getDb(); await ensureAuth();
+    var db = getWriteDb(); await ensureAuth();
     await db.rpc("clear_financials_only");
     return ok({ msg: "Financials cleared" });
   }
   async function clearInventoryOnly() {
-    var db = getDb(); await ensureAuth();
+    var db = getWriteDb(); await ensureAuth();
     await db.rpc("clear_inventory_only");
     return ok({ msg: "Inventory cleared" });
   }
@@ -644,7 +691,7 @@
   async function fortressLogEvent(p){ return passthroughOrRpc("fortress_log_event", p); }
 
   async function passthroughOrRpc(fn, args) {
-    var db = getDb(); await ensureAuth();
+    var db = getWriteDb(); await ensureAuth();
     try {
       var r = await db.rpc(fn, args || {});
       if (!r.error) return ok(r.data);
