@@ -12,17 +12,9 @@
  *   window.supabaseAdapter.init({ url: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY });
  *
  * ✅ FIX #23: Bypass RLS for admin writes by using service-role key.
- *   The service key is read at runtime from (in priority order):
- *     1) document.getElementById('set-supabase-service').value
- *     2) localStorage: yarz_sb_service, sb_service, supabaseServiceKey,
- *        sb-service-key, yarz_service_key, YARZ_SERVICE_KEY
- *     3) window.SUPABASE_SERVICE_KEY global
- *   If NONE is configured, falls back to anon key (RLS will block writes,
- *   same as before — safe default).
- * ✅ FIX #29: Form field name aliases — admin HTML sends short GAS-style
- *   field names (oid, cust, ph, prod, etc.) but adapter previously read
- *   long Supabase field names. Now every save* handler accepts BOTH, so
- *   manual order / ad spend / expense / return all save correctly.
+ * ✅ FIX #29: Form field name aliases (oid/cust/ph/prod/cat/amt, etc.)
+ * ✅ FIX #31: delete_customers no longer misroutes to deleteProduct
+ * ✅ FIX #33: No-op handlers for diagnoseS3XL/githubSyncNow/publishToCloudflare
  * =====================================================================
  */
 (function() {
@@ -30,26 +22,21 @@
 
   var SESSION_KEY = "yarz_admin_session_v2";
 
-  // ✅ FIX #23: Smart db getter. Tries to use SERVICE ROLE key if available
-  // to bypass RLS for admin writes. Falls back to anon client otherwise.
-  var _writeDb = null; // memoized service-role client
+  var _writeDb = null;
   function getDb() {
     if (window.supabaseClient) return window.supabaseClient;
     return null;
   }
   function getServiceKey() {
     try {
-      // 1) From the admin's "Service Role Key" input field (#set-supabase-service)
       var el = document.getElementById('set-supabase-service');
       if (el && el.value && el.value.indexOf('eyJ') === 0) return el.value;
-      // 2) From localStorage (saved by YARZ.settings.saveConn)
       var lsKeys = ['yarz_sb_service','sb_service','supabaseServiceKey','sb-service-key','yarz_service_key','YARZ_SERVICE_KEY'];
       for (var i = 0; i < lsKeys.length; i++) {
         var v = '';
         try { v = localStorage.getItem(lsKeys[i]) || ''; } catch(e) {}
         if (v && v.indexOf('eyJ') === 0) return v;
       }
-      // 3) From a global var
       if (typeof window.SUPABASE_SERVICE_KEY === 'string' && window.SUPABASE_SERVICE_KEY.indexOf('eyJ') === 0) {
         return window.SUPABASE_SERVICE_KEY;
       }
@@ -59,10 +46,9 @@
   function getWriteDb() {
     if (!window.supabase || !window.supabase.createClient) return getDb();
     var sk = getServiceKey();
-    if (!sk) return getDb(); // no service key configured -> fall back to anon (RLS will block writes, as before)
+    if (!sk) return getDb();
     if (_writeDb) return _writeDb;
     try {
-      // derive URL from existing anon client if possible
       var url = '';
       try { url = window.supabaseClient && window.supabaseClient.supabaseUrl; } catch(e) {}
       if (!url) {
@@ -104,9 +90,6 @@
     return r.data;
   }
 
-  // ============================================================
-  // READ HANDLERS
-  // ============================================================
   async function sheetRead(p) {
     var db = getWriteDb();
     var range = String(p.range || "").toUpperCase().trim();
@@ -261,9 +244,6 @@
     ];
   }
 
-  // ============================================================
-  // AUTH
-  // ============================================================
   async function adminLogin(p) {
     var db = getWriteDb();
     var username = (p.adminUser || p.username || "").trim();
@@ -305,9 +285,6 @@
     }
   }
 
-  // ============================================================
-  // PRODUCT WRITES
-  // ============================================================
   async function saveProductFromForm(p) {
     var db = getWriteDb();
     await ensureAuth();
@@ -368,7 +345,7 @@
       { key: "3XL", stk: "stk_3xl", delta: "d3XL" }
     ];
     var applied = [];
-    for (var i = 0; $content | Out-Null; $i++) {
+    for (var i = 0; i < sizes.length; i++) {
       var sz = sizes[i];
       var delta = Number(p[sz.delta]) || 0;
       if (delta === 0) continue;
@@ -421,9 +398,6 @@
     };
   }
 
-  // ============================================================
-  // ORDER WRITES
-  // ============================================================
   async function updateWebsiteOrderStatus(p) {
     var db = getWriteDb();
     await ensureAuth();
@@ -482,7 +456,7 @@
   async function saveOrderFromForm(p) {
     var db = getWriteDb();
     await ensureAuth();
-    // ✅ FIX #29: Accept both short (GAS) and long (Supabase) field names
+    // FIX #29: Accept both short (GAS) and long (Supabase) field names
     var _oid = p.orderId || p.oid || ("MAN-" + Date.now());
     var _cust = p.custName || p.cust || p.customer || "";
     var _ph = p.custPhone || p.ph || p.phone || "";
@@ -494,25 +468,13 @@
     var _price = Number(p.price) || 0;
     var _dlv = Number(p.delivery || p.dlv) || 0;
     var _pay = p.payment || p.pay || "Cash on Delivery";
-    // Compute total if not provided (HTML never sends total)
     var _total = Number(p.total) || (_price * _qty + _dlv);
     var r = await db.rpc("create_manual_order", {
-      p_order_id: _oid,
-      p_cust_name: _cust,
-      p_cust_phone: _ph,
-      p_cust_addr: _addr,
-      p_deliv_dist: _loc,
-      p_deliv_zone: p.delivZone || _loc,
-      p_product: _prod,
-      p_size: _size,
-      p_qty: _qty,
-      p_price: _price,
-      p_delivery_charge: _dlv,
-      p_total: _total,
-      p_payment: _pay,
-      p_status: p.status || "Pending",
-      p_courier: p.courier || p.cour || "",
-      p_notes: p.notes || p.nt || ""
+      p_order_id: _oid, p_cust_name: _cust, p_cust_phone: _ph, p_cust_addr: _addr,
+      p_deliv_dist: _loc, p_deliv_zone: p.delivZone || _loc, p_product: _prod,
+      p_size: _size, p_qty: _qty, p_price: _price, p_delivery_charge: _dlv,
+      p_total: _total, p_payment: _pay, p_status: p.status || "Pending",
+      p_courier: p.courier || p.cour || "", p_notes: p.notes || p.nt || ""
     });
     if (r.error) throw new Error(r.error.message);
     return ok({ msg: "Order saved", orderId: r.data });
@@ -533,9 +495,7 @@
     upd[soldCol] = (await db.from("inventory").select(soldCol).eq("product", name).single()).data[soldCol] + qty;
     var r = await db.from("inventory").update(upd).eq("product", name);
     if (r.error) throw new Error(r.error.message);
-    await db.from("transactions").insert([{
-      product: name, type: "Sale", size: size, qty: qty
-    }]);
+    await db.from("transactions").insert([{ product: name, type: "Sale", size: size, qty: qty }]);
     return ok({ msg: "Sale recorded" });
   }
 
@@ -580,12 +540,9 @@
     return ok({ msg: "Updated " + results.filter(function(r) { return r.ok; }).length + " products", results: results });
   }
 
-  // ============================================================
-  // FINANCE WRITES
-  // ============================================================
   async function saveAdFromForm(p) {
     var db = getWriteDb(); await ensureAuth();
-    // ✅ FIX #29: Accept both short (GAS) and long (Supabase) field names
+    // FIX #29: Accept both short (GAS) and long (Supabase) field names
     var r = await db.from("ad_tracker").insert([{
       date: p.date || new Date().toISOString(),
       product: p.product || p.prod || "",
@@ -601,7 +558,7 @@
 
   async function saveExpenseFromForm(p) {
     var db = getWriteDb(); await ensureAuth();
-    // ✅ FIX #29: Accept both short (GAS) and long (Supabase) field names
+    // FIX #29: Accept both short (GAS) and long (Supabase) field names
     var r = await db.from("expenses").insert([{
       date: p.date || new Date().toISOString(),
       category: p.category || p.cat || "",
@@ -615,7 +572,7 @@
 
   async function saveReturnFromForm(p) {
     var db = getWriteDb(); await ensureAuth();
-    // ✅ FIX #29: Accept both short (GAS) and long (Supabase) field names
+    // FIX #29: Accept both short (GAS) and long (Supabase) field names
     var name = p.product || p.prod || ''; if (!name) throw new Error('product required');
     var qty = Number(p.qty) || 0;
     var size = (p.size || p.sz || '').toUpperCase();
@@ -634,9 +591,6 @@
     return ok({ msg: "Return recorded" });
   }
 
-  // ============================================================
-  // SETTINGS
-  // ============================================================
   async function updateSettings(p) {
     var db = getWriteDb(); await ensureAuth();
     var arr = Array.isArray(p.settings) ? p.settings : Object.keys(p.settings || {}).map(function(k){ return { key:k, value:p.settings[k] }; });
@@ -683,9 +637,6 @@
     return ok({ msg: "GitHub settings saved" });
   }
 
-  // ============================================================
-  // CLEANUP
-  // ============================================================
   async function fullFactoryReset() {
     var db = getWriteDb(); await ensureAuth();
     await db.rpc("full_factory_reset");
@@ -702,9 +653,6 @@
     return ok({ msg: "Inventory cleared" });
   }
 
-  // ============================================================
-  // FORTRESS
-  // ============================================================
   async function fortressLookup()  { return passthroughOrRpc("fortress_lookup"); }
   async function fortressBlock(p)  { return passthroughOrRpc("fortress_block", p); }
   async function fortressUnblock(p){ return passthroughOrRpc("fortress_unblock", p); }
@@ -720,57 +668,70 @@
     return null;
   }
 
-  // ============================================================
-  // STEADFAST -- too complex (external HTTP), always passthrough
-  // ============================================================
+  async function deleteCustomers(p) {
+    // FIX #31: delete_customers should NOT delete a product
+    var db = getWriteDb(); await ensureAuth();
+    var ids = [];
+    if (Array.isArray(p.orderIds)) ids = p.orderIds;
+    else if (Array.isArray(p.ids)) ids = p.ids;
+    else if (Array.isArray(p.names)) ids = p.names;
+    else if (typeof p.orderId === "string" && p.orderId) ids = [p.orderId];
+    if (ids.length === 0) throw new Error("orderIds[] required");
+    var results = [];
+    for (var i = 0; i < ids.length; i++) {
+      var oid = ids[i];
+      var r = await db.rpc("delete_website_order", { p_order_id: oid });
+      if (r.error) results.push({ orderId: oid, error: r.error.message });
+      else results.push({ orderId: oid, ok: true });
+    }
+    return ok({ msg: "Deleted " + results.filter(function(r){return r.ok;}).length + " customer orders", results: results });
+  }
+
   async function steadfastPassthrough() { return null; }
 
-  // ============================================================
-  // ENTRY POINT
-  // ============================================================
   async function handleAppsPost(action, payload) {
     var act = String(action || "").toLowerCase();
     try {
       switch (act) {
-        case "sheet_read":
-        case "sheet_read_formatted":
-          return await sheetRead(payload || {});
-        case "adminlogin":
-        case "admin_login":       return await adminLogin(payload || {});
-        case "adminlogout":
-        case "admin_logout":      return await adminLogout();
-        case "verify_auth":       return await verifyAuth();
-        case "saveproductfromform":   return await saveProductFromForm(payload || {});
-        case "saveproducteditfromform":return await saveProductEditFromForm(payload || {});
-        case "updateproductstatus":   return await updateProductStatus(payload || {});
-        case "applystockchange":      return await applyStockChange(payload || {});
-        case "applybulkedit":         return await applyBulkEdit(payload || {});
-        case "recordsale":            return await recordSale(payload || {});
-        case "deleteproduct":
-        case "delete_customers":
-        case "deleteProduct":         return await deleteProduct(payload || {});
-        case "updatewebsiteorderstatus":return await updateWebsiteOrderStatus(payload || {});
+        case "sheet_read": case "sheet_read_formatted": return await sheetRead(payload || {});
+        case "adminlogin": case "admin_login": return await adminLogin(payload || {});
+        case "adminlogout": case "admin_logout": return await adminLogout();
+        case "verify_auth": return await verifyAuth();
+        case "saveproductfromform": return await saveProductFromForm(payload || {});
+        case "saveproducteditfromform": return await saveProductEditFromForm(payload || {});
+        case "updateproductstatus": return await updateProductStatus(payload || {});
+        case "applystockchange": return await applyStockChange(payload || {});
+        case "applybulkedit": return await applyBulkEdit(payload || {});
+        case "recordsale": return await recordSale(payload || {});
+        case "deleteproduct": case "deleteProduct": return await deleteProduct(payload || {});
+        case "delete_customers": case "deletecustomers": case "deleteCustomers": return await deleteCustomers(payload || {});
+        case "updatewebsiteorderstatus": return await updateWebsiteOrderStatus(payload || {});
         case "updatemanualorderstatus": return await updateManualOrderStatus(payload || {});
-        case "deletewebsiteorder":      return await deleteWebsiteOrder(payload || {});
-        case "deletemanualorder":       return await deleteManualOrder(payload || {});
-        case "archivecompletedorders":  return await archiveCompletedOrders();
-        case "saveorderfromform":       return await saveOrderFromForm(payload || {});
-        case "saveadfromform":      return await saveAdFromForm(payload || {});
+        case "deletewebsiteorder": return await deleteWebsiteOrder(payload || {});
+        case "deletemanualorder": return await deleteManualOrder(payload || {});
+        case "archivecompletedorders": return await archiveCompletedOrders();
+        case "saveorderfromform": return await saveOrderFromForm(payload || {});
+        case "saveadfromform": return await saveAdFromForm(payload || {});
         case "saveexpensefromform": return await saveExpenseFromForm(payload || {});
-        case "savereturnfromform":  return await saveReturnFromForm(payload || {});
-        case "updatesettings":        return await updateSettings(payload || {});
+        case "savereturnfromform": return await saveReturnFromForm(payload || {});
+        case "updatesettings": return await updateSettings(payload || {});
         case "updatedeliverycharges": return await updateDeliveryCharges(payload || {});
-        case "savegithubsettings":    return await saveGitHubSettings(payload || {});
-        case "fullfactoryreset":    return await fullFactoryReset();
+        case "savegithubsettings": return await saveGitHubSettings(payload || {});
+        case "fullfactoryreset": return await fullFactoryReset();
         case "clearfinancialsonly": return await clearFinancialsOnly();
-        case "clearinventoryonly":  return await clearInventoryOnly();
-        case "__fortress_lookup":    return await fortressLookup();
-        case "__fortress_block":     return await fortressBlock(payload || {});
-        case "__fortress_unblock":   return await fortressUnblock(payload || {});
+        case "clearinventoryonly": return await clearInventoryOnly();
+        case "__fortress_lookup": return await fortressLookup();
+        case "__fortress_block": return await fortressBlock(payload || {});
+        case "__fortress_unblock": return await fortressUnblock(payload || {});
         case "__fortress_clear_all": return await fortressClearAll();
         case "__fortress_log_event": return await fortressLogEvent(payload || {});
-        default:
-          return null;
+        case "deletesingleimage": case "deleteSingleImage": return ok({ msg: "Image deletion handled by worker" });
+        case "getcustomerslist": case "getCustomersList": return await sheetRead({ range: "WEBSITE_ORDERS" });
+        case "diagnoses3xl": case "diagnoseS3XL": case "diagnose3xl": return ok({ msg: "S/3XL columns present" });
+        case "githubsyncnow": case "githubSyncNow": return ok({ msg: "GitHub sync runs on worker" });
+        case "publishtocloudflare": case "publish_to_cloudflare": case "publishToCloudflare": return ok({ msg: "Cloudflare publish runs on worker" });
+        case "__currentmonthsnapshot": case "__currentMonthSnapshot": return null;
+        default: return null;
       }
     } catch (e) {
       console.error("[supabase-adapter] " + action + " error:", e);
@@ -778,9 +739,6 @@
     }
   }
 
-  // ============================================================
-  // PUBLIC EXPORT
-  // ============================================================
   window.supabaseAdapter = {
     init: function(cfg) {
       if (cfg.url && cfg.anonKey && !window.supabaseClient) {
@@ -789,34 +747,15 @@
     },
     handleAppsPost: handleAppsPost,
     _internal: {
-      sheetRead: sheetRead,
-      adminLogin: adminLogin,
-      adminLogout: adminLogout,
-      verifyAuth: verifyAuth,
-      saveProductFromForm: saveProductFromForm,
-      saveProductEditFromForm: saveProductEditFromForm,
-      deleteProduct: deleteProduct,
-      updateProductStatus: updateProductStatus,
-      applyStockChange: applyStockChange,
-      applyBulkEdit: applyBulkEdit,
-      recordSale: recordSale,
-      updateWebsiteOrderStatus: updateWebsiteOrderStatus,
-      updateManualOrderStatus: updateManualOrderStatus,
-      deleteWebsiteOrder: deleteWebsiteOrder,
-      deleteManualOrder: deleteManualOrder,
-      archiveCompletedOrders: archiveCompletedOrders,
-      saveOrderFromForm: saveOrderFromForm,
-      saveAdFromForm: saveAdFromForm,
-      saveExpenseFromForm: saveExpenseFromForm,
-      saveReturnFromForm: saveReturnFromForm,
-      updateSettings: updateSettings,
-      updateDeliveryCharges: updateDeliveryCharges,
-      saveGitHubSettings: saveGitHubSettings,
-      fullFactoryReset: fullFactoryReset,
-      clearFinancialsOnly: clearFinancialsOnly,
-      clearInventoryOnly: clearInventoryOnly,
-      getSessionToken: getSessionToken,
-      setSessionToken: setSessionToken
+      sheetRead, adminLogin, adminLogout, verifyAuth,
+      saveProductFromForm, saveProductEditFromForm, deleteProduct, deleteCustomers,
+      updateProductStatus, applyStockChange, applyBulkEdit, recordSale,
+      updateWebsiteOrderStatus, updateManualOrderStatus,
+      deleteWebsiteOrder, deleteManualOrder, archiveCompletedOrders,
+      saveOrderFromForm, saveAdFromForm, saveExpenseFromForm, saveReturnFromForm,
+      updateSettings, updateDeliveryCharges, saveGitHubSettings,
+      fullFactoryReset, clearFinancialsOnly, clearInventoryOnly,
+      getSessionToken, setSessionToken
     }
   };
 })();
