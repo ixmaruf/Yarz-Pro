@@ -148,6 +148,11 @@
       if (r.error) throw new Error(r.error.message);
       return ok(r.data);
     }
+    if (range.startsWith("MONTHLY_SUMMARIES")) {
+      var r = await db.from("monthly_summaries").select("*").order("year_month", { ascending: true });
+      if (r.error) throw new Error(r.error.message);
+      return ok(r.data);
+    }
     if (range.startsWith("_ACTIVITY")) {
       var r = await db.from("_activity").select("*").order("ts", { ascending: false }).limit(500);
       if (r.error) throw new Error(r.error.message);
@@ -158,6 +163,21 @@
             : range.startsWith("ARCHIVE_VIEW") ? "inventory_archive_view"
             : "website_sync_view";
       var r = await db.from(v).select("*");
+      if (r.error) throw new Error(r.error.message);
+      return ok(r.data);
+    }
+    if (range.startsWith("SUBSCRIBERS")) {
+      var r = await db.from("newsletter_subscribers").select("*").order("subscribed_at", { ascending: false });
+      if (r.error) throw new Error(r.error.message);
+      return ok(r.data);
+    }
+    if (range.startsWith("STAFF")) {
+      var r = await db.from("admin_users").select("*");
+      if (r.error) throw new Error(r.error.message);
+      return ok(r.data);
+    }
+    if (range.startsWith("COURIER")) {
+      var r = await db.from("steadfast_consignments").select("*").order("created_at", { ascending: false });
       if (r.error) throw new Error(r.error.message);
       return ok(r.data);
     }
@@ -739,11 +759,53 @@
     }
   }
 
+  function setupRealtime(db) {
+    if (!db || !db.channel) return;
+    try {
+      db.channel('admin-dashboard')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'website_orders' }, function(payload) {
+          console.log('[Realtime] website_orders change:', payload);
+          if (window.YARZ && window.YARZ.orders) window.YARZ.orders.load();
+          if (window.YARZ && window.YARZ.dashboard) window.YARZ.dashboard.load();
+          showRealtimeToast('New Website Order Update');
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, function(payload) {
+          console.log('[Realtime] orders change:', payload);
+          if (window.YARZ && window.YARZ.orders) window.YARZ.orders.load();
+          if (window.YARZ && window.YARZ.dashboard) window.YARZ.dashboard.load();
+          showRealtimeToast('Manual Order Update');
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, function(payload) {
+          console.log('[Realtime] inventory change:', payload);
+          if (window.YARZ && window.YARZ.inventory) window.YARZ.inventory.load();
+          if (window.YARZ && window.YARZ.dashboard) window.YARZ.dashboard.load();
+        })
+        .subscribe(function(status) {
+          console.log('[Realtime] Channel status:', status);
+        });
+    } catch(e) {
+      console.warn('Realtime setup failed:', e);
+    }
+  }
+
+  function showRealtimeToast(msg) {
+    if (window.YARZ && window.YARZ.ui && window.YARZ.ui.toast) {
+      window.YARZ.ui.toast(msg, 'success');
+    } else {
+      var d = document.createElement('div');
+      d.innerText = msg;
+      d.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:8px;z-index:99999;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:fadeIn 0.3s;';
+      document.body.appendChild(d);
+      setTimeout(function(){ d.remove(); }, 3000);
+    }
+  }
+
   window.supabaseAdapter = {
     init: function(cfg) {
       if (cfg.url && cfg.anonKey && !window.supabaseClient) {
         window.supabaseClient = window.supabase.createClient(cfg.url, cfg.anonKey);
       }
+      setupRealtime(window.supabaseClient);
     },
     handleAppsPost: handleAppsPost,
     _internal: {

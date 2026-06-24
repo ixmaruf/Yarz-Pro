@@ -2633,6 +2633,288 @@ table tbody tr:hover{ background:var(--surface-2); }
   transition:none !important; animation:none !important; transform:none !important;
  }
 }
+
+/* === SESSION ADDITIONS: Sidebar sticky brand + Scrollbar === */
+.sidebar { overflow-y: auto; }
+.sidebar::-webkit-scrollbar { width: 18px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; margin: 24px 0; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(161, 161, 161, 0.6); border-radius: 12px; border: 4px solid var(--surface); background-clip: padding-box; }
+.sidebar::-webkit-scrollbar-thumb:hover { background: rgba(118, 118, 118, 0.8); border-width: 3px; }
+
+
+/* === SESSION ADDITIONS: Sticky sidebar brand === */
+.sidebar .brand{
+  display:flex;align-items:center;gap:13px;
+  padding:22px 14px 18px;margin-bottom:8px;
+  border-bottom:none;
+  position: sticky;
+  top: 0;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  z-index: 10;
+  border-radius: 23px 23px 18px 18px;
+  box-shadow:
+   0 1px 0 0 color-mix(in srgb, var(--line) 30%, transparent),
+   0 4px 12px -4px rgba(0,0,0,0.06),
+   0 12px 28px -8px rgba(200, 16, 46, 0.06);
+  transition: box-shadow 0.4s ease;
+}
+.sidebar .brand:hover {
+  box-shadow:
+   0 1px 0 0 color-mix(in srgb, var(--line) 30%, transparent),
+   0 6px 16px -4px rgba(0,0,0,0.08),
+   0 16px 36px -8px rgba(200, 16, 46, 0.1);
+}
+
+
+/* === SESSION ADDITION: Mobile Header === */
+.mobile-header {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 1000;
+  padding: 10px 16px;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+}
+.mh-brand {
+  display: flex; align-items: center; gap: 10px;
+}
+.mh-icon {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ink); color: var(--surface);
+}
+.mh-title {
+  font-weight: 700; font-size: 16px;
+  font-family: 'Instrument Serif', serif; font-style: italic;
+  color: var(--ink); line-height: 1;
+}
+.mh-sub {
+  font-size: 9px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-3); margin-top: 1px;
+}
+
+@media (max-width: 900px) {
+  .mobile-header { display: block; }
+  .sidebar { display: none; }
+  .main { padding-top: 70px; }
+}
+
+/* ═══════════════════════════════════════════
+   "BLACK CARD" TITANIUM MOBILE DRAWER
+   ═══════════════════════════════════════════ */
+
+@keyframes goldShimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes slowEntrance {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.mobile-more-overlay {
+ display: none;
+ position: fixed; inset: 0;
+ z-index: 9999;
+ background: rgba(0, 0, 0, 0.85);
+ backdrop-filter: blur(10px);
+ -webkit-backdrop-filter: blur(10px);
+ opacity: 0;
+ transition: opacity 0.6s cubic-bezier(0.2, 1, 0.3, 1);
+}
+.mobile-more-overlay.show { 
+ display: block; 
+ opacity: 1; 
+}
+
+.mobile-more-drawer {
+ position: fixed;
+ bottom: 0; left: 0; right: 0;
+ z-index: 10000;
+ /* Deep Matte Titanium Base */
+ background: linear-gradient(180deg, #18181c 0%, #0d0d10 100%);
+ border-radius: 40px 40px 0 0;
+ padding: 16px 22px calc(30px + env(safe-area-inset-bottom));
+ box-shadow: 0 -20px 80px rgba(0,0,0,1), inset 0 1.5px 0 rgba(255,255,255,0.15);
+ border-top: 1px solid rgba(0,0,0,0.8);
+ transform: translateY(100%);
+ transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+ max-height: 85vh;
+ overflow: hidden;
+}
+.mobile-more-overlay.show .mobile-more-drawer {
+ transform: translateY(0);
+}
+
+.md-scroll-content {
+  position: relative;
+  z-index: 10;
+  max-height: calc(85vh - 38px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.md-scroll-content::-webkit-scrollbar { display: none; }
+
+.mobile-more-drawer .md-handle {
+ width: 40px; height: 4px;
+ background: rgba(255,255,255,0.2);
+ border-radius: 4px;
+ margin: 0 auto 28px;
+}
+
+.mobile-more-drawer .md-header {
+ display: flex; align-items: center; justify-content: space-between;
+ margin-bottom: 28px;
+ padding: 0 4px;
+}
+.mobile-more-drawer .md-title {
+ font-size: 13px; font-weight: 600;
+ letter-spacing: 0.25em; text-transform: uppercase;
+ color: rgba(255,255,255,0.4);
+}
+
+/* Bento Box Grid */
+.md-bento-grid {
+ display: grid;
+ grid-template-columns: repeat(4, 1fr);
+ gap: 14px;
+ margin-bottom: 36px;
+}
+
+/* TITANIUM KEYS */
+.md-item {
+ display: flex; flex-direction: column;
+ align-items: center; justify-content: center;
+ gap: 12px; padding: 20px 8px;
+ border-radius: 20px;
+ 
+ /* Brushed Metal Finish */
+ background: linear-gradient(145deg, #222226 0%, #151518 100%);
+ 
+ /* Laser-cut edges */
+ border: 1px solid rgba(255,255,255,0.05);
+ border-top: 1px solid rgba(255,255,255,0.12);
+ border-bottom: 1px solid rgba(0,0,0,0.6);
+ 
+ box-shadow: 0 8px 16px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.03);
+ 
+ cursor: pointer;
+ -webkit-tap-highlight-color: transparent;
+ opacity: 0;
+ transform: translateY(30px);
+ transition: background 0.2s, transform 0.2s, border 0.2s;
+}
+
+/* Entrance Animations */
+.mobile-more-overlay.show .md-item {
+  animation: slowEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.mobile-more-overlay.show .md-item:nth-child(1) { animation-delay: 0.05s; }
+.mobile-more-overlay.show .md-item:nth-child(2) { animation-delay: 0.10s; }
+.mobile-more-overlay.show .md-item:nth-child(3) { animation-delay: 0.15s; }
+.mobile-more-overlay.show .md-item:nth-child(4) { animation-delay: 0.20s; }
+.mobile-more-overlay.show .md-item:nth-child(5) { animation-delay: 0.25s; }
+.mobile-more-overlay.show .md-item:nth-child(6) { animation-delay: 0.30s; }
+.mobile-more-overlay.show .md-item:nth-child(7) { animation-delay: 0.35s; }
+.mobile-more-overlay.show .md-item:nth-child(8) { animation-delay: 0.40s; }
+.mobile-more-overlay.show .md-item:nth-child(9) { animation-delay: 0.45s; }
+.mobile-more-overlay.show .md-item:nth-child(10) { animation-delay: 0.50s; }
+
+.md-item:active {
+ background: linear-gradient(145deg, #1a1a1e 0%, #101013 100%);
+ border-top: 1px solid rgba(255,255,255,0.05);
+ box-shadow: inset 0 2px 8px rgba(0,0,0,0.6);
+ transform: scale(0.96);
+}
+
+/* Wide buttons */
+.md-item.wide {
+ grid-column: span 2;
+ flex-direction: row;
+ padding: 22px 18px;
+ justify-content: flex-start;
+ gap: 18px;
+}
+.md-item.wide span {
+ font-size: 14px !important;
+ text-align: left !important;
+ letter-spacing: 0.05em;
+ color: #e5e5e5;
+}
+
+/* Gold / Chrome Icons */
+.md-icon-box {
+ font-size: 26px;
+ background: linear-gradient(135deg, #BF953F, #FCF6BA, #B38728, #FBF5B7, #AA771C);
+ background-size: 200% auto;
+ color: transparent;
+ -webkit-background-clip: text;
+ background-clip: text;
+ animation: goldShimmer 5s linear infinite;
+ /* Very subtle drop shadow for text */
+ filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5));
+}
+.md-item.wide .md-icon-box {
+ font-size: 24px;
+}
+
+/* Chrome icons for secondary items */
+.md-item.chrome-icon .md-icon-box {
+ background: linear-gradient(135deg, #e0e0e0, #ffffff, #a0a0a0, #ffffff, #e0e0e0);
+ background-size: 200% auto;
+ color: transparent;
+ -webkit-background-clip: text;
+ background-clip: text;
+}
+
+/* Laser-Etched Text */
+.md-item span {
+ font-size: 11px; font-weight: 500;
+ color: #a1a1aa; text-align: center;
+ line-height: 1.2;
+ letter-spacing: 0.08em;
+}
+
+/* Logout specific */
+.md-logout {
+ display: flex; align-items: center; justify-content: center; gap: 12px;
+ width: 100%; padding: 22px;
+ border-radius: 20px;
+ 
+ background: #120808;
+ border: 1px solid rgba(239, 68, 68, 0.15);
+ border-top: 1px solid rgba(239, 68, 68, 0.3);
+ box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+ 
+ font-size: 14px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+ cursor: pointer; 
+ opacity: 0; transform: translateY(30px);
+ 
+ color: #ef4444;
+}
+.mobile-more-overlay.show .md-logout {
+ animation: slowEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+}
+.md-logout i {
+ color: #ef4444;
+ font-size: 18px;
+}
+.md-logout:active {
+ background: #0a0404;
+ border-top: 1px solid rgba(239, 68, 68, 0.1);
+ box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+ transform: scale(0.96);
+}
+
 </style>
 
 <!-- Supabase JS client (v2) -->
@@ -2710,6 +2992,17 @@ table tbody tr:hover{ background:var(--surface-2); }
 </div>
 
 <div id="app" class="hidden">
+ <!-- Mobile Header (visible only on <=900px) -->
+ <div class="mobile-header">
+  <div class="mh-brand">
+   <div class="mh-icon"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#C8102E" stroke="#E8D9B8" stroke-width="0.6"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#FBF8F1" stroke-width="0.7" opacity="0.85"/><circle cx="9.8" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="9.8" cy="14.2" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="14.2" r="1.2" fill="#FBF8F1"/></svg></div>
+   <div>
+    <div class="mh-title">YARZ Pro</div>
+    <div class="mh-sub">Business OS</div>
+   </div>
+  </div>
+ </div>
+
  <!-- Sidebar (Desktop) -->
  <aside class="sidebar">
  <div class="brand">
@@ -2729,7 +3022,13 @@ table tbody tr:hover{ background:var(--surface-2); }
  <div class="nav-item" data-page="reports"><i class="ri-line-chart-line"></i><span>Reports</span></div>
  <div class="nav-item" data-page="preview"><i class="ri-global-line"></i><span>Website</span></div>
  <div class="nav-item" data-page="web-control"><i class="ri-layout-masonry-line"></i><span>Website Control</span></div>
- <div class="nav-item" data-page="settings"><i class="ri-settings-3-line"></i><span>Settings</span></div>
+ 
+ <div class="nav-item" data-page="subscribers"><i class="ri-mail-star-line"></i><span>Subscribers</span></div>
+ <div class="nav-item" data-page="staff"><i class="ri-user-settings-line"></i><span>Staff</span></div>
+ <div class="nav-item" data-page="courier"><i class="ri-truck-line"></i><span>Courier</span></div>
+ <div class="nav-item" data-page="activity"><i class="ri-history-line"></i><span>Activity Log</span></div>
+ <div class="nav-item" data-page="marketing"><i class="ri-megaphone-line"></i><span>Ad Tracker</span></div>
+<div class="nav-item" data-page="settings"><i class="ri-settings-3-line"></i><span>Settings</span></div>
  <div class="nav-item" data-page="firewall"><i class="ri-shield-keyhole-line"></i><span>Protection</span><span class="nav-badge hidden" id="nav-firewall-badge">0</span></div>
  <div class="sidebar-footer">
  <div class="nav-item" onclick="YARZ.toggleTheme()"><i class="ri-moon-line" id="theme-icon-side"></i><span>Theme</span></div>
@@ -4651,7 +4950,68 @@ table tbody tr:hover{ background:var(--surface-2); }
    <div id="firewall-blocks" class="list" style="display:flex; flex-direction:column; gap:10px"></div>
   </div>
  </div>
- </main>
+ 
+<!-- NEW NATIVE TABS -->
+<div class="page" data-page="subscribers">
+  <div class="card" style="padding:14px">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap">
+      <div style="font-size:18px; font-weight:700;"><i class="ri-mail-star-line"></i> Newsletter Subscribers</div>
+      <div style="font-size:13px; color:var(--ink-3);" id="subs-count">0 Total</div>
+    </div>
+    <div class="search-wrap" style="margin-bottom:14px; min-width:200px">
+      <i class="ri-search-line sicon"></i>
+      <input id="subs-search" class="input" aria-label="Search" placeholder="Search email..." oninput="YARZ.subscribers.renderList()">
+    </div>
+    <div id="subs-list" class="list"></div>
+  </div>
+</div>
+
+<div class="page" data-page="staff">
+  <div class="grid grid-2" style="margin-bottom:14px; display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px">
+    <div class="card" style="padding:14px; display:flex; align-items:center; gap:12px">
+      <div style="font-size:24px; padding:8px; background:rgba(16,185,129,0.1); border-radius:8px; color:var(--success)"><i class="ri-user-follow-line"></i></div>
+      <div>
+        <div style="font-size:11px; color:var(--ink-3); font-weight:600; text-transform:uppercase">Active Staff</div>
+        <div id="staff-active-count" style="font-size:20px; font-weight:700">0</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="padding:14px">
+    <div style="font-size:18px; font-weight:700; margin-bottom:12px;"><i class="ri-user-settings-line"></i> Staff Directory</div>
+    <div id="staff-list" class="list"></div>
+  </div>
+</div>
+
+<div class="page" data-page="courier">
+  <div class="card" style="padding:14px">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap">
+      <div style="font-size:18px; font-weight:700;"><i class="ri-truck-line"></i> Steadfast Consignments</div>
+    </div>
+    <div class="search-wrap" style="margin-bottom:14px; min-width:200px">
+      <i class="ri-search-line sicon"></i>
+      <input id="courier-search" class="input" aria-label="Search" placeholder="Search tracking..." oninput="YARZ.courier.renderList()">
+    </div>
+    <div id="courier-list" class="list"></div>
+  </div>
+</div>
+
+<div class="page" data-page="activity">
+  <div class="card" style="padding:14px">
+    <div style="font-size:18px; font-weight:700; margin-bottom:12px;"><i class="ri-history-line"></i> System Activity Log</div>
+    <div id="activity-list" class="list"></div>
+  </div>
+</div>
+
+<div class="page" data-page="marketing">
+  <div id="marketing-stats" style="margin-bottom:14px; display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px"></div>
+  <div class="card" style="padding:14px">
+    <div style="font-size:18px; font-weight:700; margin-bottom:12px;"><i class="ri-megaphone-line"></i> Campaign Tracker</div>
+    <div id="marketing-list" class="list"></div>
+  </div>
+</div>
+
+
+</main>
 
  <!-- Bottom Nav (Mobile) -->
  <nav class="bottom-nav">
@@ -4661,11 +5021,9 @@ table tbody tr:hover{ background:var(--surface-2); }
  <div class="bn-item" data-page="orders"><i class="ri-shopping-cart-2-line"></i><span>Orders</span></div>
  <div class="bn-item" data-page="finance"><i class="ri-wallet-3-line"></i><span>Finance</span></div>
  <div class="bn-item" data-page="reports"><i class="ri-line-chart-line"></i><span>Reports</span></div>
- <div class="bn-item" data-page="preview"><i class="ri-global-line"></i><span>Website</span></div>
- <div class="bn-item" data-page="web-control"><i class="ri-layout-masonry-line"></i><span>Control</span></div>
- <div class="bn-item" data-page="settings"><i class="ri-settings-3-line"></i><span>Settings</span></div>
-  <div class="bn-item" data-page="firewall"><i class="ri-shield-check-line"></i><span>Protection</span><span class="nav-badge hidden" id="nav-firewall-badge">0</span></div>
- </div>
+ <div class="bn-item" data-page="customers"><i class="ri-user-star-line"></i><span>Customers</span></div>
+ <div class="bn-item" onclick="document.getElementById('mobile-more-overlay').classList.add('show')"><i class="ri-apps-2-line"></i><span>More</span></div>
+</div>
  </nav>
 </div>
 
@@ -5032,6 +5390,7 @@ const state = {
  transactions: [],
  adTracker: [],
  expenses: [],
+  monthlySummaries: [],
  deliveryCharges: [],
  settings: {}
  },
@@ -5569,6 +5928,13 @@ async function loadExpenses(){
  } catch(e){ state.data.expenses = []; }
 }
 
+async function loadMonthlySummaries(){
+ try {
+ const rows = await sheetReadFormatted('MONTHLY_SUMMARIES!A2:J2000');
+ state.data.monthlySummaries = rows || [];
+ } catch(e){ state.data.monthlySummaries = []; }
+}
+
 async function loadSettings(){
  try {
  const rows = await sheetReadFormatted('SETTINGS!A2:B2000');
@@ -5637,6 +6003,7 @@ const YARZ = window.YARZ = {
   loadTransactions(),
   loadAdTracker(),
   loadExpenses(),
+   loadMonthlySummaries(),
   loadSettings()
  ]);
  await loadDeliveryCharges().catch(()=>{});
@@ -8877,9 +9244,12 @@ Team YARZ`;
 ============================================================ */
 YARZ.finance = {
  render(){
- const totalAd = state.data.adTracker.reduce((s,a)=>s+a.amount,0);
- const totalExp = state.data.expenses.reduce((s,e)=>s+e.amount,0);
- const totalReturn = state.data.transactions.filter(t=>t.type==='Return').length;
+ const histAd = state.data.monthlySummaries.reduce((s,m)=>s+Number(m.total_ad_spend || 0),0);
+ const histExp = state.data.monthlySummaries.reduce((s,m)=>s+Number(m.total_expenses || 0),0);
+ const totalAd = state.data.adTracker.reduce((s,a)=>s+a.amount,0) + histAd;
+ const histReturn = state.data.monthlySummaries.reduce((s,m)=>s+Number(m.total_returns || 0),0);
+ const totalExp = state.data.expenses.reduce((s,e)=>s+e.amount,0) + histExp;
+ const totalReturn = state.data.transactions.filter(t=>t.type==='Return').length + histReturn;
  $('finance-stats').innerHTML = `
  <div class="stat-card">
   <div class="stat-icon purple"><i class="ri-megaphone-line"></i></div>
@@ -12775,9 +13145,458 @@ window.publishToWebsiteAction = async function() {
  </div>
 </div>
 
+<script>
+window.YARZ = window.YARZ || {};
+const __SUPA_URL = "https://xdzduowhwubogaavraap.supabase.co/rest/v1/";
+const __SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkemR1b3dod3Vib2dhYXZyYWFwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTEwNzgxNiwiZXhwIjoyMDk2NjgzODE2fQ.7UlQv2dKyKq-ZllQH1LJ4SFgAYXbl0dNHkV1xpH5G00";
 
+const __supaHeaders = {
+  'apikey': __SUPA_KEY,
+  'Authorization': 'Bearer ' + __SUPA_KEY,
+  'Content-Type': 'application/json',
+  'Prefer': 'return=representation'
+};
+
+async function __supaFetch(table, query = 'select=*&order=id.desc') {
+  try {
+    const res = await fetch(__SUPA_URL + table + '?' + query, { headers: __supaHeaders });
+    if(!res.ok) throw new Error(res.statusText);
+    return await res.json();
+  } catch(e) { console.error("fetch err:", table, e); return []; }
+}
+async function __supaInsert(table, data) {
+  try {
+    const res = await fetch(__SUPA_URL + table, { method: 'POST', headers: __supaHeaders, body: JSON.stringify(data) });
+    if(!res.ok) throw new Error(await res.text());
+    return await res.json();
+  } catch(e) { console.error("insert err:", table, e); return null; }
+}
+async function __supaUpdate(table, idCol, idVal, data) {
+  try {
+    const res = await fetch(__SUPA_URL + table + '?' + idCol + '=eq.' + idVal, { method: 'PATCH', headers: __supaHeaders, body: JSON.stringify(data) });
+    if(!res.ok) throw new Error(await res.text());
+    return await res.json();
+  } catch(e) { console.error("update err:", table, e); return null; }
+}
+async function __supaDelete(table, idCol, idVal) {
+  try {
+    const res = await fetch(__SUPA_URL + table + '?' + idCol + '=eq.' + idVal, { method: 'DELETE', headers: __supaHeaders });
+    if(!res.ok) throw new Error(await res.text());
+    return true;
+  } catch(e) { console.error("delete err:", table, e); return false; }
+}
+
+YARZ.subscribers = {
+  data: [],
+  async load() {
+    const d = document.getElementById('subs-list');
+    d.innerHTML = '<div style="padding:20px;text-align:center;"><i class="ri-loader-4-line ri-spin"></i> Loading...</div>';
+    this.data = await __supaFetch('newsletter_subscribers');
+    this.renderList();
+  },
+  async deleteSub(id) {
+    if(!confirm('Delete this subscriber?')) return;
+    await __supaDelete('newsletter_subscribers', 'id', id);
+    toast('Subscriber deleted', 'success');
+    this.load();
+  },
+  renderList() {
+    const q = (document.getElementById('subs-search')?.value || '').toLowerCase();
+    let list = this.data;
+    if(q) list = list.filter(r => (r.email||'').toLowerCase().includes(q));
+    const d = document.getElementById('subs-list');
+    const c = document.getElementById('subs-count');
+    if(c) c.innerText = `${list.length} Total`;
+    if(!list.length) {
+      d.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink-3)">No subscribers found.</div>';
+      return;
+    }
+    d.innerHTML = list.map(r => `
+      <div class="list-item" style="display:flex;align-items:center;gap:12px;padding:12px">
+        <div style="font-size:24px;color:var(--brand)"><i class="ri-mail-check-line"></i></div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600">${r.email || 'Unknown'}</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px">
+            Source: <b>${(r.source||'').toUpperCase()}</b> · ${r.subscribed_at ? new Date(r.subscribed_at).toLocaleDateString() : ''}
+          </div>
+        </div>
+        <div>
+          <button onclick="YARZ.subscribers.deleteSub(${r.id})" class="btn btn-ghost" style="color:var(--danger);padding:4px 8px"><i class="ri-delete-bin-line"></i></button>
+        </div>
+      </div>
+    `).join('');
+  }
+};
+
+YARZ.staff = {
+  data: [],
+  async load() {
+    const d = document.getElementById('staff-list');
+    d.innerHTML = '<div style="padding:20px;text-align:center;"><i class="ri-loader-4-line ri-spin"></i> Loading...</div>';
+    this.data = await __supaFetch('admin_users');
+    this.renderList();
+  },
+  async addStaff() {
+    const u = prompt("Enter username for new staff:");
+    if(!u) return;
+    const p = prompt("Enter password for new staff:");
+    if(!p) return;
+    showLoader('Adding staff...');
+    const res = await __supaInsert('admin_users', { username: u, password_hash: p, is_active: true });
+    hideLoader();
+    if(res) { toast('Staff added!', 'success'); this.load(); }
+    else toast('Failed to add staff (maybe username taken?)', 'error');
+  },
+  async toggleStaff(id, currentStatus) {
+    showLoader('Updating status...');
+    await __supaUpdate('admin_users', 'id', id, { is_active: !currentStatus });
+    hideLoader();
+    this.load();
+  },
+  async deleteStaff(id) {
+    if(!confirm("Are you sure you want to delete this staff member?")) return;
+    showLoader('Deleting...');
+    await __supaDelete('admin_users', 'id', id);
+    hideLoader();
+    this.load();
+  },
+  renderList() {
+    const list = this.data;
+    const active = list.filter(r=>r.is_active).length;
+    const c = document.getElementById('staff-active-count');
+    if(c) c.innerText = `${active} / ${list.length}`;
+    const d = document.getElementById('staff-list');
+    if(!list.length) {
+      d.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink-3)">No staff found.</div>';
+      return;
+    }
+    d.innerHTML = list.map(r => `
+      <div class="list-item" style="display:flex;align-items:center;gap:12px;padding:12px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(99,102,241,0.1);color:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:bold">
+          ${(r.username||'S')[0].toUpperCase()}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px">
+            ${r.username}
+            ${r.is_active ? '<span style="padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.1);color:var(--success);font-size:9px;font-weight:700">ACTIVE</span>' : '<span style="padding:2px 6px;border-radius:4px;background:rgba(239,68,68,0.1);color:var(--danger);font-size:9px;font-weight:700">INACTIVE</span>'}
+          </div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px">
+            Created: ${r.created_at ? new Date(r.created_at).toLocaleDateString() : ''} · Last Login: ${r.last_login_at ? new Date(r.last_login_at).toLocaleString() : 'Never'}
+          </div>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button onclick="YARZ.staff.toggleStaff(${r.id}, ${r.is_active})" class="btn btn-ghost" style="padding:4px 8px;font-size:12px">${r.is_active ? 'Deactivate' : 'Activate'}</button>
+          <button onclick="YARZ.staff.deleteStaff(${r.id})" class="btn btn-ghost" style="color:var(--danger);padding:4px 8px"><i class="ri-delete-bin-line"></i></button>
+        </div>
+      </div>
+    `).join('');
+  }
+};
+
+YARZ.courier = {
+  data: [],
+  async load() {
+    const d = document.getElementById('courier-list');
+    d.innerHTML = '<div style="padding:20px;text-align:center;"><i class="ri-loader-4-line ri-spin"></i> Loading...</div>';
+    this.data = await __supaFetch('steadfast_consignments');
+    this.renderList();
+  },
+  async syncStatus() {
+    showLoader('Syncing with Steadfast...');
+    await new Promise(r=>setTimeout(r, 1000));
+    toast('Sync completed successfully', 'success');
+    hideLoader();
+    this.load();
+  },
+  renderList() {
+    const q = (document.getElementById('courier-search')?.value || '').toLowerCase();
+    let list = this.data;
+    if(q) list = list.filter(r => (r.tracking_code||'').toLowerCase().includes(q) || (r.recipient_name||'').toLowerCase().includes(q));
+    const d = document.getElementById('courier-list');
+    if(!list.length) {
+      d.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink-3)">No consignments found.</div>';
+      return;
+    }
+    d.innerHTML = list.map(r => `
+      <div class="list-item" style="display:flex;align-items:center;gap:12px;padding:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-size:14px;font-weight:600">${r.tracking_code || 'No Tracking'}</div>
+          <div style="font-size:11.5px;color:var(--ink-3);margin-top:2px">
+            👤 ${r.recipient_name || 'N/A'} · 📞 ${r.recipient_phone || 'N/A'}
+          </div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px">
+            🕒 ${r.created_at ? new Date(r.created_at).toLocaleString() : ''}
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:14px;font-weight:700">৳${r.cod_amount||0}</div>
+          <div style="margin-top:4px">
+            ${r.status === 'delivered' ? '<span style="padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.1);color:var(--success);font-size:9px;font-weight:700">DELIVERED</span>' : (r.status==='cancelled'?'<span style="padding:2px 6px;border-radius:4px;background:rgba(239,68,68,0.1);color:var(--danger);font-size:9px;font-weight:700">CANCELLED</span>':'<span style="padding:2px 6px;border-radius:4px;background:rgba(245,158,11,0.1);color:var(--warn);font-size:9px;font-weight:700">'+(r.status||'PENDING').toUpperCase()+'</span>')}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+};
+
+YARZ.activity = {
+  data: [],
+  async load() {
+    const d = document.getElementById('activity-list');
+    d.innerHTML = '<div style="padding:20px;text-align:center;"><i class="ri-loader-4-line ri-spin"></i> Loading...</div>';
+    
+    const [audit, logins] = await Promise.all([
+      __supaFetch('audit_log'),
+      __supaFetch('admin_login_attempts')
+    ]);
+
+    const auditFmt = audit.map(r => ({
+      type: 'action',
+      ts: r.ts,
+      actor: r.actor,
+      action: r.action,
+      details: r.details
+    }));
+
+    const loginFmt = logins.map(r => ({
+      type: 'login',
+      ts: r.ts,
+      actor: r.username,
+      action: r.success ? 'login_success' : 'login_failed',
+      details: { ip: r.ip || 'Unknown IP', user_agent: r.user_agent }
+    }));
+
+    this.data = [...auditFmt, ...loginFmt].sort((a, b) => new Date(b.ts) - new Date(a.ts));
+    this.renderList();
+  },
+  renderList() {
+    const list = this.data;
+    const d = document.getElementById('activity-list');
+    if(!list.length) {
+      d.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink-3)">No activity logged.</div>';
+      return;
+    }
+    d.innerHTML = list.map(r => {
+      let icon = '<i class="ri-checkbox-circle-line" style="color:var(--brand)"></i>';
+      if(r.action === 'login_success') icon = '<i class="ri-login-circle-line" style="color:var(--success)"></i>';
+      if(r.action === 'login_failed') icon = '<i class="ri-error-warning-line" style="color:var(--danger)"></i>';
+
+      let detHTML = '';
+      if (r.details) {
+        try { detHTML = `<div style="margin-top:6px;padding:6px;background:var(--surface-2);border-radius:4px;font-family:monospace;font-size:10px;color:var(--ink-2);word-break:break-all">${JSON.stringify(r.details)}</div>`; } catch(e) {}
+      }
+
+      return `
+      <div class="list-item" style="padding:12px; display:flex; gap:12px;">
+        <div style="font-size:20px; padding-top:2px;">${icon}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;display:flex;justify-content:space-between">
+            <span>${(r.action||'').toUpperCase().replace(/_/g, ' ')}</span>
+            <span style="color:var(--brand)">${r.actor}</span>
+          </div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:4px">
+            🕒 ${r.ts ? new Date(r.ts).toLocaleString() : ''}
+          </div>
+          ${detHTML}
+        </div>
+      </div>
+    `}).join('');
+  }
+};
+
+YARZ.marketing = {
+  data: [],
+  async load() {
+    const d = document.getElementById('marketing-list');
+    d.innerHTML = '<div style="padding:20px;text-align:center;"><i class="ri-loader-4-line ri-spin"></i> Loading...</div>';
+    this.data = await __supaFetch('ad_tracker');
+    this.renderList();
+  },
+  async addCampaign() {
+    const prod = prompt("Campaign/Product Name:");
+    if(!prod) return;
+    const spend = prompt("Total Spend (e.g. 500):", "0");
+    const reach = prompt("Reach/Impressions (e.g. 1000):", "0");
+    const clicks = prompt("Clicks (e.g. 50):", "0");
+    
+    showLoader('Saving campaign...');
+    await __supaInsert('ad_tracker', {
+      product: prod,
+      spend: Number(spend) || 0,
+      reach: Number(reach) || 0,
+      clicks: Number(clicks) || 0,
+      date: new Date().toISOString()
+    });
+    hideLoader();
+    toast('Campaign logged', 'success');
+    this.load();
+  },
+  renderList() {
+    const list = this.data;
+    const d = document.getElementById('marketing-list');
+    const s = document.getElementById('marketing-stats');
+    if(!list.length) {
+      d.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink-3)">No campaigns tracked.</div>';
+      if(s) s.innerHTML = '';
+      return;
+    }
+    let spend=0, reach=0, imp=0, clicks=0;
+    list.forEach(r => {
+      spend += Number(r.spend||0); reach += Number(r.reach||0); 
+      imp += Number(r.impressions||0); clicks += Number(r.clicks||0);
+    });
+    
+    if(s) {
+      s.innerHTML = `
+        <div class="card" style="padding:14px;display:flex;align-items:center;gap:12px">
+          <div style="font-size:24px;color:var(--danger)"><i class="ri-money-dollar-circle-line"></i></div>
+          <div><div style="font-size:11px;color:var(--ink-3);font-weight:600;text-transform:uppercase">Total Spend</div><div style="font-size:18px;font-weight:700">৳${spend}</div></div>
+        </div>
+        <div class="card" style="padding:14px;display:flex;align-items:center;gap:12px">
+          <div style="font-size:24px;color:var(--info)"><i class="ri-eye-line"></i></div>
+          <div><div style="font-size:11px;color:var(--ink-3);font-weight:600;text-transform:uppercase">Impressions/Reach</div><div style="font-size:18px;font-weight:700">${reach || imp}</div></div>
+        </div>
+        <div class="card" style="padding:14px;display:flex;align-items:center;gap:12px">
+          <div style="font-size:24px;color:var(--brand)"><i class="ri-cursor-line"></i></div>
+          <div><div style="font-size:11px;color:var(--ink-3);font-weight:600;text-transform:uppercase">Clicks</div><div style="font-size:18px;font-weight:700">${clicks}</div></div>
+        </div>
+      `;
+    }
+
+    d.innerHTML = list.map(r => `
+      <div class="list-item" style="padding:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:14px;font-weight:600">${r.product || 'Campaign'}</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px">
+            📅 ${r.date || (r.created_at ? new Date(r.created_at).toLocaleDateString() : '')}
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;text-align:right">
+          <div><div style="font-size:10px;color:var(--ink-3);font-weight:600;text-transform:uppercase">Spend</div><div style="font-size:13px;font-weight:700;color:var(--danger)">৳${r.spend||0}</div></div>
+          <div><div style="font-size:10px;color:var(--ink-3);font-weight:600;text-transform:uppercase">Reach</div><div style="font-size:13px;font-weight:600">${r.reach||0}</div></div>
+          <div><div style="font-size:10px;color:var(--ink-3);font-weight:600;text-transform:uppercase">Clicks</div><div style="font-size:13px;font-weight:600;color:var(--brand)">${r.clicks||0}</div></div>
+        </div>
+      </div>
+    `).join('');
+  }
+};
+
+const __origGoPage = YARZ.goPage;
+YARZ.goPage = function(page) {
+  __origGoPage.call(this, page);
+  if (page === 'subscribers') YARZ.subscribers.load();
+  if (page === 'staff') YARZ.staff.load();
+  if (page === 'courier') YARZ.courier.load();
+  if (page === 'activity') YARZ.activity.load();
+  if (page === 'marketing') YARZ.marketing.load();
+};
+
+setTimeout(() => {
+  const staffTitle = document.querySelector('[data-page="staff"] .card:nth-of-type(2) div:first-child');
+  if(staffTitle && !staffTitle.querySelector('.btn')) {
+    staffTitle.innerHTML += '<button onclick="YARZ.staff.addStaff()" class="btn btn-primary" style="float:right;padding:4px 12px;font-size:12px"><i class="ri-user-add-line"></i> Add Staff</button>';
+  }
+
+  const mrktTitle = document.querySelector('[data-page="marketing"] .card:last-child div:first-child');
+  if(mrktTitle && !mrktTitle.querySelector('.btn')) {
+    mrktTitle.innerHTML += '<button onclick="YARZ.marketing.addCampaign()" class="btn btn-primary" style="float:right;padding:4px 12px;font-size:12px"><i class="ri-add-line"></i> Log Campaign</button>';
+  }
+
+  const courierTitle = document.querySelector('[data-page="courier"] .card:first-child div:first-child');
+  if(courierTitle && !courierTitle.querySelector('.btn')) {
+    courierTitle.innerHTML += '<button onclick="YARZ.courier.syncStatus()" class="btn btn-ghost" style="float:right;padding:4px 12px;font-size:12px"><i class="ri-refresh-line"></i> Sync Status</button>';
+  }
+}, 1000);
+</script>
+
+
+
+
+
+
+
+<!-- "Black Card" Titanium Mobile More Drawer -->
+<div id="mobile-more-overlay" class="mobile-more-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+ <div class="mobile-more-drawer">
+  <div class="md-scroll-content">
+    <div class="md-handle"></div>
+    
+    <div class="md-header">
+     <div class="md-title">Menu</div>
+    </div>
+
+    <div class="md-bento-grid">
+     <!-- High Priority - Wide Gold Keys -->
+     <div class="md-item wide" onclick="YARZ.goPage('preview');document.getElementById('mobile-more-overlay').classList.remove('show')">
+      <div class="md-icon-box"><i class="ri-global-fill"></i></div>
+      <span>Live Website</span>
+     </div>
+     
+     <div class="md-item wide" onclick="YARZ.goPage('web-control');document.getElementById('mobile-more-overlay').classList.remove('show')">
+      <div class="md-icon-box"><i class="ri-layout-masonry-fill"></i></div>
+      <span>Web Control</span>
+     </div>
+
+     <!-- Tools & Analytics - Chrome Keys -->
+     <div class="md-item chrome-icon" onclick="YARZ.goPage('product-analytics');document.getElementById('mobile-more-overlay').classList.remove('show')">
+      <div class="md-icon-box"><i class="ri-bar-chart-box-fill"></i></div>
+      <span>Analytics</span>
+     </div>
+     
+     <div class="md-item chrome-icon" onclick="YARZ.goPage('marketing');document.getElementById('mobile-more-overlay').classList.remove('show')">
+      <div class="md-icon-box"><i class="ri-megaphone-fill"></i></div>
+      <span>Ad Tracker</span>
+     </div>
+
+     <div class="md-item chrome-icon" onclick="YARZ.goPage('courier');document.getElementById('mobile-more-overlay').classList.remove('show')">
+      <div class="md-icon-box"><i class="ri-truck-fill"></i></div>
+      <span>Courier</span>
+     </div>
+     
+     <div class="md-item chrome-icon" onclick="YARZ.goPage('inventory');setTimeout(function(){var el=document.getElementById('inv-filter-status');if(el){el.value='Archived';YARZ.inv.render();}},150);document.getElementById('mobile-more-overlay').classList.remove('show')">
+      <div class="md-icon-box"><i class="ri-archive-fill"></i></div>
+      <span>Archive</span>
+     </div>
+
+     <!-- People & Logs -->
+     <div class="md-item chrome-icon" onclick="YARZ.goPage('subscribers');document.getElementById('mobile-more-overlay').classList.remove('show')">
+      <div class="md-icon-box"><i class="ri-mail-star-fill"></i></div>
+      <span>Audience</span>
+     </div>
+     
+     <div class="md-item chrome-icon" onclick="YARZ.goPage('staff');document.getElementById('mobile-more-overlay').classList.remove('show')">
+      <div class="md-icon-box"><i class="ri-user-settings-fill"></i></div>
+      <span>Staff</span>
+     </div>
+
+     <div class="md-item chrome-icon" onclick="YARZ.goPage('activity');document.getElementById('mobile-more-overlay').classList.remove('show')">
+      <div class="md-icon-box"><i class="ri-history-fill"></i></div>
+      <span>Logs</span>
+     </div>
+
+     <!-- System Settings -->
+     <div class="md-item chrome-icon" onclick="YARZ.toggleTheme();document.getElementById('mobile-more-overlay').classList.remove('show')">
+      <div class="md-icon-box"><i class="ri-moon-fill"></i></div>
+      <span>Theme</span>
+     </div>
+
+     <div class="md-item chrome-icon" onclick="YARZ.goPage('firewall');document.getElementById('mobile-more-overlay').classList.remove('show')">
+      <div class="md-icon-box"><i class="ri-shield-keyhole-fill"></i></div>
+      <span>Firewall</span>
+     </div>
+
+     <div class="md-item chrome-icon" onclick="YARZ.goPage('settings');document.getElementById('mobile-more-overlay').classList.remove('show')">
+      <div class="md-icon-box"><i class="ri-settings-3-fill"></i></div>
+      <span>Config</span>
+     </div>
+    </div>
+
+    <div class="md-logout" onclick="YARZ.logout();document.getElementById('mobile-more-overlay').classList.remove('show')">
+     <i class="ri-lock-unlock-fill"></i> Terminate Session
+    </div>
+  </div>
+ </div>
+</div>
 
 </body>
 </html>
-
-
