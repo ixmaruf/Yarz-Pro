@@ -3030,6 +3030,20 @@ table tbody tr:hover{ background:var(--surface-2); }
     .flatpickr-calendar.arrowUp:after, .flatpickr-calendar.arrowUp:before {
       display: none !important;
     }
+
+    /* Glassmorphism Card for premium filter bar */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.45) !important;
+      backdrop-filter: blur(14px) saturate(120%) !important;
+      -webkit-backdrop-filter: blur(14px) saturate(120%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.4) !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04) !important;
+    }
+    body.dark .glass-card {
+      background: rgba(24, 28, 32, 0.6) !important;
+      border-color: rgba(255, 255, 255, 0.08) !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+    }
   </style>
 </head>
 <body>
@@ -3347,7 +3361,7 @@ table tbody tr:hover{ background:var(--surface-2); }
  <!-- REPORTS -->
  <div class="page" data-page="reports">
   <!-- REPORTS DATE FILTER BAR -->
-  <div class="card" style="padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap" class="dark-card">
+  <div class="card glass-card" style="padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
     <div style="display:flex;align-items:center;gap:12px">
       <div style="width:40px;height:40px;border-radius:12px;background:rgba(59,130,246,0.1);color:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">
         <i class="ri-filter-3-line"></i>
