@@ -3266,13 +3266,20 @@ table tbody tr:hover{ background:var(--surface-2); }
  <!-- REPORTS -->
  <div class="page" data-page="reports">
   <!-- REPORTS DATE FILTER BAR -->
-  <div class="card" style="padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px" class="dark-card">
-    <div style="display:flex;align-items:center;gap:8px">
-      <i class="ri-filter-3-line" style="font-size:20px;color:var(--info)"></i>
-      <h2 style="margin:0;font-size:16px;font-weight:700">Filter Reports</h2>
+  <div class="card" style="padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap" class="dark-card">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:40px;height:40px;border-radius:12px;background:rgba(59,130,246,0.1);color:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">
+        <i class="ri-filter-3-line"></i>
+      </div>
+      <div>
+        <h3 style="margin:0;font-size:14.5px;font-weight:700">Filter Reports</h3>
+        <span style="font-size:11px;color:var(--ink-3)">Select date range or quick preset</span>
+      </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <select id="rep-quick" class="input" style="width:140px;padding:8px 12px;font-size:12px" onchange="YARZ.rep.onQuickSelect(this.value)">
+    
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <!-- Preset Select -->
+      <select id="rep-quick" class="select" style="padding:10px 14px !important;font-size:12.5px;border-radius:12px !important;width:150px;height:42px;border:1px solid rgba(27,37,48,0.1) !important" onchange="YARZ.rep.onQuickSelect(this.value)">
         <option value="">Quick Select...</option>
         <option value="this_month">This Month</option>
         <option value="last_month">Last Month</option>
@@ -3280,12 +3287,18 @@ table tbody tr:hover{ background:var(--surface-2); }
         <option value="this_year">This Year</option>
         <option value="all_time" selected>All Time</option>
       </select>
-      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3)">
-        <input type="date" id="rep-from" class="input" style="padding:8px 12px;font-size:12px" onchange="YARZ.rep.applyFilter()">
-        <span>to</span>
-        <input type="date" id="rep-to" class="input" style="padding:8px 12px;font-size:12px" onchange="YARZ.rep.applyFilter()">
+
+      <!-- Date Range Inputs Container -->
+      <div style="display:flex;align-items:center;gap:6px;background:var(--bg-card);border:1px solid rgba(27,37,48,0.1);border-radius:12px;padding:4px 12px;height:42px;box-sizing:border-box" class="dark-card border-dark">
+        <input type="date" id="rep-from" class="input" style="border:none !important;background:transparent !important;padding:0 !important;font-size:12.5px;width:115px;height:auto !important;color:inherit;box-shadow:none !important" onchange="YARZ.rep.applyFilter()">
+        <span style="font-size:11px;color:var(--ink-3);user-select:none">to</span>
+        <input type="date" id="rep-to" class="input" style="border:none !important;background:transparent !important;padding:0 !important;font-size:12.5px;width:115px;height:auto !important;color:inherit;box-shadow:none !important" onchange="YARZ.rep.applyFilter()">
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="YARZ.rep.clearFilter()"><i class="ri-refresh-line"></i> Clear</button>
+
+      <!-- Clear Button -->
+      <button class="btn btn-secondary btn-sm" style="border-radius:12px !important;height:42px;padding:0 14px !important;font-size:12.5px;display:flex;align-items:center;gap:4px" onclick="YARZ.rep.clearFilter()">
+        <i class="ri-refresh-line"></i> Clear
+      </button>
     </div>
   </div>
   <div class="card" style="padding:20px;margin-bottom:14px">
