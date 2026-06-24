@@ -3265,6 +3265,29 @@ table tbody tr:hover{ background:var(--surface-2); }
 
  <!-- REPORTS -->
  <div class="page" data-page="reports">
+  <!-- REPORTS DATE FILTER BAR -->
+  <div class="card" style="padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px" class="dark-card">
+    <div style="display:flex;align-items:center;gap:8px">
+      <i class="ri-filter-3-line" style="font-size:20px;color:var(--info)"></i>
+      <h2 style="margin:0;font-size:16px;font-weight:700">Filter Reports</h2>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <select id="rep-quick" class="input" style="width:140px;padding:8px 12px;font-size:12px" onchange="YARZ.rep.onQuickSelect(this.value)">
+        <option value="">Quick Select...</option>
+        <option value="this_month">This Month</option>
+        <option value="last_month">Last Month</option>
+        <option value="last_3_months">Last 3 Months</option>
+        <option value="this_year">This Year</option>
+        <option value="all_time" selected>All Time</option>
+      </select>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3)">
+        <input type="date" id="rep-from" class="input" style="padding:8px 12px;font-size:12px" onchange="YARZ.rep.applyFilter()">
+        <span>to</span>
+        <input type="date" id="rep-to" class="input" style="padding:8px 12px;font-size:12px" onchange="YARZ.rep.applyFilter()">
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="YARZ.rep.clearFilter()"><i class="ri-refresh-line"></i> Clear</button>
+    </div>
+  </div>
   <div class="card" style="padding:20px;margin-bottom:14px">
   <div class="section-title"><h2><i class="ri-calendar-line" style="color:var(--info)"></i> Monthly Report</h2>
   <button class="btn btn-primary btn-sm" onclick="YARZ.rep.generate('monthly')"><i class="ri-save-line"></i> Sheet- Save</button>
