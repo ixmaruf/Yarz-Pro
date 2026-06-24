@@ -269,14 +269,16 @@
     var username = (p.adminUser || p.username || "").trim();
     var password = (p.adminPass || p.password || "");
     var userAgent = p.userAgent || (navigator && navigator.userAgent) || "";
+    var ip = p.ip || "Unknown";
 
-    var rl = await db.rpc("check_login_rate_limit", { p_ip: "browser", p_window_sec: 900 });
+    var rl = await db.rpc("check_login_rate_limit", { p_ip: ip, p_window_sec: 900 });
     if (!rl.data) throw new Error("Too many login attempts. Try again later.");
 
     var r = await db.rpc("admin_login", {
       p_username: username,
       p_password: password,
-      p_user_agent: userAgent
+      p_user_agent: userAgent,
+      p_ip: ip
     });
     if (r.error) throw new Error(r.error.message);
     var row = Array.isArray(r.data) ? r.data[0] : (r.data || null);
@@ -707,6 +709,36 @@
     return ok({ msg: "Deleted " + results.filter(function(r){return r.ok;}).length + " customer orders", results: results });
   }
 
+  async function deleteActivityLogs(p) {
+    var db = getWriteDb();
+    await ensureAuth();
+    var ids = p.ids;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      throw new Error("No log IDs provided for deletion");
+    }
+    var grouped = {};
+    for (var i = 0; i < ids.length; i++) {
+      var item = ids[i];
+      var tbl = item.table;
+      var idVal = item.id;
+      if (!tbl || !idVal) continue;
+      if (!grouped[tbl]) grouped[tbl] = [];
+      grouped[tbl].push(idVal);
+    }
+    var results = [];
+    var tables = Object.keys(grouped);
+    for (var j = 0; j < tables.length; j++) {
+      var table = tables[j];
+      var tableIds = grouped[table];
+      var r = await db.from(table).delete().in("id", tableIds);
+      if (r.error) {
+        throw new Error("Failed to delete from " + table + ": " + r.error.message);
+      }
+      results.push({ table: table, deletedCount: tableIds.length });
+    }
+    return ok({ msg: "Deleted selected logs", results: results });
+  }
+
   async function steadfastPassthrough() { return null; }
 
   async function handleAppsPost(action, payload) {
@@ -717,6 +749,7 @@
         case "adminlogin": case "admin_login": return await adminLogin(payload || {});
         case "adminlogout": case "admin_logout": return await adminLogout();
         case "verify_auth": return await verifyAuth();
+        case "delete_activity_logs": return await deleteActivityLogs(payload || {});
         case "saveproductfromform": return await saveProductFromForm(payload || {});
         case "saveproducteditfromform": return await saveProductEditFromForm(payload || {});
         case "updateproductstatus": return await updateProductStatus(payload || {});
@@ -810,7 +843,7 @@
     handleAppsPost: handleAppsPost,
     _internal: {
       sheetRead, adminLogin, adminLogout, verifyAuth,
-      saveProductFromForm, saveProductEditFromForm, deleteProduct, deleteCustomers,
+      saveProductFromForm, saveProductEditFromForm, deleteProduct, deleteCustomers, deleteActivityLogs,
       updateProductStatus, applyStockChange, applyBulkEdit, recordSale,
       updateWebsiteOrderStatus, updateManualOrderStatus,
       deleteWebsiteOrder, deleteManualOrder, archiveCompletedOrders,

@@ -5140,9 +5140,29 @@ table tbody tr:hover{ background:var(--surface-2); }
 </div>
 
 <div class="page" data-page="activity">
-  <div class="card" style="padding:14px">
-    <div style="font-size:18px; font-weight:700; margin-bottom:12px;"><i class="ri-history-line"></i> System Activity Log</div>
-    <div id="activity-list" class="list"></div>
+  <div class="card" style="padding:18px">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+      <div style="font-size:18px; font-weight:700; display:flex; align-items:center; gap:8px;">
+        <i class="ri-history-line" style="color:var(--brand)"></i> System Activity Log
+      </div>
+      <div id="activity-stats" style="display:flex; gap:8px;"></div>
+    </div>
+    
+    <!-- Bulk Operations Toolbar -->
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <label style="display:inline-flex; align-items:center; gap:6px; font-weight:600; cursor:pointer; user-select:none; font-size:13px;">
+          <input type="checkbox" id="activity-select-all" onclick="YARZ.activity.toggleSelectAll(this.checked)" style="width:16px; height:16px; accent-color:var(--brand); cursor:pointer;">
+          Select All
+        </label>
+        <span id="activity-selected-count" style="font-size:12px; color:var(--ink-3); font-weight:500;">0 selected</span>
+      </div>
+      <button id="activity-delete-btn" onclick="YARZ.activity.deleteSelected()" style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; font-size:12.5px; font-weight:600; border-radius:8px; background:#ef4444; color:#ffffff; border:none; cursor:pointer; opacity:0.5; pointer-events:none; transition:all 0.2s; box-shadow:var(--shadow-sm);">
+        <i class="ri-delete-bin-line"></i> Delete Selected
+      </button>
+    </div>
+
+    <div id="activity-list" class="list" style="display:grid; gap:10px;"></div>
   </div>
 </div>
 
@@ -6589,7 +6609,21 @@ function setupLogin(){
    // ✅ v17.5: Call adminLogin instead of verify_auth. Server validates
    // the password with a constant-time compare, checks IP-based rate
    // limit, and on success returns a 64-char hex session token.
-   const res = await appsPost('adminLogin', { adminUser: u, adminPass: p, userAgent: navigator.userAgent });
+   let ip = 'Unknown';
+    try {
+      const services = ['https://api.ipify.org?format=json', 'https://ipinfo.io/json', 'https://freeipapi.com/api/json'];
+      for (var i = 0; i < services.length; i++) {
+        try {
+          const ipRes = await Promise.race([
+            fetch(services[i]).then(r => r.json()),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 1500))
+          ]);
+          if (ipRes && ipRes.ip) { ip = ipRes.ip; break; }
+        } catch (err) { console.warn("IP fetch error:", err); }
+      }
+    } catch (e) { console.error("IP resolution completely failed:", e); }
+
+    const res = await appsPost('adminLogin', { adminUser: u, adminPass: p, userAgent: navigator.userAgent, ip: ip });
    if(res && res.success && res.token){
      window._adminToken = res.token;
      sessionStorage.setItem('yarz_session_token', res.token);
@@ -13364,6 +13398,13 @@ async function __supaDelete(table, idCol, idVal) {
     if(!res.ok) throw new Error(await res.text());
     return true;
   } catch(e) { console.error("delete err:", table, e); return false; }
+async function __supaDeleteBulk(table, ids) {
+  try {
+    const res = await fetch(__SUPA_URL + table + '?id=in.(' + ids.join(',') + ')', { method: 'DELETE', headers: __supaHeaders });
+    if(!res.ok) throw new Error(await res.text());
+    return true;
+  } catch(e) { console.error("bulk delete err:", table, e); return false; }
+}
 }
 
 YARZ.subscribers = {
@@ -13523,67 +13564,294 @@ YARZ.activity = {
   data: [],
   async load() {
     const d = document.getElementById('activity-list');
-    d.innerHTML = '<div style="padding:20px;text-align:center;"><i class="ri-loader-4-line ri-spin"></i> Loading...</div>';
+    d.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink-2)"><i class="ri-loader-4-line ri-spin"></i> Loading system activity logs...</div>';
     
-    const [audit, logins] = await Promise.all([
-      __supaFetch('audit_log'),
-      __supaFetch('admin_login_attempts')
-    ]);
+    try {
+      const [audit, logins, activity] = await Promise.all([
+        __supaFetch('audit_log'),
+        __supaFetch('admin_login_attempts'),
+        __supaFetch('_activity')
+      ]);
 
-    const auditFmt = audit.map(r => ({
-      type: 'action',
-      ts: r.ts,
-      actor: r.actor,
-      action: r.action,
-      details: r.details
-    }));
+      const auditFmt = audit.map(r => ({
+        type: 'action',
+        id: r.id,
+        ts: r.ts,
+        actor: r.actor,
+        action: r.action,
+        details: r.details
+      }));
 
-    const loginFmt = logins.map(r => ({
-      type: 'login',
-      ts: r.ts,
-      actor: r.username,
-      action: r.success ? 'login_success' : 'login_failed',
-      details: { ip: r.ip || 'Unknown IP', user_agent: r.user_agent }
-    }));
+      const loginFmt = logins.map(r => ({
+        type: 'login',
+        id: r.id,
+        ts: r.ts,
+        actor: r.username,
+        action: r.success ? 'login_success' : 'login_failed',
+        details: { ip: r.ip || 'Unknown', user_agent: r.user_agent }
+      }));
 
-    this.data = [...auditFmt, ...loginFmt].sort((a, b) => new Date(b.ts) - new Date(a.ts));
-    this.renderList();
+      const activityFmt = activity.map(r => ({
+        type: 'status_change',
+        id: r.id,
+        ts: r.ts,
+        actor: r.actor || 'system',
+        action: 'status_change',
+        details: { product: r.product, old_status: r.old_status, new_status: r.new_status }
+      }));
+
+      this.data = [...auditFmt, ...loginFmt, ...activityFmt].sort((a, b) => new Date(b.ts) - new Date(a.ts));
+      this.renderList();
+    } catch (e) {
+      console.error("Failed to load activity logs:", e);
+      d.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger)"><i class="ri-error-warning-line"></i> Error loading logs: ' + e.message + '</div>';
+    }
   },
+  
   renderList() {
     const list = this.data;
     const d = document.getElementById('activity-list');
+    
+    // Reset selection inputs
+    const masterSelect = document.getElementById('activity-select-all');
+    if (masterSelect) masterSelect.checked = false;
+    this.updateSelection();
+
     if(!list.length) {
-      d.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink-3)">No activity logged.</div>';
+      d.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink-3)"><i class="ri-history-line" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.5;"></i>No activity logs found.</div>';
       return;
     }
-    d.innerHTML = list.map(r => {
-      let icon = '<i class="ri-checkbox-circle-line" style="color:var(--brand)"></i>';
-      if(r.action === 'login_success') icon = '<i class="ri-login-circle-line" style="color:var(--success)"></i>';
-      if(r.action === 'login_failed') icon = '<i class="ri-error-warning-line" style="color:var(--danger)"></i>';
 
-      let detHTML = '';
-      if (r.details) {
-        try { detHTML = `<div style="margin-top:6px;padding:6px;background:var(--surface-2);border-radius:4px;font-family:monospace;font-size:10px;color:var(--ink-2);word-break:break-all">${JSON.stringify(r.details)}</div>`; } catch(e) {}
+    const parseUserAgent = (ua) => {
+      if (!ua) return { os: 'Unknown OS', browser: 'Unknown Browser' };
+      
+      let os = 'Unknown OS';
+      if (ua.includes('Windows NT 10.0')) os = 'Windows 10/11';
+      else if (ua.includes('Windows NT 6.3')) os = 'Windows 8.1';
+      else if (ua.includes('Windows NT 6.2')) os = 'Windows 8';
+      else if (ua.includes('Windows NT 6.1')) os = 'Windows 7';
+      else if (ua.includes('Macintosh') || ua.includes('Mac OS X')) os = 'macOS';
+      else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+      else if (ua.includes('Android')) os = 'Android';
+      else if (ua.includes('Linux')) os = 'Linux';
+      
+      let browser = 'Unknown Browser';
+      if (ua.includes('Edg/')) browser = 'Edge';
+      else if (ua.includes('Chrome/') && !ua.includes('Chromium')) browser = 'Chrome';
+      else if (ua.includes('Safari/') && !ua.includes('Chrome')) browser = 'Safari';
+      else if (ua.includes('Firefox/')) browser = 'Firefox';
+      else if (ua.includes('MSIE') || ua.includes('Trident/')) browser = 'Internet Explorer';
+      
+      return { os, browser };
+    };
+
+    const getOSIcon = (os) => {
+      if (os.includes('Windows')) return 'ri-windows-line';
+      if (os.includes('macOS') || os.includes('iOS')) return 'ri-apple-line';
+      if (os.includes('Android')) return 'ri-android-line';
+      if (os.includes('Linux')) return 'ri-terminal-line';
+      return 'ri-computer-line';
+    };
+
+    const getBrowserIcon = (browser) => {
+      if (browser.includes('Chrome')) return 'ri-chrome-line';
+      if (browser.includes('Safari')) return 'ri-safari-line';
+      if (browser.includes('Firefox')) return 'ri-firefox-line';
+      if (browser.includes('Edge')) return 'ri-edge-line';
+      return 'ri-global-line';
+    };
+
+    // Update Header stats counters
+    const statsEl = document.getElementById('activity-stats');
+    if (statsEl) {
+      const loginsSuccess = list.filter(r => r.action === 'login_success').length;
+      const loginsFailed = list.filter(r => r.action === 'login_failed').length;
+      const actionsCount = list.filter(r => r.type === 'action' || r.type === 'status_change').length;
+      
+      statsEl.innerHTML = `
+        <span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:8px; background:rgba(16,185,129,0.08); color:#10b981; font-size:11.5px; font-weight:700;">
+          <i class="ri-shield-user-line"></i> ${loginsSuccess} Success
+        </span>
+        <span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:8px; background:rgba(239,68,68,0.08); color:#ef4444; font-size:11.5px; font-weight:700;">
+          <i class="ri-shield-flash-line"></i> ${loginsFailed} Failed
+        </span>
+        <span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:8px; background:rgba(59,130,246,0.08); color:#3b82f6; font-size:11.5px; font-weight:700;">
+          <i class="ri-settings-4-line"></i> ${actionsCount} Actions
+        </span>
+      `;
+    }
+
+    d.innerHTML = list.map(r => {
+      let icon = '<i class="ri-checkbox-circle-line"></i>';
+      let iconBg = 'rgba(59, 130, 246, 0.08)';
+      let iconColor = '#3b82f6';
+      
+      if (r.action === 'login_success') {
+        icon = '<i class="ri-shield-check-line"></i>';
+        iconBg = 'rgba(16, 185, 129, 0.08)';
+        iconColor = '#10b981';
+      } else if (r.action === 'login_failed') {
+        icon = '<i class="ri-shield-flash-line"></i>';
+        iconBg = 'rgba(239, 68, 68, 0.08)';
+        iconColor = '#ef4444';
+      } else if (r.action === 'status_change') {
+        icon = '<i class="ri-exchange-line"></i>';
+        iconBg = 'rgba(139, 92, 246, 0.08)';
+        iconColor = '#8b5cf6';
+      } else if (r.action.toLowerCase().includes('delete') || r.action.toLowerCase().includes('clear')) {
+        icon = '<i class="ri-delete-bin-4-line"></i>';
+        iconBg = 'rgba(239, 68, 68, 0.08)';
+        iconColor = '#ef4444';
+      }
+
+      let osBadge = '';
+      let browserBadge = '';
+      let ipBadge = '';
+      
+      if (r.type === 'login') {
+        const uaInfo = parseUserAgent(r.details ? r.details.user_agent : '');
+        osBadge = `<span style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; background:var(--bg-2); color:var(--ink-2); font-size:10.5px; font-weight:600;"><i class="${getOSIcon(uaInfo.os)}"></i> ${uaInfo.os}</span>`;
+        browserBadge = `<span style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; background:var(--bg-2); color:var(--ink-2); font-size:10.5px; font-weight:600;"><i class="${getBrowserIcon(uaInfo.browser)}"></i> ${uaInfo.browser}</span>`;
+        
+        let ipVal = (r.details && r.details.ip) ? r.details.ip : 'Unknown';
+        if (ipVal === '::1' || ipVal === '127.0.0.1') {
+          ipVal = 'Localhost (::1)';
+        }
+        ipBadge = `<span style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; background:rgba(59, 130, 246, 0.08); color:#3b82f6; font-size:10.5px; font-weight:700;"><i class="ri-global-line"></i> ${ipVal}</span>`;
+      }
+
+      let statusDetails = '';
+      if (r.type === 'status_change' && r.details) {
+        statusDetails = `
+          <div style="display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap;">
+            <span style="font-size:11px; font-weight:600; color:var(--ink-3);">Product:</span>
+            <span style="padding:2px 8px; border-radius:6px; background:var(--bg-2); color:var(--ink-2); font-size:11px; font-weight:600;">${r.details.product}</span>
+            <span style="font-size:11px; color:var(--ink-3);"><i class="ri-arrow-right-line"></i></span>
+            <span style="padding:2px 6px; border-radius:4px; background:rgba(245,158,11,0.08); color:var(--warn); font-size:9.5px; font-weight:700; text-transform:uppercase;">${r.details.old_status}</span>
+            <span style="font-size:11px; color:var(--ink-3);"><i class="ri-arrow-right-line"></i></span>
+            <span style="padding:2px 6px; border-radius:4px; background:rgba(16,185,129,0.08); color:var(--success); font-size:9.5px; font-weight:700; text-transform:uppercase;">${r.details.new_status}</span>
+          </div>
+        `;
+      }
+
+      let detailsViewer = '';
+      if (r.type === 'action' && r.details && Object.keys(r.details).length > 0) {
+        detailsViewer = `
+          <div style="margin-top:6px;">
+            <span onclick="const b=this.nextElementSibling; const d=b.style.display==='none'; b.style.display=d?'block':'none'; this.querySelector('i').className=d?'ri-arrow-down-s-line':'ri-arrow-right-s-line';" style="font-size:11px; color:var(--brand); cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:2px; user-select:none;">
+              <i class="ri-arrow-right-s-line"></i> Show Details
+            </span>
+            <div style="display:none; margin-top:4px; padding:8px; background:var(--surface-2); border:1px solid var(--line); border-radius:6px; font-family:monospace; font-size:10.5px; color:var(--ink-2); word-break:break-all; max-height:150px; overflow-y:auto;">
+              ${JSON.stringify(r.details, null, 2).replace(/\n/g, '<br>').replace(/\s/g, '&nbsp;')}
+            </div>
+          </div>
+        `;
       }
 
       return `
-      <div class="list-item" style="padding:12px; display:flex; gap:12px;">
-        <div style="font-size:20px; padding-top:2px;">${icon}</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;display:flex;justify-content:space-between">
-            <span>${(r.action||'').toUpperCase().replace(/_/g, ' ')}</span>
-            <span style="color:var(--brand)">${r.actor}</span>
+      <div class="list-item" style="padding:14px; display:flex; gap:14px; align-items:flex-start; border:1px solid var(--line); border-radius:12px; background:var(--surface); transition:background 0.15s; margin-bottom:4px;">
+        <div style="display:flex; align-items:center; height:24px; padding-top:2px;">
+          <input type="checkbox" class="activity-item-check" data-id="${r.id}" data-table="${r.type === 'login' ? 'admin_login_attempts' : (r.type === 'status_change' ? '_activity' : 'audit_log')}" onchange="YARZ.activity.updateSelection()" style="width:16px; height:16px; accent-color:var(--brand); cursor:pointer;">
+        </div>
+        <div style="width:36px; height:36px; border-radius:10px; background:${iconBg}; color:${iconColor}; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;">
+          ${icon}
+        </div>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;">
+            <div style="font-size:13.5px; font-weight:700; color:var(--ink);">
+              ${(r.action||'').toUpperCase().replace(/_/g, ' ')}
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; padding:2px 8px; border-radius:999px; background:rgba(230,0,35,0.08); color:var(--brand);">
+                ${r.actor || 'system'}
+              </span>
+            </div>
           </div>
-          <div style="font-size:11px;color:var(--ink-3);margin-top:4px">
-            🕒 ${r.ts ? new Date(r.ts).toLocaleString() : ''}
+          
+          <div style="font-size:11.5px; color:var(--ink-3); margin-top:4px; display:flex; align-items:center; gap:4px;">
+            <i class="ri-time-line"></i> ${r.ts ? new Date(r.ts).toLocaleString() : ''}
           </div>
-          ${detHTML}
+          
+          ${osBadge || browserBadge || ipBadge ? `
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+              ${osBadge} ${browserBadge} ${ipBadge}
+            </div>
+          ` : ''}
+          
+          ${statusDetails}
+          ${detailsViewer}
         </div>
       </div>
-    `}).join('');
+      `;
+    }).join('');
+  },
+
+  toggleSelectAll(checked) {
+    const checks = document.querySelectorAll('.activity-item-check');
+    checks.forEach(c => c.checked = checked);
+    this.updateSelection();
+  },
+
+  updateSelection() {
+    const checks = document.querySelectorAll('.activity-item-check');
+    const checked = Array.from(checks).filter(c => c.checked);
+    
+    const countEl = document.getElementById('activity-selected-count');
+    if (countEl) {
+      countEl.innerText = checked.length + ' selected';
+    }
+    
+    const delBtn = document.getElementById('activity-delete-btn');
+    if (delBtn) {
+      if (checked.length > 0) {
+        delBtn.style.opacity = '1';
+        delBtn.style.pointerEvents = 'auto';
+      } else {
+        delBtn.style.opacity = '0.5';
+        delBtn.style.pointerEvents = 'none';
+      }
+    }
+    
+    const master = document.getElementById('activity-select-all');
+    if (master) {
+      master.checked = checked.length === checks.length && checks.length > 0;
+    }
+  },
+
+  async deleteSelected() {
+    const checks = Array.from(document.querySelectorAll('.activity-item-check:checked'));
+    if (checks.length === 0) return;
+    
+    if (!confirm('Are you sure you want to delete ' + checks.length + ' selected log entries? This will delete them from Supabase permanently.')) {
+      return;
+    }
+    
+    showLoader('Deleting logs...');
+    
+    const groups = {};
+    checks.forEach(c => {
+      const table = c.getAttribute('data-table');
+      const id = c.getAttribute('data-id');
+      if (!groups[table]) groups[table] = [];
+      groups[table].push(id);
+    });
+    
+    try {
+      const deletePromises = Object.keys(groups).map(table => {
+        return __supaDeleteBulk(table, groups[table]);
+      });
+      
+      await Promise.all(deletePromises);
+      toast('Selected logs deleted successfully', 'success');
+      this.load();
+    } catch(e) {
+      console.error("Error deleting logs:", e);
+      alert("Failed to delete logs: " + e.message);
+    } finally {
+      hideLoader();
+    }
   }
 };
-
 YARZ.marketing = {
   data: [],
   async load() {
