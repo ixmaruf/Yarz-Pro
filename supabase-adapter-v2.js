@@ -723,7 +723,7 @@
       var idVal = item.id;
       if (!tbl || !idVal) continue;
       if (!grouped[tbl]) grouped[tbl] = [];
-      grouped[tbl].push(idVal);
+      grouped[tbl].push(Number(idVal));
     }
     var results = [];
     var tables = Object.keys(grouped);

@@ -5148,6 +5148,14 @@ table tbody tr:hover{ background:var(--surface-2); }
       <div id="activity-stats" style="display:flex; gap:8px;"></div>
     </div>
     
+    <!-- Filter Tabs -->
+    <div style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--line); padding-bottom:10px; flex-wrap:wrap;">
+      <button onclick="YARZ.activity.setTab('all')" id="activity-tab-all" class="activity-tab-btn" style="padding:6px 12px; font-size:12.5px; font-weight:600; border-radius:8px; border:none; background:var(--brand); color:#fff; cursor:pointer; transition:all 0.2s;">All Logs</button>
+      <button onclick="YARZ.activity.setTab('login')" id="activity-tab-login" class="activity-tab-btn" style="padding:6px 12px; font-size:12.5px; font-weight:600; border-radius:8px; border:none; background:var(--bg-2); color:var(--ink-2); cursor:pointer; transition:all 0.2s;">Logins</button>
+      <button onclick="YARZ.activity.setTab('status_change')" id="activity-tab-status_change" class="activity-tab-btn" style="padding:6px 12px; font-size:12.5px; font-weight:600; border-radius:8px; border:none; background:var(--bg-2); color:var(--ink-2); cursor:pointer; transition:all 0.2s;">Status Changes</button>
+      <button onclick="YARZ.activity.setTab('action')" id="activity-tab-action" class="activity-tab-btn" style="padding:6px 12px; font-size:12.5px; font-weight:600; border-radius:8px; border:none; background:var(--bg-2); color:var(--ink-2); cursor:pointer; transition:all 0.2s;">Admin Actions</button>
+    </div>
+    
     <!-- Bulk Operations Toolbar -->
     <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
       <div style="display:flex; align-items:center; gap:12px;">
@@ -13562,6 +13570,23 @@ YARZ.courier = {
 
 YARZ.activity = {
   data: [],
+  currentTab: 'all',
+  
+  setTab(tab) {
+    this.currentTab = tab;
+    const btns = document.querySelectorAll('.activity-tab-btn');
+    btns.forEach(btn => {
+      if (btn.id === 'activity-tab-' + tab) {
+        btn.style.background = 'var(--brand)';
+        btn.style.color = '#fff';
+      } else {
+        btn.style.background = 'var(--bg-2)';
+        btn.style.color = 'var(--ink-2)';
+      }
+    });
+    this.renderList();
+  },
+
   async load() {
     const d = document.getElementById('activity-list');
     d.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink-2)"><i class="ri-loader-4-line ri-spin"></i> Loading system activity logs...</div>';
@@ -13601,7 +13626,9 @@ YARZ.activity = {
       }));
 
       this.data = [...auditFmt, ...loginFmt, ...activityFmt].sort((a, b) => new Date(b.ts) - new Date(a.ts));
-      this.renderList();
+      
+      // Keep selected tab or reset to all
+      this.setTab(this.currentTab);
     } catch (e) {
       console.error("Failed to load activity logs:", e);
       d.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger)"><i class="ri-error-warning-line"></i> Error loading logs: ' + e.message + '</div>';
@@ -13609,7 +13636,11 @@ YARZ.activity = {
   },
   
   renderList() {
-    const list = this.data;
+    let list = this.data;
+    if (this.currentTab !== 'all') {
+      list = list.filter(r => r.type === this.currentTab);
+    }
+
     const d = document.getElementById('activity-list');
     
     // Reset selection inputs
@@ -13618,7 +13649,7 @@ YARZ.activity = {
     this.updateSelection();
 
     if(!list.length) {
-      d.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink-3)"><i class="ri-history-line" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.5;"></i>No activity logs found.</div>';
+      d.innerHTML = '<div style="padding:40px;text-align:center;color:var(--ink-3)"><i class="ri-history-line" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.5;"></i>No logs found in this category.</div>';
       return;
     }
 
@@ -13661,12 +13692,12 @@ YARZ.activity = {
       return 'ri-global-line';
     };
 
-    // Update Header stats counters
+    // Update Header stats counters (always based on all loaded data)
     const statsEl = document.getElementById('activity-stats');
     if (statsEl) {
-      const loginsSuccess = list.filter(r => r.action === 'login_success').length;
-      const loginsFailed = list.filter(r => r.action === 'login_failed').length;
-      const actionsCount = list.filter(r => r.type === 'action' || r.type === 'status_change').length;
+      const loginsSuccess = this.data.filter(r => r.action === 'login_success').length;
+      const loginsFailed = this.data.filter(r => r.action === 'login_failed').length;
+      const actionsCount = this.data.filter(r => r.type === 'action' || r.type === 'status_change').length;
       
       statsEl.innerHTML = `
         <span style="display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:8px; background:rgba(16,185,129,0.08); color:#10b981; font-size:11.5px; font-weight:700;">
@@ -13828,22 +13859,19 @@ YARZ.activity = {
     
     showLoader('Deleting logs...');
     
-    const groups = {};
-    checks.forEach(c => {
-      const table = c.getAttribute('data-table');
-      const id = c.getAttribute('data-id');
-      if (!groups[table]) groups[table] = [];
-      groups[table].push(id);
-    });
+    const selectedIds = checks.map(c => ({
+      id: Number(c.getAttribute('data-id')),
+      table: c.getAttribute('data-table')
+    }));
     
     try {
-      const deletePromises = Object.keys(groups).map(table => {
-        return __supaDeleteBulk(table, groups[table]);
-      });
-      
-      await Promise.all(deletePromises);
-      toast('Selected logs deleted successfully', 'success');
-      this.load();
+      const res = await appsPost('delete_activity_logs', { ids: selectedIds });
+      if (res && res.success) {
+        toast('Selected logs deleted successfully', 'success');
+        this.load();
+      } else {
+        throw new Error(res ? res.message : 'Unknown backend deletion error');
+      }
     } catch(e) {
       console.error("Error deleting logs:", e);
       alert("Failed to delete logs: " + e.message);
