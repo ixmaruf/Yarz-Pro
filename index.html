@@ -2957,17 +2957,19 @@ table tbody tr:hover{ background:var(--surface-2); }
   <style>
     /* Premium Flatpickr overrides for Light & Dark mode */
     .flatpickr-calendar {
-      background: var(--bg-card) !important;
+      background: var(--surface) !important;
       border: 1px solid rgba(27,37,48,0.08) !important;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
       border-radius: 16px !important;
       font-family: 'Inter', sans-serif !important;
       margin-top: 5px !important;
+      z-index: 999999 !important;
     }
     body.dark .flatpickr-calendar {
       background: #181c20 !important;
       border-color: rgba(255,255,255,0.08) !important;
       box-shadow: 0 10px 40px rgba(0,0,0,0.4) !important;
+      z-index: 999999 !important;
     }
     .flatpickr-months {
       padding: 10px 0 !important;
@@ -3031,18 +3033,29 @@ table tbody tr:hover{ background:var(--surface-2); }
       display: none !important;
     }
 
-    /* Glassmorphism Card for premium filter bar */
+    /* Matte Card for premium filter bar */
     .glass-card {
-      background: rgba(255, 255, 255, 0.45) !important;
-      backdrop-filter: blur(14px) saturate(120%) !important;
-      -webkit-backdrop-filter: blur(14px) saturate(120%) !important;
-      border: 1px solid rgba(255, 255, 255, 0.4) !important;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04) !important;
+      background: var(--surface) !important;
+      border: 1px solid var(--line) !important;
+      box-shadow: var(--shadow) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
     }
     body.dark .glass-card {
-      background: rgba(24, 28, 32, 0.6) !important;
+      background: var(--surface) !important;
+      border-color: var(--line) !important;
+      box-shadow: var(--shadow) !important;
+    }
+
+    /* Premium Date Range Inputs Container */
+    .rep-date-range-container {
+      background: var(--bg) !important;
+      border: 1px solid var(--line) !important;
+      transition: all 0.2s ease;
+    }
+    body.dark .rep-date-range-container {
+      background: rgba(255, 255, 255, 0.04) !important;
       border-color: rgba(255, 255, 255, 0.08) !important;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
     }
   </style>
 </head>
@@ -3384,7 +3397,7 @@ table tbody tr:hover{ background:var(--surface-2); }
       </select>
 
       <!-- Date Range Inputs Container -->
-      <div style="display:flex;align-items:center;gap:6px;background:var(--bg-card);border:1px solid rgba(27,37,48,0.1);border-radius:12px;padding:4px 12px;height:42px;box-sizing:border-box" class="dark-card border-dark">
+      <div class="rep-date-range-container" style="display:flex;align-items:center;gap:6px;border-radius:12px;padding:4px 12px;height:42px;box-sizing:border-box">
         <input type="text" id="rep-from" class="input" style="border:none !important;background:transparent !important;padding:0 !important;font-size:12.5px;width:105px;height:auto !important;color:inherit;box-shadow:none !important;cursor:pointer" placeholder="Start Date" readonly>
         <span style="font-size:11px;color:var(--ink-3);user-select:none">to</span>
         <input type="text" id="rep-to" class="input" style="border:none !important;background:transparent !important;padding:0 !important;font-size:12.5px;width:105px;height:auto !important;color:inherit;box-shadow:none !important;cursor:pointer" placeholder="End Date" readonly>
