@@ -2950,6 +2950,87 @@ table tbody tr:hover{ background:var(--surface-2); }
 
 <!-- Admin Panel script (now uses supabase-adapter-v2.js with full RPC support) -->
 <script src="supabase-adapter-v2.js"></script>
+
+  <!-- Flatpickr (Premium Custom Calendar Picker) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <style>
+    /* Premium Flatpickr overrides for Light & Dark mode */
+    .flatpickr-calendar {
+      background: var(--bg-card) !important;
+      border: 1px solid rgba(27,37,48,0.08) !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
+      border-radius: 16px !important;
+      font-family: 'Inter', sans-serif !important;
+      margin-top: 5px !important;
+    }
+    body.dark .flatpickr-calendar {
+      background: #181c20 !important;
+      border-color: rgba(255,255,255,0.08) !important;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4) !important;
+    }
+    .flatpickr-months {
+      padding: 10px 0 !important;
+    }
+    .flatpickr-months .flatpickr-month {
+      color: var(--ink) !important;
+      fill: var(--ink) !important;
+      height: 34px !important;
+    }
+    .flatpickr-current-month {
+      padding: 0 !important;
+      font-size: 13.5px !important;
+    }
+    .flatpickr-current-month select.flatpickr-monthDropdown-months {
+      color: var(--ink) !important;
+      font-weight: 700 !important;
+      font-family: inherit !important;
+    }
+    .flatpickr-current-month input.cur-year {
+      color: var(--ink) !important;
+      font-weight: 700 !important;
+      font-family: inherit !important;
+    }
+    .flatpickr-weekday {
+      color: var(--ink-3) !important;
+      font-weight: 600 !important;
+      font-size: 11px !important;
+    }
+    .flatpickr-day {
+      color: var(--ink) !important;
+      border-radius: 10px !important;
+      font-size: 12.5px !important;
+      height: 36px !important;
+      line-height: 36px !important;
+      margin: 2px !important;
+    }
+    .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay {
+      color: var(--ink-4) !important;
+      opacity: 0.5;
+    }
+    .flatpickr-day:hover, .flatpickr-day:focus {
+      background: rgba(63,191,165,0.12) !important;
+      color: var(--accent) !important;
+    }
+    .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange {
+      background: var(--accent) !important;
+      border-color: var(--accent) !important;
+      color: #fff !important;
+      font-weight: 700 !important;
+    }
+    .flatpickr-months .flatpickr-prev-month, .flatpickr-months .flatpickr-next-month {
+      color: var(--ink) !important;
+      fill: var(--ink) !important;
+      padding: 10px !important;
+    }
+    .flatpickr-months .flatpickr-prev-month:hover, .flatpickr-months .flatpickr-next-month:hover {
+      color: var(--accent) !important;
+      fill: var(--accent) !important;
+    }
+    .flatpickr-calendar.arrowUp:after, .flatpickr-calendar.arrowUp:before {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
 
@@ -3290,9 +3371,9 @@ table tbody tr:hover{ background:var(--surface-2); }
 
       <!-- Date Range Inputs Container -->
       <div style="display:flex;align-items:center;gap:6px;background:var(--bg-card);border:1px solid rgba(27,37,48,0.1);border-radius:12px;padding:4px 12px;height:42px;box-sizing:border-box" class="dark-card border-dark">
-        <input type="date" id="rep-from" class="input" style="border:none !important;background:transparent !important;padding:0 !important;font-size:12.5px;width:115px;height:auto !important;color:inherit;box-shadow:none !important" onchange="YARZ.rep.applyFilter()">
+        <input type="text" id="rep-from" class="input" style="border:none !important;background:transparent !important;padding:0 !important;font-size:12.5px;width:105px;height:auto !important;color:inherit;box-shadow:none !important;cursor:pointer" placeholder="Start Date" readonly>
         <span style="font-size:11px;color:var(--ink-3);user-select:none">to</span>
-        <input type="date" id="rep-to" class="input" style="border:none !important;background:transparent !important;padding:0 !important;font-size:12.5px;width:115px;height:auto !important;color:inherit;box-shadow:none !important" onchange="YARZ.rep.applyFilter()">
+        <input type="text" id="rep-to" class="input" style="border:none !important;background:transparent !important;padding:0 !important;font-size:12.5px;width:105px;height:auto !important;color:inherit;box-shadow:none !important;cursor:pointer" placeholder="End Date" readonly>
       </div>
 
       <!-- Clear Button -->
@@ -6661,8 +6742,30 @@ _ls('yarz_settings', JSON.stringify(sav));
  }
  });
 
- // Initial data load
- YARZ.loadAll();
+ // Initialize custom premium date pickers
+  try {
+    if (typeof flatpickr !== 'undefined') {
+      YARZ.rep._fpFrom = flatpickr("#rep-from", {
+        dateFormat: "Y-m-d",
+        disableMobile: "true",
+        onChange: function(selectedDates, dateStr) {
+          YARZ.rep.applyFilter();
+        }
+      });
+      YARZ.rep._fpTo = flatpickr("#rep-to", {
+        dateFormat: "Y-m-d",
+        disableMobile: "true",
+        onChange: function(selectedDates, dateStr) {
+          YARZ.rep.applyFilter();
+        }
+      });
+    }
+  } catch(e) {
+    console.error("Flatpickr initialization failed", e);
+  }
+
+  // Initial data load
+  YARZ.loadAll();
 
  // Auto-refresh every 60 seconds to catch new website orders
  setInterval(()=>{
@@ -9532,37 +9635,51 @@ YARZ.rep = {
  filter: { from: null, to: null },
 
  onQuickSelect(val) {
-   if(!val) return;
-   const now = new Date();
-   let f, t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-   if(val === 'this_month') { f = new Date(now.getFullYear(), now.getMonth(), 1); }
-   else if(val === 'last_month') { f = new Date(now.getFullYear(), now.getMonth()-1, 1); t = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59); }
-   else if(val === 'last_3_months') { f = new Date(now.getFullYear(), now.getMonth()-3, 1); }
-   else if(val === 'this_year') { f = new Date(now.getFullYear(), 0, 1); }
-   else if(val === 'all_time') { f = null; t = null; }
-   
-   if(f) $('rep-from').value = f.toISOString().split('T')[0]; else $('rep-from').value = '';
-   if(t && val !== 'all_time') $('rep-to').value = t.toISOString().split('T')[0]; else $('rep-to').value = '';
-   if(val === 'all_time') this.clearFilter();
-   else this.applyFilter();
- },
+    if(!val) return;
+    const now = new Date();
+    let f, t = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    if(val === 'this_month') { f = new Date(now.getFullYear(), now.getMonth(), 1); }
+    else if(val === 'last_month') { f = new Date(now.getFullYear(), now.getMonth()-1, 1); t = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59); }
+    else if(val === 'last_3_months') { f = new Date(now.getFullYear(), now.getMonth()-3, 1); }
+    else if(val === 'this_year') { f = new Date(now.getFullYear(), 0, 1); }
+    else if(val === 'all_time') { f = null; t = null; }
+    
+    if(f) {
+      $('rep-from').value = f.toISOString().split('T')[0];
+      if(YARZ.rep._fpFrom) YARZ.rep._fpFrom.setDate(f, false);
+    } else {
+      $('rep-from').value = '';
+      if(YARZ.rep._fpFrom) YARZ.rep._fpFrom.clear();
+    }
+    if(t && val !== 'all_time') {
+      $('rep-to').value = t.toISOString().split('T')[0];
+      if(YARZ.rep._fpTo) YARZ.rep._fpTo.setDate(t, false);
+    } else {
+      $('rep-to').value = '';
+      if(YARZ.rep._fpTo) YARZ.rep._fpTo.clear();
+    }
+    if(val === 'all_time') this.clearFilter();
+    else this.applyFilter();
+  },
 
- applyFilter() {
-   const f = $('rep-from').value;
-   const t = $('rep-to').value;
-   this.filter.from = f ? new Date(f + 'T00:00:00') : null;
-   this.filter.to = t ? new Date(t + 'T23:59:59') : null;
-   this.render();
- },
+  applyFilter() {
+    const f = $('rep-from').value;
+    const t = $('rep-to').value;
+    this.filter.from = f ? new Date(f + 'T00:00:00') : null;
+    this.filter.to = t ? new Date(t + 'T23:59:59') : null;
+    this.render();
+  },
 
- clearFilter() {
-   $('rep-from').value = '';
-   $('rep-to').value = '';
-   $('rep-quick').value = '';
-   this.filter.from = null;
-   this.filter.to = null;
-   this.render();
- },
+  clearFilter() {
+    $('rep-from').value = '';
+    $('rep-to').value = '';
+    $('rep-quick').value = '';
+    if(YARZ.rep._fpFrom) YARZ.rep._fpFrom.clear();
+    if(YARZ.rep._fpTo) YARZ.rep._fpTo.clear();
+    this.filter.from = null;
+    this.filter.to = null;
+    this.render();
+  },
 
  _inRange(d) {
    if(!d) return false;
