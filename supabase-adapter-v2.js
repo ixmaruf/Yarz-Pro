@@ -172,9 +172,19 @@
       return ok(r.data);
     }
     if (range.startsWith("STAFF")) {
-      var r = await db.from("admin_users").select("*");
-      if (r.error) throw new Error(r.error.message);
-      return ok(r.data);
+      var rUsers = await db.from("admin_users").select("*").order("created_at", { ascending: false });
+      if (rUsers.error) throw new Error(rUsers.error.message);
+      
+      var rSessions = await db.from("admin_sessions").select("*").gt("expires_at", new Date().toISOString());
+      if (rSessions.error) throw new Error(rSessions.error.message);
+      
+      var users = rUsers.data.map(function(u) {
+        u.sessions = rSessions.data.filter(function(s) {
+          return s.username === u.username;
+        });
+        return u;
+      });
+      return ok(users);
     }
     if (range.startsWith("COURIER")) {
       var r = await db.from("steadfast_consignments").select("*").order("created_at", { ascending: false });
@@ -691,22 +701,37 @@
   }
 
   async function deleteCustomers(p) {
-    // FIX #31: delete_customers should NOT delete a product
     var db = getWriteDb(); await ensureAuth();
-    var ids = [];
-    if (Array.isArray(p.orderIds)) ids = p.orderIds;
-    else if (Array.isArray(p.ids)) ids = p.ids;
-    else if (Array.isArray(p.names)) ids = p.names;
-    else if (typeof p.orderId === "string" && p.orderId) ids = [p.orderId];
-    if (ids.length === 0) throw new Error("orderIds[] required");
-    var results = [];
-    for (var i = 0; i < ids.length; i++) {
-      var oid = ids[i];
-      var r = await db.rpc("delete_website_order", { p_order_id: oid });
-      if (r.error) results.push({ orderId: oid, error: r.error.message });
-      else results.push({ orderId: oid, ok: true });
-    }
-    return ok({ msg: "Deleted " + results.filter(function(r){return r.ok;}).length + " customer orders", results: results });
+    var phones = [];
+    if (Array.isArray(p.phones)) phones = p.phones;
+    else if (Array.isArray(p.ids)) phones = p.ids;
+    else if (typeof p.phone === "string" && p.phone) phones = [p.phone];
+    if (phones.length === 0) throw new Error("phones[] required");
+    var r = await db.from("customers").delete().in("phone", phones);
+    if (r.error) throw new Error(r.error.message);
+    return ok({ msg: "Deleted " + phones.length + " customers", success: true });
+  }
+
+  async function killStaffSession(p) {
+    var db = getWriteDb(); await ensureAuth();
+    if (!p.token) throw new Error("token required");
+    var r = await db.from("admin_sessions").delete().eq("token", p.token);
+    if (r.error) throw new Error(r.error.message);
+    return ok({ msg: "Session revoked successfully" });
+  }
+
+  async function createStaff(p) {
+    var db = getWriteDb(); await ensureAuth();
+    if (!p.username || !p.password) throw new Error("username and password required");
+    var r = await db.rpc("create_staff", {
+      p_username: p.username,
+      p_password: p.password,
+      p_name: p.name || "",
+      p_showroom: p.showroom || ""
+    });
+    if (r.error) throw new Error(r.error.message);
+    if (!r.data) throw new Error("Username already taken");
+    return ok({ msg: "Staff added successfully" });
   }
 
   async function deleteActivityLogs(p) {
@@ -758,6 +783,8 @@
         case "recordsale": return await recordSale(payload || {});
         case "deleteproduct": case "deleteProduct": return await deleteProduct(payload || {});
         case "delete_customers": case "deletecustomers": case "deleteCustomers": return await deleteCustomers(payload || {});
+        case "kill_staff_session": return await killStaffSession(payload || {});
+        case "create_staff": return await createStaff(payload || {});
         case "updatewebsiteorderstatus": return await updateWebsiteOrderStatus(payload || {});
         case "updatemanualorderstatus": return await updateManualOrderStatus(payload || {});
         case "deletewebsiteorder": return await deleteWebsiteOrder(payload || {});
@@ -850,7 +877,7 @@
       saveOrderFromForm, saveAdFromForm, saveExpenseFromForm, saveReturnFromForm,
       updateSettings, updateDeliveryCharges, saveGitHubSettings,
       fullFactoryReset, clearFinancialsOnly, clearInventoryOnly,
-      getSessionToken, setSessionToken
+      getSessionToken, setSessionToken, killStaffSession, createStaff
     }
   };
 })();
