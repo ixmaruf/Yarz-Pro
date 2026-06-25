@@ -2731,6 +2731,7 @@ table tbody tr:hover{ background:var(--surface-2); }
  <div class="nav-item" data-page="web-control"><i class="ri-layout-masonry-line"></i><span>Website Control</span></div>
  <div class="nav-item" data-page="settings"><i class="ri-settings-3-line"></i><span>Settings</span></div>
  <div class="nav-item" data-page="firewall"><i class="ri-shield-keyhole-line"></i><span>Protection</span><span class="nav-badge hidden" id="nav-firewall-badge">0</span></div>
+ <div class="nav-item" data-page="staff"><i class="ri-user-settings-line"></i><span>Staff</span></div>
  <div class="sidebar-footer">
  <div class="nav-item" onclick="YARZ.toggleTheme()"><i class="ri-moon-line" id="theme-icon-side"></i><span>Theme</span></div>
  <div class="nav-item" onclick="YARZ.logout()"><i class="ri-logout-box-r-line"></i><span>Logout</span></div>
@@ -4651,6 +4652,35 @@ table tbody tr:hover{ background:var(--surface-2); }
    <div id="firewall-blocks" class="list" style="display:flex; flex-direction:column; gap:10px"></div>
   </div>
  </div>
+
+ <!-- STAFF MANAGEMENT -->
+ <div class="page" data-page="staff">
+  <div class="grid grid-2" style="margin-bottom:14px; display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px">
+    <div class="card" style="padding:14px; display:flex; align-items:center; gap:12px">
+      <div style="font-size:24px; padding:8px; background:rgba(16,185,129,0.1); border-radius:8px; color:var(--success)"><i class="ri-user-follow-line"></i></div>
+      <div>
+        <div style="font-size:11px; color:var(--ink-3); font-weight:600; text-transform:uppercase">Active Staff</div>
+        <div id="staff-active-count" style="font-size:20px; font-weight:700">0</div>
+      </div>
+    </div>
+    <div class="card" style="padding:14px; display:flex; align-items:center; gap:12px">
+      <div style="font-size:24px; padding:8px; background:rgba(99,102,241,0.1); border-radius:8px; color:var(--brand)"><i class="ri-device-line"></i></div>
+      <div>
+        <div style="font-size:11px; color:var(--ink-3); font-weight:600; text-transform:uppercase">Active Sessions</div>
+        <div id="staff-session-count" style="font-size:20px; font-weight:700">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:14px; margin-bottom:14px">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px">
+      <div style="font-size:18px; font-weight:700;"><i class="ri-user-settings-line" style="color:var(--brand)"></i> Staff Directory</div>
+      <button class="btn btn-primary btn-sm" onclick="YARZ.staff.showAddModal()"><i class="ri-user-add-line"></i> Add Staff</button>
+    </div>
+    <div id="staff-list" class="list" style="display:flex; flex-direction:column; gap:10px"></div>
+  </div>
+ </div>
+
  </main>
 
  <!-- Bottom Nav (Mobile) -->
@@ -4665,6 +4695,7 @@ table tbody tr:hover{ background:var(--surface-2); }
  <div class="bn-item" data-page="web-control"><i class="ri-layout-masonry-line"></i><span>Control</span></div>
  <div class="bn-item" data-page="settings"><i class="ri-settings-3-line"></i><span>Settings</span></div>
   <div class="bn-item" data-page="firewall"><i class="ri-shield-check-line"></i><span>Protection</span><span class="nav-badge hidden" id="nav-firewall-badge">0</span></div>
+  <div class="bn-item" data-page="staff"><i class="ri-user-settings-line"></i><span>Staff</span></div>
  </div>
  </nav>
 </div>
@@ -5816,7 +5847,9 @@ const YARZ = window.YARZ = {
  finance:['Finance','and/more '],
  reports:['Reports','Monthly Yearly'],
  preview:['Website preview','buyer '],
- settings:['Settings',' config']
+ settings:['Settings',' config'],
+ staff:['Staff Management','Manage staff & sessions'],
+ firewall:['Protection','Security & Firewall']
  };
  const t = titles[page]||[page,''];
  $('topbar-title').textContent = t[0];
@@ -12554,6 +12587,139 @@ window.publishToWebsiteAction = async function() {
 
 })();
 
+// ============ YARZ STAFF MANAGEMENT ============
+YARZ.staff = {
+  data: [],
+  async load() {
+    const d = document.getElementById('staff-list');
+    if(d) d.innerHTML = '<div style="padding:20px;text-align:center;"><i class="ri-loader-4-line" style="animation:spin 1s linear infinite;display:inline-block"></i> Loading staff...</div>';
+    try {
+      const res = await sheetRead('STAFF');
+      this.data = res || [];
+      this.renderList();
+    } catch(e) {
+      console.error('Staff load error:', e);
+      if(d) d.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger)">Failed to load staff data.</div>';
+    }
+  },
+  showAddModal() {
+    const html = `
+      <div class="modal-header">
+        <h3><i class="ri-user-add-line" style="color:var(--brand)"></i> Add New Staff</h3>
+        <button class="modal-close" onclick="YARZ.closeModal()"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="field"><label>Username <span class="req">*</span></label><input id="staff-f-username" class="input" placeholder="Enter username"></div>
+      <div class="field"><label>Password <span class="req">*</span></label><input id="staff-f-password" type="password" class="input" placeholder="Enter password"></div>
+      <div class="field"><label>Full Name</label><input id="staff-f-name" class="input" placeholder="Staff member's name"></div>
+      <div class="field"><label>Showroom</label><input id="staff-f-showroom" class="input" placeholder="Showroom location"></div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary" onclick="YARZ.staff.addStaff()"><i class="ri-check-line"></i> Create Staff Account</button>
+      </div>
+    `;
+    $('modal-content').innerHTML = html;
+    $('modal-overlay').classList.add('show');
+    setTimeout(()=>{ const f = document.getElementById('staff-f-username'); if(f) f.focus(); }, 100);
+  },
+  async addStaff() {
+    const username = ($('staff-f-username')||{}).value;
+    const password = ($('staff-f-password')||{}).value;
+    const name = ($('staff-f-name')||{}).value;
+    const showroom = ($('staff-f-showroom')||{}).value;
+    if(!username || !password) { toast('Username and Password are required', 'error'); return; }
+    YARZ.closeModal();
+    showLoader('Creating staff account...');
+    try {
+      const res = await appsPost('create_staff', { username, password, name, showroom });
+      if(res && res.success) {
+        toast('Staff account created successfully!', 'success');
+        this.load();
+      } else {
+        toast(res.msg || 'Failed to create staff', 'error');
+      }
+    } catch(e) {
+      toast('Error: ' + e.message, 'error');
+    } finally {
+      hideLoader();
+    }
+  },
+  async revokeSession(token) {
+    if(!confirm('Revoke this session? The staff member will be logged out immediately on that device.')) return;
+    showLoader('Revoking session...');
+    try {
+      const res = await appsPost('kill_staff_session', { token });
+      if(res && res.success) {
+        toast('Session revoked successfully', 'success');
+        this.load();
+      } else {
+        toast(res.msg || 'Failed to revoke session', 'error');
+      }
+    } catch(e) {
+      toast('Error: ' + e.message, 'error');
+    } finally {
+      hideLoader();
+    }
+  },
+  renderList() {
+    const list = this.data;
+    // Count active staff and total sessions
+    let totalSessions = 0;
+    const activeStaff = list.filter(r => {
+      const sessions = r.sessions || [];
+      totalSessions += sessions.length;
+      return r.is_active;
+    }).length;
+    const ac = document.getElementById('staff-active-count');
+    if(ac) ac.innerText = activeStaff + ' / ' + list.length;
+    const sc = document.getElementById('staff-session-count');
+    if(sc) sc.innerText = totalSessions;
+
+    const d = document.getElementById('staff-list');
+    if(!d) return;
+    if(!list.length) {
+      d.innerHTML = '<div style="padding:20px;text-align:center;color:var(--ink-3)">No staff found. Click "Add Staff" to create one.</div>';
+      return;
+    }
+    d.innerHTML = list.map(r => {
+      const sessions = r.sessions || [];
+      const sessHtml = sessions.length > 0 ? sessions.map(s => `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface-2);border-radius:6px;margin-top:6px;font-size:11px;flex-wrap:wrap">
+          <i class="ri-device-line" style="color:var(--brand);font-size:13px"></i>
+          <span style="flex:1;min-width:120px;color:var(--ink-2)">${esc(s.user_agent ? s.user_agent.substring(0, 50) + '...' : 'Unknown Device')}</span>
+          <span style="color:var(--ink-3)">${s.ip_address || ''}</span>
+          <span style="color:var(--ink-3)">🕒 ${s.created_at ? new Date(s.created_at).toLocaleString() : ''}</span>
+          <button onclick="YARZ.staff.revokeSession('${esc(s.token)}')" class="btn btn-ghost" style="color:var(--danger);padding:2px 8px;font-size:11px;border:1px solid var(--danger);border-radius:6px" title="Revoke this session">
+            <i class="ri-logout-circle-r-line"></i> Revoke
+          </button>
+        </div>
+      `).join('') : '<div style="font-size:11px;color:var(--ink-3);margin-top:6px;padding:6px 10px;background:var(--surface-2);border-radius:6px">No active sessions</div>';
+
+      return `
+        <div class="card" style="padding:12px 14px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="width:36px;height:36px;border-radius:50%;background:rgba(99,102,241,0.1);color:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:16px">
+              ${(r.username||'S')[0].toUpperCase()}
+            </div>
+            <div style="flex:1;min-width:150px">
+              <div style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px">
+                ${esc(r.username || '')}
+                ${r.name ? '<span style="font-weight:400;color:var(--ink-3);font-size:12px">(' + esc(r.name) + ')</span>' : ''}
+                ${r.is_active ? '<span style="padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.1);color:var(--success);font-size:9px;font-weight:700">ACTIVE</span>' : '<span style="padding:2px 6px;border-radius:4px;background:rgba(239,68,68,0.1);color:var(--danger);font-size:9px;font-weight:700">INACTIVE</span>'}
+              </div>
+              <div style="font-size:11px;color:var(--ink-3);margin-top:2px">
+                ${r.showroom ? '📍 ' + esc(r.showroom) + ' · ' : ''}Created: ${r.created_at ? new Date(r.created_at).toLocaleDateString() : '?'} · Last Login: ${r.last_login_at ? new Date(r.last_login_at).toLocaleString() : 'Never'}
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--ink-2);font-weight:600">
+              <i class="ri-device-line"></i> ${sessions.length} Session${sessions.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+          ${sessHtml}
+        </div>
+      `;
+    }).join('');
+  }
+};
+
     // ============ YARZ FIREWALL (Fortress) ============
     YARZ.firewall = {
       _threats: [],
@@ -12737,6 +12903,8 @@ window.publishToWebsiteAction = async function() {
           YARZ.cust.load();
         } else if (page === 'product-analytics') {
           YARZ.pa.load();
+        } else if (page === 'staff') {
+          YARZ.staff.load();
         }
       };
     })();

@@ -1,7 +1,7 @@
-﻿/**
+/**
  * =====================================================================
  * YARZ Supabase Adapter v2 (complete replacement for v1)
- * Date: 2026-06-20
+ * Date: 2026-06-25
  *
  * Use:
  *   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -159,6 +159,11 @@
       if (r.error) throw new Error(r.error.message);
       return ok(r.data);
     }
+    if (range.startsWith("MONTHLY_SUMMARIES")) {
+      var r = await db.from("monthly_summaries").select("*").order("year_month", { ascending: true });
+      if (r.error) throw new Error(r.error.message);
+      return ok(r.data);
+    }
     if (range.startsWith("_ACTIVITY")) {
       var r = await db.from("_activity").select("*").order("ts", { ascending: false }).limit(500);
       if (r.error) throw new Error(r.error.message);
@@ -169,6 +174,31 @@
             : range.startsWith("ARCHIVE_VIEW") ? "inventory_archive_view"
             : "website_sync_view";
       var r = await db.from(v).select("*");
+      if (r.error) throw new Error(r.error.message);
+      return ok(r.data);
+    }
+    if (range.startsWith("SUBSCRIBERS")) {
+      var r = await db.from("newsletter_subscribers").select("*").order("subscribed_at", { ascending: false });
+      if (r.error) throw new Error(r.error.message);
+      return ok(r.data);
+    }
+    if (range.startsWith("STAFF")) {
+      var rUsers = await db.from("admin_users").select("*").order("created_at", { ascending: false });
+      if (rUsers.error) throw new Error(rUsers.error.message);
+      
+      var rSessions = await db.from("admin_sessions").select("*").gt("expires_at", new Date().toISOString());
+      if (rSessions.error) throw new Error(rSessions.error.message);
+      
+      var users = rUsers.data.map(function(u) {
+        u.sessions = rSessions.data.filter(function(s) {
+          return s.username === u.username;
+        });
+        return u;
+      });
+      return ok(users);
+    }
+    if (range.startsWith("COURIER")) {
+      var r = await db.from("steadfast_consignments").select("*").order("created_at", { ascending: false });
       if (r.error) throw new Error(r.error.message);
       return ok(r.data);
     }
@@ -719,20 +749,66 @@
   // ============================================================
   async function deleteCustomers(p) {
     var db = getWriteDb(); await ensureAuth();
-    var ids = [];
-    if (Array.isArray(p.orderIds)) ids = p.orderIds;
-    else if (Array.isArray(p.ids)) ids = p.ids;
-    else if (Array.isArray(p.names)) ids = p.names;
-    else if (typeof p.orderId === "string" && p.orderId) ids = [p.orderId];
-    if (ids.length === 0) throw new Error("orderIds[] required");
-    var results = [];
-    for (var i = 0; i < ids.length; i++) {
-      var oid = ids[i];
-      var r = await db.rpc("delete_website_order", { p_order_id: oid });
-      if (r.error) results.push({ orderId: oid, error: r.error.message });
-      else results.push({ orderId: oid, ok: true });
+    var phones = [];
+    if (Array.isArray(p.phones)) phones = p.phones;
+    else if (Array.isArray(p.ids)) phones = p.ids;
+    else if (typeof p.phone === "string" && p.phone) phones = [p.phone];
+    if (phones.length === 0) throw new Error("phones[] required");
+    var r = await db.from("customers").delete().in("phone", phones);
+    if (r.error) throw new Error(r.error.message);
+    return ok({ msg: "Deleted " + phones.length + " customers", success: true });
+  }
+
+  async function killStaffSession(p) {
+    var db = getWriteDb(); await ensureAuth();
+    if (!p.token) throw new Error("token required");
+    var r = await db.from("admin_sessions").delete().eq("token", p.token);
+    if (r.error) throw new Error(r.error.message);
+    return ok({ msg: "Session revoked successfully" });
+  }
+
+  async function createStaff(p) {
+    var db = getWriteDb(); await ensureAuth();
+    if (!p.username || !p.password) throw new Error("username and password required");
+    var r = await db.rpc("create_staff", {
+      p_username: p.username,
+      p_password: p.password,
+      p_name: p.name || "",
+      p_showroom: p.showroom || ""
+    });
+    if (r.error) throw new Error(r.error.message);
+    if (!r.data) throw new Error("Username already taken");
+    return ok({ msg: "Staff added successfully" });
+  }
+
+  async function deleteActivityLogs(p) {
+    var db = getWriteDb();
+    await ensureAuth();
+    var ids = p.ids;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      throw new Error("No log IDs provided for deletion");
     }
-    return ok({ msg: "Deleted " + results.filter(function(r){return r.ok;}).length + " customer orders", results: results });
+    var grouped = {};
+    for (var i = 0; i < ids.length; i++) {
+      var item = ids[i];
+      var tbl = item.table;
+      var idVal = item.id;
+      if (!tbl || !idVal) continue;
+      if (!grouped[tbl]) grouped[tbl] = [];
+      grouped[tbl].push(Number(idVal));
+    }
+    var results = [];
+    var tables = Object.keys(grouped);
+    for (var j = 0; j < tables.length; j++) {
+      var table = tables[j];
+      var tableIds = grouped[table];
+      var r = await db.from(table).delete().in("id", tableIds);
+      if (r.error) {
+        throw new Error("Failed to delete from " + table + ": " + r.error.message);
+      }
+      results.push({ table: table, deletedCount: tableIds.length });
+    }
+    return ok({ msg: "Deleted selected logs", results: results });
   }
 
   // ============================================================
@@ -766,6 +842,9 @@
         case "delete_customers":
         case "deletecustomers":
         case "deleteCustomers":       return await deleteCustomers(payload || {});
+        case "kill_staff_session":    return await killStaffSession(payload || {});
+        case "create_staff":          return await createStaff(payload || {});
+        case "delete_activity_logs":  return await deleteActivityLogs(payload || {});
         case "updatewebsiteorderstatus":return await updateWebsiteOrderStatus(payload || {});
         case "updatemanualorderstatus": return await updateManualOrderStatus(payload || {});
         case "deletewebsiteorder":      return await deleteWebsiteOrder(payload || {});
@@ -816,6 +895,50 @@
   }
 
   // ============================================================
+  // REALTIME
+  // ============================================================
+  function setupRealtime(db) {
+    if (!db || !db.channel) return;
+    try {
+      db.channel('admin-dashboard')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'website_orders' }, function(payload) {
+          console.log('[Realtime] website_orders change:', payload);
+          if (window.YARZ && window.YARZ.orders) window.YARZ.orders.load();
+          if (window.YARZ && window.YARZ.dashboard) window.YARZ.dashboard.load();
+          showRealtimeToast('New Website Order Update');
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, function(payload) {
+          console.log('[Realtime] orders change:', payload);
+          if (window.YARZ && window.YARZ.orders) window.YARZ.orders.load();
+          if (window.YARZ && window.YARZ.dashboard) window.YARZ.dashboard.load();
+          showRealtimeToast('Manual Order Update');
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory' }, function(payload) {
+          console.log('[Realtime] inventory change:', payload);
+          if (window.YARZ && window.YARZ.inventory) window.YARZ.inventory.load();
+          if (window.YARZ && window.YARZ.dashboard) window.YARZ.dashboard.load();
+        })
+        .subscribe(function(status) {
+          console.log('[Realtime] Channel status:', status);
+        });
+    } catch(e) {
+      console.warn('Realtime setup failed:', e);
+    }
+  }
+
+  function showRealtimeToast(msg) {
+    if (window.YARZ && window.YARZ.ui && window.YARZ.ui.toast) {
+      window.YARZ.ui.toast(msg, 'success');
+    } else {
+      var d = document.createElement('div');
+      d.innerText = msg;
+      d.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#22c55e;color:#fff;padding:12px 20px;border-radius:8px;z-index:99999;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:fadeIn 0.3s;';
+      document.body.appendChild(d);
+      setTimeout(function(){ d.remove(); }, 3000);
+    }
+  }
+
+  // ============================================================
   // PUBLIC EXPORT
   // ============================================================
   window.supabaseAdapter = {
@@ -823,6 +946,7 @@
       if (cfg.url && cfg.anonKey && !window.supabaseClient) {
         window.supabaseClient = window.supabase.createClient(cfg.url, cfg.anonKey);
       }
+      setupRealtime(window.supabaseClient);
     },
     handleAppsPost: handleAppsPost,
     _internal: {
@@ -834,6 +958,7 @@
       saveProductEditFromForm: saveProductEditFromForm,
       deleteProduct: deleteProduct,
       deleteCustomers: deleteCustomers,
+      deleteActivityLogs: deleteActivityLogs,
       updateProductStatus: updateProductStatus,
       applyStockChange: applyStockChange,
       applyBulkEdit: applyBulkEdit,
@@ -854,7 +979,9 @@
       clearFinancialsOnly: clearFinancialsOnly,
       clearInventoryOnly: clearInventoryOnly,
       getSessionToken: getSessionToken,
-      setSessionToken: setSessionToken
+      setSessionToken: setSessionToken,
+      killStaffSession: killStaffSession,
+      createStaff: createStaff
     }
   };
 })();

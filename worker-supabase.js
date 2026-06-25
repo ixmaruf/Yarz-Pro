@@ -46,7 +46,7 @@ const PUBLIC_CACHEABLE = new Set([
 
 // Public POST actions -- passthrough (rate-limited)
 const PUBLIC_POST = new Set([
-  "place_order","subscribe_newsletter","subscribe_newsletter","capi","fbcapi","ttapi","ttevents"
+  "place_order","subscribe_newsletter","subscribenewsletter","capi","fbcapi","ttapi","ttevents"
 ]);
 
 // Admin actions -- require session token verified upstream
@@ -93,6 +93,7 @@ const ACTIONS_SUPABASE = {
   // ---- Public POSTs (not cached) ----
   place_order:        { kind: "passthrough" }, // complex, keep in GAS for now
   subscribe_newsletter: { kind: "table", table: "newsletter_subscribers", op: "insert" },
+  subscribenewsletter:  { kind: "table", table: "newsletter_subscribers", op: "insert" },
   capi:               { kind: "passthrough" },
   ttapi:              { kind: "passthrough" },
 
@@ -696,17 +697,22 @@ async function handle(request, env, ctx) {
   let action = null;
   let body = {};
   const url = new URL(request.url);
-  if (request.method === "GET") {
+  const path = url.pathname.toLowerCase();
+  
+  if (path === "/__customerltv") {
+    action = "getcustomerltv";
+  } else if (path === "/__productanalytics6m") {
+    action = "getproductanalytics6m";
+  } else if (path === "/__currentmonthsnapshot") {
+    action = "getcurrentmonthsnapshot";
+  } else if (request.method === "GET") {
     action = (url.searchParams.get("action") || "products").toLowerCase();
   } else {
-    {
-      const txt = await request.text();
-      try { body = txt ? JSON.parse(txt) : {}; } catch(e) { body = {}; }
-      // FIX #27: Customer site sends params in URL, not body. Merge URL params.
-      try { for (const [k, v] of url.searchParams.entries()) { if (!(k in body) || body[k] === "" || body[k] == null) body[k] = v; } } catch(e) {}
-      action = String(body.action || url.searchParams.get("action") || "").toLowerCase();
-
-  }
+    const txt = await request.text();
+    try { body = txt ? JSON.parse(txt) : {}; } catch(e) { body = {}; }
+    // FIX #27: Customer site sends params in URL, not body. Merge URL params.
+    try { for (const [k, v] of url.searchParams.entries()) { if (!(k in body) || body[k] === "" || body[k] == null) body[k] = v; } } catch(e) {}
+    action = String(body.action || url.searchParams.get("action") || "").toLowerCase();
   }
 
   // Supabase enabled?
