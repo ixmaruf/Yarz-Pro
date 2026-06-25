@@ -1,0 +1,75 @@
+# YARZ — Yarzclothing — Robots.txt
+# Premium Men's Fashion Bangladesh — yarzclothing.xyz
+# Updated: 2026-05-27 (v15.69)
+# Allow all legitimate search engines to crawl public pages.
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /js/armor.js
+Disallow: /js/shield.js
+Disallow: /404.html
+Disallow: /*?search=
+Disallow: /*?utm_
+
+# ─────────────────────────────────────────────
+# Major search engines (explicit allow)
+# ─────────────────────────────────────────────
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Crawl-delay: 1
+
+User-agent: Googlebot-Image
+Allow: /images/
+Allow: /
+
+User-agent: Googlebot-Mobile
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Crawl-delay: 2
+
+User-agent: Slurp
+Allow: /
+Disallow: /admin/
+
+User-agent: DuckDuckBot
+Allow: /
+Disallow: /admin/
+
+User-agent: YandexBot
+Allow: /
+Disallow: /admin/
+
+User-agent: Baiduspider
+Allow: /
+Disallow: /admin/
+
+# ─────────────────────────────────────────────
+# Social media preview crawlers (allow OG/Twitter)
+# ─────────────────────────────────────────────
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+# ─────────────────────────────────────────────
+# Sitemap
+# ─────────────────────────────────────────────
+Sitemap: https://yarzclothing.xyz/sitemap.xml
+
+# Host (Yandex hint)
+Host: https://yarzclothing.xyz

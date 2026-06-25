@@ -1,0 +1,32 @@
+# Live Supabase Tables
+
+- **admin_login_attempts**: id, username, ip, success, user_agent, ts
+- **steadfast_keys**: id, api_key, secret_key, updated_at
+- **_draft_data**: id, name, note, created_at
+- **steadfast_balance_cache**: id, balance, raw_json, fetched_at
+- **orders**: id, order_id, date, cust_name, cust_phone, cust_addr, deliv_dist, deliv_zone, product, size, qty, price, delivery_charge, total, payment, status, courier, notes, created_at
+- **website_orders**: id, order_id, date, cust_name, cust_phone, cust_addr, deliv_zone, product, size, qty, price, delivery_charge, total, payment, notes, coupon_code, status, courier, updated_at, activity, device_id, ip, country, asn, risk_score, risk_signals, flagged, flag_reason, flagged_at, flagged_by, created_at
+- **customers**: id, phone, name, total_orders, total_spent, first_order_at, last_order_at, risk_score, is_blocked, block_reason, notes, created_at, updated_at
+- **blocked_devices**: id, device_id, blocked_at, blocked_by, block_reason, block_type, expires_at, admin_notes, status, last_seen, order_attempts, risk_score, phones_seen, ips_seen, created_at, updated_at
+- **audit_log**: id, action, actor, details, ts
+- **website_sync_view**: Product, Image1, Image2, Image3, Video, Description, Category, Fabric, Badge, SizeChart, DeliveryDays, Regular, Sale, Disc%, DiscType, Delivery(Dhaka), Delivery(Outside), S_Left, M_Left, L_Left, XL_Left, XXL_Left, 3XL_Left, Status, Image4, Image5, Image6, CouponActive, CouponCode, CouponDisc
+- **settings**: id, key, value, description, is_secret, updated_at
+- **transactions**: id, date, product, type, size, qty, revenue, cost, profit, created_at
+- **yearly_reports**: id, year, revenue, cost, ad_spend, net_profit, orders, created_at, updated_at
+- **admin_users**: id, username, password_hash, is_active, created_at, last_login_at
+- **fortress_log**: id, log_id, ts, event_type, device_id, phone_hash, ip, country, risk_score, reason, actor, order_id, notes
+- **delivery_charges**: id, name, charge, active, sort_order, created_at, updated_at
+- **newsletter_subscribers**: id, email, phone, source, subscribed_at
+- **_activity**: id, ts, product, old_status, new_status, actor
+- **inventory_draft_view**: #, Product, Image, Category, Fabric, Badge, Cost, Regular, Sale, Stock, Sold, Left, Action
+- **admin_sessions**: id, token, username, user_agent, ip, expires_at, created_at, last_used_at
+- **steadfast_consignments**: id, consignment_id, tracking_code, invoice, recipient_name, recipient_phone, recipient_address, cod_amount, total_lot, item_description, note, delivery_type, status, stead_response, created_at, last_checked_at, delivered_at, cancelled_at
+- **monthly_reports**: id, month, revenue, cost, ad_spend, net_profit, orders, created_at, updated_at
+- **public_products**: Product, Image1, Image2, Image3, Video, Description, Category, Fabric, Badge, SizeChart, DeliveryDays, Regular, Sale, Disc%, DiscType, Delivery(Dhaka), Delivery(Outside), S_Left, M_Left, L_Left, XL_Left, XXL_Left, 3XL_Left, Status, Image4, Image5, Image6, CouponActive, CouponCode, CouponDisc
+- **rate_limit_log**: id, scope, identifier, ts
+- **customer_ltv_view**: phone, name, total_orders, total_spent, first_order_at, last_order_at
+- **inventory**: id, product, image_1, image_2, image_3, video_url, description, category, fabric, badge, size_chart, delivery_days, cost, regular, sale, disc_percent, disc_type, dhaka_delivery, outside_delivery, stk_s, stk_m, stk_l, stk_xl, stk_xxl, stk_3xl, sold_s, sold_m, sold_l, sold_xl, sold_xxl, sold_3xl, tot_sold, tot_stock, remaining, returns, invest, revenue, to_recover, gross, fb_ad, net, disc_impact, updated_at, status, image_4, image_5, image_6, coupon_active, coupon_code, coupon_disc_percent, hidden_sizes, size_type, accessory, created_at
+- **inventory_archive_view**: #, Product, Image, Category, Fabric, Badge, Cost, Regular, Sale, Stock, Sold, Left, Action
+- **expenses**: id, date, category, description, amount, notes, created_at
+- **ad_tracker**: id, date, product, spend, reach, impressions, clicks, notes, created_at
+- **_archive_data**: id, name, note, created_at

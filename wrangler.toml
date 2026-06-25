@@ -1,0 +1,71 @@
+name = "yarz"
+main = "worker-supabase.js"
+compatibility_date = "2024-11-01"
+workers_dev = true
+
+# =====================================================================
+# YARZ API Worker — Cloudflare configuration
+# Date: 2026-06-20
+#
+# DEPLOY:
+#   1. wrangler login
+#   2. wrangler secret put SUPABASE_URL
+#      -> https://xdzduowhwubogaavraap.supabase.co
+#   3. wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+#      -> from Supabase Dashboard -> Settings -> API -> service_role
+#   4. wrangler secret put TG_BOT_TOKEN
+#      -> from @BotFather on Telegram
+#   5. wrangler secret put TG_OWNER_ID
+#      -> 6409729183 (default, override if different)
+#   6. wrangler secret put TG_WEBHOOK_SECRET
+#      -> any random string (e.g. openssl rand -hex 32)
+#   7. wrangler secret put PURGE_SECRET
+#      -> same value as TG_WEBHOOK_SECRET (or different)
+#   8. wrangler secret put SUPABASE_ENABLED
+#      -> "false" initially (flip to "true" in PHASE 6 cutover)
+#   9. wrangler deploy
+# =====================================================================
+
+# Plain-text variables (safe to commit)
+[vars]
+SUPABASE_ENABLED = "true"
+TG_OWNER_ID = "8370659578"
+FRESHT_TTL = "60"    # 1 min cache for public reads (was 1800=30min; lowered so admin "Save All Changes" appears faster on customer site)
+SWR_TTL = "60"       # 1 min stale-while-revalidate (was 300=5min)
+HARD_TTL = "86400"    # 24 hr hard TTL for /purge
+
+# Secrets (set via `wrangler secret put NAME`)
+# SUPABASE_URL
+# SUPABASE_SERVICE_ROLE_KEY
+# TG_BOT_TOKEN
+# TG_WEBHOOK_SECRET
+# PURGE_SECRET
+
+# Custom domain (optional — set up in Cloudflare dashboard first)
+# Routes removed in v3.7.0 — was causing edge propagation issues with image
+# requests. R2 custom domain now serves images directly (with proper cache
+# headers set on R2 bucket).
+# routes = [
+#   { pattern = "images.yarzclothing.xyz/*", zone_name = "yarzclothing.xyz" }
+# ]
+
+# R2 binding removed in v3.7.1 — image handler was removed from worker too.
+# If you ever want to re-enable image proxy via worker, restore both:
+#   1) [[r2_buckets]] binding = "IMAGES", bucket_name = "yarz-images"
+#   2) fetchImageWithEdgeCache() function in worker-supabase.js
+
+# Cron triggers (for periodic cleanup — optional, pg_cron also available)
+# [triggers]
+# crons = ["0 1 * * *"]  # daily at 1 AM Dhaka time
+
+# =====================================================================
+# CUTOVER (PHASE 6) STATUS: 2026-06-20
+# - New worker deployed at: https://yarz-api.marufhasan80009.workers.dev
+# - Frontend (js/api.js) updated to default to yarz-api
+# - Admin Panel WORKER constant updated to yarz-api
+# - Cutover method: localStorage override `yarz_worker_url`
+#   OR deploy this code to "yarz" worker name (overwrite old)
+#   OR rebind yarzclothing.xyz custom domain
+# - Current production: still routes via yarzclothing.xyz → OLD worker
+#   Set SUPABASE_ENABLED=true to enable Supabase routing once verified
+# =====================================================================

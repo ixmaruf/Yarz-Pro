@@ -1,0 +1,54 @@
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Mac/Windows system files
+.DS_Store
+Thumbs.db
+
+# Node.js (If you ever use npm later)
+node_modules/
+npm-debug.log*
+
+# Audit/Temp folders
+.audit/
+scratch/
+exports/
+
+# Notes/Docs you don't want live
+Competitor-Analysis-YARZ.txt
+Facebook-Pixel-Setup-Guide-Bangla.txt
+DEPLOYMENT-GUIDE.md
+
+# =========================
+# 🔒 SECURITY PROTECTIONS 🔒
+# =========================
+# Prevent accidental upload of passwords, API keys, or secret files to GitHub
+.env
+.env.*
+*.env
+secrets.json
+config.json
+credentials.json
+key.json
+*.pem
+*.key
+*.log
+
+# Backup folders
+BACKUP_PRISTINE_*/
+
+# Tool-specific
+.kilo/
+.playwright-mcp/
+.agents/
+
+# Temporary test/debug scripts
+test_query.js
+fetch_supabase_schema.js
+extract_tables_main.js
+
+# Screenshots (development artifacts)
+*.png

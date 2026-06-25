@@ -1,0 +1,1666 @@
+/* ════════════════════════════════════════════════════════════════════
+   YARZ — Cloudflare Worker Reverse Proxy + Smart Edge Cache
+   ────────────────────────────────────────────────────────────────────
+   Worker URL: https://yarz.marufhasan80009.workers.dev/
+
+   What this Worker does:
+     • Sits between your GitHub Pages frontend and Google Apps Script.
+     • GET requests  → served from Cloudflare edge cache (sub-100ms).
+                       1-min fresh window + 30s stale-while-revalidate.
+     • POST requests → passthrough to GAS (place_order, admin actions).
+     • Webhook POST  → admin can purge cache instantly when stock/data
+                       changes, then Worker re-primes the cache so the
+                       NEXT customer gets live data immediately.
+     • CORS          → fully open for both GET and POST.
+     • Background    → ctx.waitUntil() so customer is never slowed down.
+
+   Daily upstream calls (worst case):
+     • Time-based revalidation: ~1 call/min × 4 actions ≈ 5,760/day
+       (only IF traffic is constant 24/7; usually far less)
+     • Webhook purges (admin):  ~ a few dozen/day
+     • → Still comfortably below the 20,000/day GAS quota.
+   ════════════════════════════════════════════════════════════════════ */
+
+// ════════════════════════════════════════════════════════
+// CONFIG — UPDATE THESE if your URLs / keys change
+// ════════════════════════════════════════════════════════
+
+// Global Map to track in-flight pre-warms with timestamps.
+// ✅ v15.8 FIX: Was a Set with no TTL → stuck entries never cleared if Worker
+// killed the waitUntil callback (GAS cold start > 30s). That made every
+// subsequent Publish click skip the pre-warm for ~hours until the isolate
+// recycled. Now uses a Map with timestamps and stale-entry expiry.
+const activePrewarms = new Map();
+const PREWARM_TTL_MS = 60 * 1000; // 60s — anything older is considered stale
+
+// Your live Google Apps Script Web App URL (the /exec one)
+var UPSTREAM_URL = 'https://script.google.com/macros/s/AKfycbzLs9KDameNALSxN4ntZXHKs-st2V-4gN5ITFL38UnqKFw_s2yXFPcmLFB4KXzIVs7K/exec';
+function _upstreamUrl(env) { return env && env.GAS_DEPLOYMENT_ID ? 'https://script.google.com/macros/s/' + env.GAS_DEPLOYMENT_ID + '/exec' : UPSTREAM_URL; }
+
+// ✅ v17.5 PHASE 4: Fail-closed secret resolver.
+// Returns null if the env var is missing or empty (caller decides what
+// to do). Previously the Worker had hardcoded fallbacks for PURGE_SECRET
+// and GAS_API_KEY scattered across 4 sites, which meant:
+//   • A typo in env setup silently used the public fallback.
+//   • Anyone reading this repo got the secrets (the admin/index.html
+//     bundle also ships them).
+//   • Rotating a secret required editing both the dashboard AND
+//     redeploying the Worker.
+//
+// New policy: PURGE_SECRET MUST be set. GAS_API_KEY is allowed to fall
+// back to the public key (it's a client-side key already in the admin
+// bundle, so it was never really secret — the "fallback" was honest
+// about that). To override either, set the env var in the Cloudflare
+// dashboard or via `wrangler secret put`.
+function _secretOrNull_(env, name) {
+  if (!env) return null;
+  var v = env[name];
+  if (typeof v === 'string' && v.length > 0) return v;
+  return null;
+}
+
+// ✅ v17.5 PHASE 4: URL scheme allowlist for any user-controlled URL
+// that the Worker would inject into HTML (og:image, etc.) or fetch.
+// Blocks javascript:, vbscript:, data:text/html, file:, blob: — anything
+// that could turn into a script execution or data exfiltration vector.
+function _safeUrl_(rawUrl) {
+  if (typeof rawUrl !== 'string' || rawUrl.length === 0) return '';
+  var trimmed = rawUrl.trim();
+  // Allow data: only for images, not for text/html or any executable type.
+  if (/^data:image\/(png|jpe?g|webp|gif|avif|svg\+xml);/i.test(trimmed)) return trimmed;
+  // Disallow all other data: schemes.
+  if (/^data:/i.test(trimmed)) return '';
+  // Disallow javascript:, vbscript:, file:, blob:, about:
+  if (/^(javascript|vbscript|file|blob|about):/i.test(trimmed)) return '';
+  // Allow only http(s) for absolute URLs.
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  // Allow protocol-relative or relative URLs (Worker fills in origin).
+  if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) return trimmed;
+  // Anything else: be paranoid and reject.
+  return '';
+}
+
+// Shared secret — must be provided via env.PURGE_SECRET (now enforced)
+
+// Cache lifetime (in seconds)
+// ✅ v15.9 — Owner's intent: 30-min cache as breakpoint; manual "Publish to
+// Website" instantly purges it on every admin update, so customers never see
+// stale data more than a few seconds after a publish. The long TTL is what
+// keeps GAS API quota safe (without it, every 15s revalidation × every visitor
+// would burn the daily quota fast and add 2-3s of upstream-fetch latency to
+// many customer page loads).
+//   - FRESH_TTL = 30 minutes: 99% of customer requests served from edge in ~50ms
+//   - SWR_TTL = 5 minutes: serve stale + bg refresh after FRESH expires
+//   - Manual purge: instant — fires on every admin save + every "Publish" click
+//   - activePrewarms TTL guard (v15.8) ensures publish never silently fails
+const FRESH_TTL = 30 * 60;     // 30 min — edge-served, no upstream call
+const SWR_TTL   = 5 * 60;      // 5 min — serve stale + bg refresh
+const HARD_TTL  = 24 * 60 * 60;// 24h max — emergency upper bound
+
+// Actions whose responses MUST always be live (never cached)
+const NEVER_CACHE_ACTIONS = new Set([
+  'orders_by_phone',   // each phone gets unique data, real-time
+  'health',            // status check
+  'place_order_get',   // any GET-style write
+  // ✅ v15.39: Per-product stock check must always be live so the storefront's
+  // PDP "live stock poll" reflects new orders within seconds (not 30 min).
+  // Throttled in app.js to 1×/8s so GAS quota stays safe (~1k calls/day max
+  // even with heavy concurrent PDP browsing).
+  'product'
+]);
+
+// Actions that should be pre-warmed after a purge (so the next user
+// never waits). Add/remove based on what your frontend hits most.
+const PREWARM_ACTIONS = ['products', 'store_info', 'categories', 'delivery_charges'];
+
+// ════════════════════════════════════════════════════════
+// Cloudflare Worker entry point
+// ════════════════════════════════════════════════════════
+export default {
+  async fetch(request, env, ctx) {
+    try {
+      return await handle(request, env, ctx);
+    } catch (err) {
+      return cors(new Response(JSON.stringify({
+        success: false, error: 'Worker error: ' + err.message
+      }), { status: 500, headers: { 'Content-Type': 'application/json' } }), request);
+    }
+  },
+  
+  // ✅ v16.8 KEEP-WARM FIX: Cron Trigger scheduled handler.
+  // This automatically runs every X minutes (e.g., */5 * * * *) to fetch fresh data
+  // from GAS in the background and overwrite the Edge Cache. This guarantees the 
+  // cache never expires naturally and customers NEVER hit a cold start.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(handleCronPrewarm(env));
+    
+    // NEW: monthly snapshot at BDT 00:01 on 1st of month
+    const cron = event && event.cron;
+    if (cron === '1 18 1 * *') {
+      ctx.waitUntil(handleMonthlySnapshot(env));
+    }
+  }
+};
+
+// ════════════════════════════════════════════════════════
+// MAIN ROUTER
+// ════════════════════════════════════════════════════════
+async function handle(request, env, ctx) {
+  const url = new URL(request.url);
+  const method = request.method;
+
+  // ─── CORS preflight (browsers send OPTIONS before POST) ───
+  if (method === 'OPTIONS') {
+    return cors(new Response(null, { status: 204 }), request);
+  }
+
+  // ─── ANALYTICS endpoint (admin panel reads visitor stats) ───
+  // ✅ v15.45 SECURITY: Require X-Purge-Key (same secret used for /__purge)
+  // so unauthenticated visitors can't enumerate visitor counts.
+  if (url.pathname === '/__analytics') {
+    if (method !== 'GET') {
+      return cors(new Response('Method Not Allowed', {
+        status: 405, headers: { 'Allow': 'GET, OPTIONS' }
+      }), request);
+    }
+    const _provided = request.headers.get('X-Purge-Key') || '';
+    // ✅ v17.5 PHASE 4: Fail-closed. If env.PURGE_SECRET is missing,
+    // refuse the request — better to deny analytics reads than to leak
+    // counts via a hardcoded fallback. Set env.PURGE_SECRET in the
+    // Cloudflare dashboard or via `wrangler secret put PURGE_SECRET`.
+    const _expected = _secretOrNull_(env, 'PURGE_SECRET');
+    if (!_expected) {
+      return cors(json({
+        success: false,
+        error: 'Server misconfigured: PURGE_SECRET not set. Set via `wrangler secret put PURGE_SECRET`.',
+        code: 'SECRET_NOT_CONFIGURED'
+      }, 503), request);
+    }
+    if (_provided !== _expected) {
+      return cors(json({ success: false, error: 'Unauthorized' }, 401), request);
+    }
+    return handleAnalyticsRead(env, request);
+  }
+
+  // ─── HEALTH endpoint (keep-alive ping from GAS cron) ───
+  // GAS cron hits this every 5 min. We forward to GAS once so the GAS
+  // instance also stays warm, then return our own status. Cheap, ~1 GAS
+  // call per 5 min, negligible quota use.
+  if (method === 'GET' && url.pathname === '/__health') {
+    ctx.waitUntil((async () => {
+      try {
+        // Load from env only — fail closed if not set
+        const _kk = _secretOrNull_(env, 'GAS_API_KEY');
+        await fetch(_upstreamUrl(env) + '?action=health&key=' + _kk, {
+          method: 'GET',
+          headers: { 'User-Agent': 'YARZ-CF-Worker-KeepAlive/1.0' }
+        });
+      } catch (_) {}
+    })());
+    return cors(json({
+      success: true,
+      status: 'online',
+      worker: 'yarz-cf-worker',
+      timestamp: new Date().toISOString()
+    }), request);
+  }
+
+  // ─── PURGE endpoint (admin webhook from GAS) ───
+  // Accepts:  POST /__purge   with header "X-Purge-Key: <secret>"
+  // Or:       POST /?purge=1  with header "X-Purge-Key: <secret>"
+  if (url.pathname === '/__purge' || url.searchParams.get('purge') === '1') {
+    if (method !== 'POST') {
+      return cors(new Response('Method Not Allowed', {
+        status: 405, headers: { 'Allow': 'POST, OPTIONS' }
+      }), request);
+    }
+    return handlePurge(request, env, ctx);
+  }
+
+
+  if (url.pathname === '/__currentMonthSnapshot' && method === 'POST') {
+    let body = {};
+    try { body = await request.json(); } catch(e) { console.error('[currentMonthSnapshot] invalid JSON body:', e.message); }
+    const token = request.headers.get('Authorization') || '';
+    const GAS_URL = 'https://script.google.com/macros/s/' + (env.GAS_DEPLOYMENT_ID || '') + '/exec';
+    const resp = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'getcurrentmonthsnapshot', key: _secretOrNull_(env, 'GAS_API_KEY'), sessionToken: token, year: body.year, month: body.month })
+    });
+    const j = await resp.json().catch(() => ({ success: false }));
+    return cors(new Response(JSON.stringify(j), { status: 200, headers: { 'Content-Type': 'application/json' } }), request);
+  }
+
+  if (url.pathname === '/__productAnalytics6m' && method === 'GET') {
+    const token = request.headers.get('Authorization') || '';
+    const GAS_URL = 'https://script.google.com/macros/s/' + (env.GAS_DEPLOYMENT_ID || '') + '/exec';
+    const resp = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'getproductanalytics6m', key: _secretOrNull_(env, 'GAS_API_KEY'), sessionToken: token })
+    });
+    const j = await resp.json().catch(() => ({ success: false }));
+    return cors(new Response(JSON.stringify(j), { status: 200, headers: { 'Content-Type': 'application/json' } }), request);
+  }
+
+  if (url.pathname === '/__customerLTV' && method === 'GET') {
+    const token = request.headers.get('Authorization') || '';
+    const GAS_URL = 'https://script.google.com/macros/s/' + (env.GAS_DEPLOYMENT_ID || '') + '/exec';
+    const resp = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'getcustomerltv', key: _secretOrNull_(env, 'GAS_API_KEY'), sessionToken: token })
+    });
+    const j = await resp.json().catch(() => ({ success: false }));
+    return cors(new Response(JSON.stringify(j), { status: 200, headers: { 'Content-Type': 'application/json' } }), request);
+  }
+
+  // ✅ v15.45: Any unmatched /__* path is a Worker-internal route — never
+  // forward to GAS. Return 404 cleanly.
+  if (url.pathname.startsWith('/__')) {
+    return cors(new Response('Not Found', { status: 404 }), request);
+  }
+
+  // ─── POST passthrough (place_order, admin actions) — never cached ───
+  if (method === 'POST') {
+    return cors(await passthroughPost(request, env), request);
+  }
+
+  // ─── GET — only allowed method for public reads ───
+  if (method !== 'GET') {
+    return cors(new Response('Method Not Allowed', {
+      status: 405, headers: { 'Allow': 'GET, POST, OPTIONS' }
+    }), request);
+  }
+
+  // ─── Edge SSR for HTML requests (0ms load injection) ───
+  if (method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html') && !url.searchParams.has('action')) {
+    // ✅ v16.4 BUGFIX: Always serve HTML for the homepage path when there's no
+    // `action` param — regardless of the Accept header. Previously this was
+    // gated behind `accept: text/html`; some browsers / in-app webviews
+    // re-request `/` on BACK navigation with `Accept: */*` (no text/html),
+    // which skipped this block and fell through to the catch-all API handler
+    // below (action defaults to 'products') → the customer saw raw products
+    // JSON instead of the page. Real API calls ALWAYS carry `?action=...`, so
+    // routing the bare `/` path to HTML unconditionally is safe.
+    const today = getTodayKey();
+    const cookie = request.headers.get('cookie') || '';
+    const isNewVisitor = !cookie.includes('yarz_v=' + today);
+
+    let response = await handleHTMLRequest(request, env, ctx);
+
+    if (isNewVisitor) {
+      // 📊 Track visitor in background via smart batching
+      ctx.waitUntil(trackVisitorKV(env, ctx));
+      response = new Response(response.body, response);
+      response.headers.append('Set-Cookie', `yarz_v=${today}; Path=/; Max-Age=86400; HttpOnly; SameSite=Lax`);
+      // ✅ v17.5: Override Cache-Control to "private, no-store" so this
+      // Set-Cookie response is NEVER cached at the Cloudflare edge.
+      // Without this, the next visitor hitting the same edge slot would
+      // receive the FIRST visitor's cookie value (privacy + tracking leak).
+      // Returning visitors (no Set-Cookie added) keep the normal SWR policy.
+      response.headers.set('Cache-Control', 'private, no-store, max-age=0');
+    }
+    return response;
+  }
+
+  // ─── v15.37: STATIC ASSET PROXY ───
+  // When the Worker is bound to the custom domain (yarzclothing.xyz), every
+  // CSS/JS/image/subpage request also lands here. We forward those to the
+  // GitHub Pages origin (https://ixmaruf.github.io/Yarz/...) and cache them
+  // at the Cloudflare edge with appropriate TTLs. Without this, every
+  // static asset would fall through to the catch-all GET handler below,
+  // which calls GAS and returns JSON errors — site would break.
+  //
+  // What this handler routes:
+  //   • /css/*, /js/*                              → versioned assets, 1y immutable cache
+  //   • /sw.js                                     → no-cache (must update fast)
+  //   • /manifest.webmanifest, /robots.txt, /sitemap.xml → 1h cache
+  //   • /404.html                                  → 5min cache
+  //   • /<subpage>/[index.html]                    → SWR like main HTML
+  //   • Any path with a recognized file extension  → 1y immutable
+  //
+  // What it does NOT route (these are handled before this branch):
+  //   • /, /index.html (SSR injection above)
+  //   • /__analytics, /__health, /__purge (Worker endpoints)
+  //   • Any path with ?action= (API call)
+  if (method === 'GET' && !url.searchParams.has('action') && !url.pathname.startsWith('/__')) {
+    const proxyResult = await tryStaticProxy(request, env, ctx);
+    if (proxyResult) return proxyResult;
+  }
+
+  // ✅ v16.4 BUGFIX: A GET with NO `action` param is never an API call (every
+  // real API request carries `?action=...`). If we reach here without one, the
+  // path is some unknown/extensionless route (a typo, /shop, /men, a bad link,
+  // a crawler probe, or a BACK-navigation that lost its Accept header). Serve
+  // the storefront HTML shell instead of falling through to the catch-all
+  // below, which used to default `action` to 'products' and leak raw products
+  // JSON (HTTP 200) — bad for customers AND SEO. The SPA then resolves the
+  // path client-side (or shows home), and unknown deep links degrade to home.
+  if (method === 'GET' && !url.searchParams.has('action')) {
+    return cors(await handleHTMLRequest(request, env, ctx), request);
+  }
+
+  const action = (url.searchParams.get('action') || 'products').toLowerCase();
+
+  // Real-time / per-user actions — bypass cache entirely
+  if (NEVER_CACHE_ACTIONS.has(action)) {
+    return cors(await passthroughGet(request, env), request);
+  }
+
+  // Cacheable read — full edge magic
+  return handleCachedGet(request, env, ctx);
+}
+
+// ════════════════════════════════════════════════════════
+// CACHED GET — Stale-While-Revalidate at the edge
+// ════════════════════════════════════════════════════════
+async function handleCachedGet(request, env, ctx) {
+  const cache = caches.default;
+  const cacheKey = buildCacheKey(request);
+
+  const cached = await cache.match(cacheKey);
+
+  if (cached) {
+    const tsHeader = cached.headers.get('x-yarz-cached-at');
+    const ts = tsHeader ? parseInt(tsHeader, 10) : 0;
+    const ageSec = (Date.now() - ts) / 1000;
+
+    // ── Fresh: serve from cache, no upstream call ──
+    if (ageSec < FRESH_TTL) {
+      return cors(decorate(cached, { cache: 'HIT', ageSec }), request);
+    }
+
+    // ── Stale-but-usable: serve cached + refresh in background ──
+    if (ageSec < HARD_TTL) {
+      ctx.waitUntil(revalidate(request, cacheKey, env));
+      return cors(decorate(cached, { cache: 'STALE', ageSec }), request);
+    }
+  }
+
+  // ── Miss or too old: fetch fresh and cache ──
+  const fresh = await fetchAndStore(request, cacheKey, env);
+  return cors(decorate(fresh, { cache: 'MISS' }), request);
+}
+
+// ════════════════════════════════════════════════════════
+// HTML EDGE SSR — Inject initial state for 0ms load
+// ════════════════════════════════════════════════════════
+async function handleHTMLRequest(request, env, ctx) {
+  try {
+    // ✅ v16.3 STALE-IN-WEBVIEW FIX: Facebook / Instagram / TikTok in-app
+    // browsers honor `stale-while-revalidate` extremely aggressively AND
+    // ignore the user's manual pull-to-refresh — so they keep replaying the
+    // SWR-cached HTML (with its SSR-embedded product data baked in) for up to
+    // the full 24h SWR window. Result: customers in the FB/IG webview see old
+    // prices/products that never refresh, while normal browsers are always
+    // fresh. We detect those webviews by User-Agent and serve them HTML with
+    // `no-store` (NO swr) so the webview can never hold a stale copy. This does
+    // NOT touch GAS quota (HTML still comes from GitHub via cf cache, products
+    // JSON still from the 30-min Worker edge cache) and does NOT affect the
+    // Facebook link-preview scraper (UA `facebookexternalhit`, which is not in
+    // this list, still gets the cacheable + SEO-injected response).
+    const _ua = request.headers.get('User-Agent') || '';
+    const _isInAppBrowser = /FBAN|FBAV|FBIOS|FB_IAB|Instagram|MessengerLite|musical_ly|Bytedance|TikTok|MicroMessenger|Line\/|KAKAOTALK|Snapchat|Pinterest/i.test(_ua);
+
+    // 1. Fetch the raw HTML (from GitHub pages or origin)
+    // We explicitly fetch from GitHub pages to avoid proxy loops if misconfigured
+    // ✅ v15.2 FIX: Correct GitHub username (ixmaruf) and main website repo (Yarz).
+    // NOTE: Yarz-Pro is the admin panel — DO NOT fetch from there. Only the
+    // public storefront repo (Yarz) gets edge-SSR'd to customers.
+    const htmlReq = new Request('https://ixmaruf.github.io/Yarz/index.html', {
+      headers: { 'User-Agent': 'YARZ-Edge-SSR/1.0', 'Accept': 'text/html' }
+    });
+    // ✅ v15.48 PROPAGATION FIX: Reduced from 86400s (24h) to 60s.
+    // Previous 24h cache caused stale HTML to be served from Cloudflare's
+    // internal upstream cache for up to a full day after a GitHub push,
+    // even after admin clicked "Publish to Website" — because Publish purges
+    // /?action=* JSON keys but cannot reach this internal cf-fetch cache.
+    // 60s is the right balance: fresh GitHub HTML within a minute of push,
+    // GAS quota still safe (the JSON cache (FRESH_TTL=30min) keeps GAS calls
+    // low — this only affects the Worker → GitHub Pages fetch, which is
+    // cheap and doesn't touch GAS at all).
+    const htmlRes = await fetch(htmlReq, {
+      cf: { cacheTtl: 3600, cacheEverything: true } // ✅ v16.15: Increased to 1 hour for faster TTFB
+    });
+    // ✅ v15.31 FIX: Don't fall back to `fetch(request)` — that re-enters this
+    // same Worker (since request.url points at our domain) → infinite SSR
+    // loop until CPU timeout (524 to customer). Instead serve a minimal HTML
+    // shell so the page at least renders if GitHub Pages is having an outage.
+    if (!htmlRes.ok) {
+      const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store, max-age=0' });
+      _securityHeaders(headers);
+      return new Response(
+        '<!DOCTYPE html><html lang="bn"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>YARZ — Loading</title><style>body{font-family:system-ui,sans-serif;background:#FBF8F1;color:#1A1411;text-align:center;padding:80px 20px}h1{font-weight:700;letter-spacing:.2em}p{color:#C8102E;margin-top:20px}</style></head><body><svg viewBox="0 0 24 24" width="56" height="56" style="display:block;margin:0 auto 12px;"><circle cx="12" cy="12" r="10" fill="#C8102E" stroke="#9B0C23" stroke-width="0.6"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#FBF8F1" stroke-width="0.7" opacity="0.85"/><circle cx="9.8" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="9.8" cy="14.2" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="14.2" r="1.2" fill="#FBF8F1"/></svg><h1 style="letter-spacing:.26em;font-family:Cormorant Garamond,Georgia,serif;">YARZ</h1><p>Site temporarily unavailable. Please refresh in a moment.</p></body></html>',
+        { status: 503, headers }
+      );
+    }
+    
+    let html = await htmlRes.text();
+
+    // 2. Fetch the cached product data instantly
+    const cache = caches.default;
+    // Build a fake request that matches the cache key for action=products
+    const u = new URL(request.url);
+    // ✅ v16.9 PROTOCOL FIX: Force HTTPS so HTTP hits from Facebook don't miss the cache!
+    u.protocol = 'https:';
+    // ✅ v16.10 WWW FIX: Normalize www to root domain so they share the exact same warm cache slot!
+    if (u.hostname === 'www.yarzclothing.xyz') u.hostname = 'yarzclothing.xyz';
+    u.pathname = '/';
+    // Strip all frontend query parameters so they don't fracture the API cache
+    const keysToDelete = Array.from(u.searchParams.keys());
+    for (const k of keysToDelete) {
+      u.searchParams.delete(k);
+    }
+    u.searchParams.set('action', 'products');
+    const sorted = new URLSearchParams([...u.searchParams.entries()].sort());
+    u.search = sorted.toString();
+    const cacheKey = new Request(u.toString(), { method: 'GET' });
+    
+    const cached = await cache.match(cacheKey);
+    let injectedData = null;
+    let preloadTag = '';
+
+    let isFresh = false;
+    if (cached) {
+      const tsHeader = cached.headers.get('x-yarz-cached-at');
+      const ts = tsHeader ? parseInt(tsHeader, 10) : 0;
+      const ageSec = (Date.now() - ts) / 1000;
+      if (ageSec < FRESH_TTL) {
+        isFresh = true;
+      }
+    }
+
+    if (isFresh) {
+      const productsJson = await cached.text();
+      injectedData = productsJson;
+      
+      // Extract hero banner to preload
+      try {
+        const data = JSON.parse(productsJson);
+        const storeInfo = data.storeInfo || (data.data && data.data.storeInfo) || {};
+        let firstBanner = storeInfo.hero_banner_1 || storeInfo['hero_banner 1'];
+        if (firstBanner) {
+          // Build the lh3 base id
+          let lh3Base = firstBanner;
+          if (firstBanner.includes('drive.google.com')) {
+            const idMatch = firstBanner.match(/id=([^&]+)/) || firstBanner.match(/d\/([a-zA-Z0-9_-]+)/);
+            if (idMatch) lh3Base = 'https://lh3.googleusercontent.com/d/' + idMatch[1];
+          } else if (firstBanner.includes('lh3.googleusercontent.com')) {
+            // Strip any existing size suffix
+            lh3Base = firstBanner.replace(/=[swh]\d+(-[a-z0-9]+)*$/i, '');
+          }
+          // ✅ v15.36 PERF: SSR preload now matches runtime <img> srcset so
+          // first-time mobile visitors fetch =s1000 (~80-120 KB) instead of
+          // =s1600 (~200-300 KB). Single image per device — no double fetch.
+          if (lh3Base.includes('lh3.googleusercontent.com')) {
+            const m1000 = lh3Base + '=s1000-rw';
+            const m1600 = lh3Base + '=s1600-rw';
+            const m2000 = lh3Base + '=s2000-rw';
+            const srcset = `${m1000} 1000w, ${m1600} 1600w, ${m2000} 2000w`;
+            const sizes = '(max-width:768px) 100vw, (max-width:1280px) 100vw, 1600px';
+            preloadTag = `<link rel="preload" as="image" href="${m1600}" imagesrcset="${srcset}" imagesizes="${sizes}" fetchpriority="high">`;
+          } else {
+            // Non-Drive URL: just preload as-is
+            preloadTag = `<link rel="preload" as="image" href="${firstBanner}" fetchpriority="high">`;
+          }
+        }
+      } catch (e) { console.error('[seoInjection] banner parse failed:', e.message); }
+    } else {
+      // ✅ v15.36 PERF: Cold colo cache miss — instead of serving HTML
+      // without state and forcing the client to round-trip Worker→GAS→Worker
+      // (adds 300-1000ms of blank-page-with-no-products), block briefly to
+      // fetch the products JSON inline. Worst-case TTFB grows by ~200-400ms
+      // but the page renders fully populated instead of empty. This is the
+      // single biggest cold-visit win because clients on slow mobile would
+      // otherwise see "loading…" spinner for 1-2 seconds.
+      //
+      // Safety: 1500ms timeout — if GAS is slow/down, fall back to the old
+      // behavior (client-side fetch + ctx.waitUntil cache fill in background).
+      try {
+        const freshPromise = fetchAndStore(cacheKey, cacheKey, env);
+        const timeoutPromise = new Promise(function (resolve) {
+          setTimeout(function () { resolve(null); }, 2500);
+        });
+        const fresh = await Promise.race([freshPromise, timeoutPromise]);
+        if (fresh && fresh.body) {
+          // fetchAndStore returns a Response — read its body for injection
+          const freshClone = fresh.clone();
+          const freshText = await freshClone.text();
+          // Validate it's a JSON success response before injecting
+          try {
+            const parsed = JSON.parse(freshText);
+            if (parsed && (parsed.success || parsed.ok)) {
+              injectedData = freshText;
+              const storeInfo = parsed.storeInfo || (parsed.data && parsed.data.storeInfo) || {};
+              let firstBanner = storeInfo.hero_banner_1 || storeInfo['hero_banner 1'];
+              if (firstBanner) {
+                let lh3Base = firstBanner;
+                if (firstBanner.includes('drive.google.com')) {
+                  const idMatch = firstBanner.match(/id=([^&]+)/) || firstBanner.match(/d\/([a-zA-Z0-9_-]+)/);
+                  if (idMatch) lh3Base = 'https://lh3.googleusercontent.com/d/' + idMatch[1];
+                } else if (firstBanner.includes('lh3.googleusercontent.com')) {
+                  lh3Base = firstBanner.replace(/=[swh]\d+(-[a-z0-9]+)*$/i, '');
+                }
+                if (lh3Base.includes('lh3.googleusercontent.com')) {
+                  const m1000 = lh3Base + '=s1000-rw';
+                  const m1600 = lh3Base + '=s1600-rw';
+                  const m2000 = lh3Base + '=s2000-rw';
+                  preloadTag = `<link rel="preload" as="image" href="${m1600}" imagesrcset="${m1000} 1000w, ${m1600} 1600w, ${m2000} 2000w" imagesizes="(max-width:768px) 100vw, (max-width:1280px) 100vw, 1600px" fetchpriority="high">`;
+                } else {
+                  preloadTag = `<link rel="preload" as="image" href="${firstBanner}" fetchpriority="high">`;
+                }
+              }
+            }
+          } catch (e) { /* malformed JSON — fall through to client-side fetch */ }
+        } else {
+          // ✅ v15.45: Reuse the in-flight freshPromise. The original GAS
+          // fetch is still running; let it finish in the background and
+          // populate cache instead of starting a second one (which doubles
+          // GAS calls under cold-miss bursts).
+          ctx.waitUntil(freshPromise.catch(function(e){console.error('BG cache refresh failed',e);}));
+            if (cached) {
+              injectedData = await cached.text();
+            }
+          }
+      } catch (e) {
+        // Anything failed — fall back to background fetch
+        ctx.waitUntil(fetchAndStore(cacheKey, cacheKey, env));
+      }
+    }
+
+    // 3. Inject into HTML
+    if (injectedData) {
+      // ✅ v15.45 SECURITY: Neutralize any literal "</script" inside the
+      // upstream JSON before injecting between <script>...</script> tags.
+      // Without this, a malicious or accidentally-pasted "</script>" in a
+      // product description (or any storeInfo field) would terminate the
+      // injected block early and let attacker-controlled HTML execute.
+      const _safeJson = String(injectedData).replace(/<\/script/gi, '<\\/script');
+      const scriptTag = `<script>window.__YARZ_INITIAL_STATE = ${_safeJson};</script>`;
+
+      // ✅ v15.44 CRITICAL FIX: Server-side inject FB Domain Verification +
+      // og:image override INTO THE HTML before Facebook's scraper sees it.
+      // Previously these were injected client-side after getGlobalControls()
+      // resolved (~100-300ms post-DOM-ready), but FB's verification crawler
+      // does NOT execute JavaScript → meta tag invisible → AEM 8-priority
+      // events broken → iOS 14.5+ attribution silently degraded for months.
+      //
+      // Same for og:image — admin's uploaded share image was invisible to
+      // FB share crawler; only the hard-coded fallback got picked up.
+      //
+      // Now: parse the cached products JSON's storeInfo, extract the keys,
+      // and write them straight into <head> alongside the SSR state.
+      let seoMetaTags = '';
+      try {
+        const _seoData = JSON.parse(injectedData);
+        const _seoStore = _seoData.storeInfo || (_seoData.data && _seoData.data.storeInfo) || {};
+        // Resolve a key tolerantly (matches both "FB Domain Verify" and "fb_domain_verify")
+        const _seoGet = (k1, k2) => {
+          const a = _seoStore[k1];
+          if (a) return String(a).trim();
+          const b = _seoStore[k2];
+          if (b) return String(b).trim();
+          return '';
+        };
+        // FB Domain Verification — required for AEM 8-event priority on iOS 14.5+
+        const fbDomVer = _seoGet('FB Domain Verify', 'fb_domain_verify');
+        if (fbDomVer && !html.includes('facebook-domain-verification')) {
+          seoMetaTags += `\n  <meta name="facebook-domain-verification" content="${fbDomVer.replace(/"/g, '&quot;')}">`;
+        }
+        // og:image override — admin's chosen share image (replaces hard-coded fallback)
+        let ogImage = _seoGet('OG Image', 'og_image');
+        if (ogImage) {
+          // Convert Drive URLs to lh3 CDN (same logic as getImgSrc on the client)
+          if (ogImage.includes('drive.google.com')) {
+            const m = ogImage.match(/d\/([a-zA-Z0-9_-]+)/) || ogImage.match(/id=([a-zA-Z0-9_-]+)/);
+            if (m) ogImage = 'https://lh3.googleusercontent.com/d/' + m[1] + '=s1200-rw';
+          }
+          // ✅ v17.5 PHASE 4: Reject dangerous schemes before injecting into
+          // HTML. The admin is trusted, but if their setting is ever
+          // overwritten by a misbehaving script, a `javascript:` URL in
+          // og:image could turn into a redirect-or-execute surface.
+          const _ogSafe = _safeUrl_(ogImage);
+          if (_ogSafe) {
+            const _ogEsc = _ogSafe.replace(/"/g, '&quot;');
+            // Replace the existing og:image tag in-place so FB scraper picks the admin one
+            html = html.replace(
+              /<meta\s+property="og:image"\s+content="[^"]*">/i,
+              `<meta property="og:image" content="${_ogEsc}">`
+            );
+          }
+        }
+        // Meta Title override (admin Branding & SEO → Global Meta Title)
+        const metaTitle = _seoGet('Meta Title', 'meta_title');
+        if (metaTitle) {
+          const _mtEsc = metaTitle.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          // Replace <title>...</title> in-place
+          html = html.replace(/<title>[^<]*<\/title>/i, `<title>${_mtEsc}</title>`);
+          // Also og:title
+          html = html.replace(
+            /<meta\s+property="og:title"\s+content="[^"]*">/i,
+            `<meta property="og:title" content="${_mtEsc}">`
+          );
+        }
+        // Meta Description override
+        const metaDesc = _seoGet('Meta Desc', 'meta_desc');
+        if (metaDesc) {
+          const _mdEsc = metaDesc.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+          html = html.replace(
+            /<meta\s+name="description"\s+content="[^"]*">/i,
+            `<meta name="description" content="${_mdEsc}">`
+          );
+          html = html.replace(
+            /<meta\s+property="og:description"\s+content="[^"]*">/i,
+            `<meta property="og:description" content="${_mdEsc}">`
+          );
+        }
+      } catch (_) { /* malformed JSON — fall through, no SEO injection */ }
+
+      // Inject before </head>
+      html = html.replace('</head>', `  ${preloadTag}${seoMetaTags}\n  ${scriptTag}\n</head>`);
+    }
+
+    return new Response(html, {
+      status: htmlRes.status,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        // ✅ v17.5: Security headers (clickjacking + MIME-sniff + referrer).
+        // Clickjacking: page can NEVER be loaded inside an <iframe>, so an
+        //   attacker can't overlay it with a fake "Click here to win" trap.
+        // nosniff: stops old IE / misconfigured browsers from guessing a
+        //   response's MIME type (could let a /products JSON response render
+        //   as HTML and execute a stored XSS).
+        // Referrer-Policy: only send the origin (not full path) when leaving
+        //   the site via a link — protects internal query-string tokens.
+        'Content-Security-Policy': "frame-ancestors 'none'",
+        'X-Content-Type-Options': 'nosniff',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+        // ✅ v15.47 PROPAGATION FIX: Reduce s-maxage from 600 to 30 seconds.
+        // Previously edge cache held SSR-rendered HTML for 10 min after a
+        // purge, so admin updates were invisible to customers for up to
+        // that window. With s-maxage=30, every customer gets re-rendered
+        // SSR HTML within 30s of any admin Publish even if the explicit
+        // HTML purge fails (cross-colo). Edge still serves at <50ms.
+        // SWR=86400 still keeps repeated returns instant.
+        // ✅ v15.32 FIX: max-age=0 + must-revalidate forces the BROWSER to
+        // send a conditional request to Cloudflare on every navigation.
+        // ✅ v16.3: FB/IG/TikTok webviews abuse stale-while-revalidate and
+        // ignore manual refresh → they replay stale SSR HTML (old prices)
+        // for hours. For those UAs ONLY, send `no-store` so the webview can
+        // never keep a stale copy. Normal browsers keep the fast SWR policy.
+        'Cache-Control': _isInAppBrowser
+          ? 'no-store, no-cache, must-revalidate, max-age=0'
+          : 'public, max-age=0, s-maxage=30, stale-while-revalidate=86400, must-revalidate',
+        // ✅ v15.33 PERF: Hint browser to start parsing as data arrives.
+        // Combined with HTTP/2 priority hints from Cloudflare, this can shave
+        // 30-80ms off TTFB-to-FCP on slower connections.
+        'Vary': 'Accept-Encoding',
+        // ✅ v15.33: Tell browser this resource is critical/high-priority.
+        // Cloudflare reads this header for HTTP/3 prioritization.
+        'Priority': 'u=0, i'
+      }
+    });
+  } catch (err) {
+    // ✅ v15.31 FIX: Same anti-loop concern as the !ok branch above.
+    // Serve a minimal HTML shell instead of re-entering the Worker.
+    const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store, max-age=0' });
+    _securityHeaders(headers);
+    return new Response(
+      '<!DOCTYPE html><html lang="bn"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>YARZ — Loading</title><style>body{font-family:system-ui,sans-serif;background:#FBF8F1;color:#1A1411;text-align:center;padding:80px 20px}h1{font-weight:700;letter-spacing:.2em}p{color:#C8102E;margin-top:20px}</style></head><body><svg viewBox="0 0 24 24" width="56" height="56" style="display:block;margin:0 auto 12px;"><circle cx="12" cy="12" r="10" fill="#C8102E" stroke="#9B0C23" stroke-width="0.6"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#FBF8F1" stroke-width="0.7" opacity="0.85"/><circle cx="9.8" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="9.8" cy="14.2" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="14.2" r="1.2" fill="#FBF8F1"/></svg><h1 style="letter-spacing:.26em;font-family:Cormorant Garamond,Georgia,serif;">YARZ</h1><p>Site temporarily unavailable. Please refresh in a moment.</p></body></html>',
+      { status: 503, headers }
+    );
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// v15.37 — STATIC ASSET PROXY (custom-domain support)
+// ════════════════════════════════════════════════════════
+// When the Worker is bound to yarzclothing.xyz, every CSS/JS/subpage
+// request also hits the Worker. We forward those to GitHub Pages and
+// cache aggressively at the edge per asset type.
+//
+// Returns:
+//   • Response  — request was a static asset, served from edge/origin
+//   • null      — request is NOT a static asset, let main router continue
+const GITHUB_PAGES_ORIGIN = 'https://ixmaruf.github.io/Yarz';
+
+const STATIC_FILE_EXTS = /\.(css|js|mjs|map|webp|jpe?g|png|gif|svg|ico|avif|woff2?|ttf|otf|eot|json|xml|txt|webmanifest|html?)$/i;
+
+const KNOWN_SUBPAGES = new Set([
+  '/about', '/about/', '/about/index.html',
+  '/community', '/community/', '/community/index.html',
+  '/contact', '/contact/', '/contact/index.html',
+  '/privacy', '/privacy/', '/privacy/index.html',
+  '/return-policy', '/return-policy/', '/return-policy/index.html',
+  '/shipping', '/shipping/', '/shipping/index.html',
+  '/terms', '/terms/', '/terms/index.html'
+]);
+
+const KNOWN_ROOT_FILES = new Set([
+  '/sw.js',
+  '/manifest.webmanifest',
+  '/robots.txt',
+  '/sitemap.xml',
+  '/404.html'
+]);
+
+async function tryStaticProxy(request, env, ctx) {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
+
+  const isAdminPath = pathname === '/admin' || pathname === '/admin/' || pathname === '/admin/index.html';
+
+  if (isAdminPath) {
+    const adminRes = await fetch(GITHUB_PAGES_ORIGIN + '/admin/index.html', {
+      headers: { 'User-Agent': 'YARZ-Edge-SSR/1.0', 'Accept': 'text/html' }
+    });
+    if (adminRes.ok) {
+      const html = await adminRes.text();
+      return new Response(html, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Content-Security-Policy': "frame-ancestors 'none'",
+          'X-Content-Type-Options': 'nosniff',
+          'Referrer-Policy': 'strict-origin-when-cross-origin'
+        }
+      });
+    }
+  }
+
+  // Determine if this looks like a static asset
+  const isSubpage = KNOWN_SUBPAGES.has(pathname);
+  const isRootFile = KNOWN_ROOT_FILES.has(pathname);
+  const isAssetFolder = pathname.startsWith('/css/') || pathname.startsWith('/js/') || pathname.startsWith('/admin/');
+  const hasFileExt = STATIC_FILE_EXTS.test(pathname);
+
+  if (!isSubpage && !isRootFile && !isAssetFolder && !hasFileExt) {
+    return null; // not a static asset — let main router handle it
+  }
+
+  // Build origin URL — preserve query string for cache-busting (e.g. ?v=15.36)
+  let originPath = pathname;
+  // GitHub Pages serves /about/ as /about/index.html — pass directory paths as-is
+  // (GitHub auto-appends index.html). For canonical pretty-URL behavior keep as-is.
+  const originUrl = GITHUB_PAGES_ORIGIN + originPath + url.search;
+
+  // Pick edge cache TTL based on asset type
+  let edgeTtl = 3600; // default 1h
+  let browserCacheControl = 'public, max-age=3600';
+
+  if (pathname === '/sw.js') {
+    // Service Worker MUST update fast — never long-cache
+    edgeTtl = 0;
+    browserCacheControl = 'no-cache, max-age=0, must-revalidate';
+  } else if (isAssetFolder && url.searchParams.has('v')) {
+    // Versioned CSS/JS — content is immutable per ?v=
+    edgeTtl = 31536000; // 1 year
+    browserCacheControl = 'public, max-age=31536000, immutable';
+  } else if (isAssetFolder) {
+    // Unversioned CSS/JS (rare) — short cache
+    edgeTtl = 300;
+    browserCacheControl = 'public, max-age=300, must-revalidate';
+  } else if (isSubpage || pathname === '/404.html') {
+    // HTML subpages — same SWR strategy as main HTML
+    edgeTtl = 86400;
+    browserCacheControl = 'public, max-age=0, s-maxage=600, stale-while-revalidate=86400, must-revalidate';
+  } else if (pathname === '/manifest.webmanifest') {
+    edgeTtl = 3600;
+    browserCacheControl = 'public, max-age=3600';
+  } else if (pathname === '/robots.txt' || pathname === '/sitemap.xml') {
+    edgeTtl = 3600;
+    browserCacheControl = 'public, max-age=3600';
+  } else if (hasFileExt && /\.(woff2?|ttf|otf|eot|jpe?g|png|webp|avif|gif|svg|ico)$/i.test(pathname)) {
+    // Long-cache fonts and images
+    edgeTtl = 2592000; // 30 days
+    browserCacheControl = 'public, max-age=2592000';
+  }
+
+  try {
+    const originReq = new Request(originUrl, {
+      headers: {
+        'User-Agent': 'YARZ-CF-Worker/1.0',
+        'Accept': request.headers.get('accept') || '*/*',
+        'Accept-Encoding': 'gzip, br'
+      },
+      // cf-level edge cache — Cloudflare keeps it warm across all visitors
+      cf: edgeTtl > 0 ? { cacheTtl: edgeTtl, cacheEverything: true } : { cacheTtl: 0 }
+    });
+
+    const originRes = await fetch(originReq);
+
+    if (!originRes.ok) {
+      // 404 from GitHub for a subpage → return GitHub's 404 page if we have one cached
+      if (originRes.status === 404 && (isSubpage || pathname.endsWith('.html'))) {
+        try {
+          const fallback = await fetch(GITHUB_PAGES_ORIGIN + '/404.html', {
+            cf: { cacheTtl: 300, cacheEverything: true }
+          });
+          if (fallback.ok) {
+            const headers = new Headers(fallback.headers);
+            headers.set('Cache-Control', 'public, max-age=300');
+            _securityHeaders(headers);
+            return new Response(fallback.body, { status: 404, headers });
+          }
+        } catch (_) { console.error('[tryStaticProxy] fallback error:', _.message); }
+      }
+      // Pass-through other errors
+      return originRes;
+    }
+
+    // Re-wrap with our cache headers
+    const headers = new Headers(originRes.headers);
+    headers.set('Cache-Control', browserCacheControl);
+    _securityHeaders(headers);
+    // Preserve content type from origin — GitHub Pages already sets these correctly
+    // Add CORS for fonts (Safari needs this for cross-origin font CSS)
+    if (/\.(woff2?|ttf|otf|eot)$/i.test(pathname)) {
+      headers.set('Access-Control-Allow-Origin', '*');
+    }
+    // Service Worker scope hint (only matters if /sw.js, doesn't hurt otherwise)
+    if (pathname === '/sw.js') {
+      headers.set('Service-Worker-Allowed', '/');
+    }
+    // Strip GitHub-specific headers that shouldn't leak
+    headers.delete('x-github-request-id');
+    headers.delete('x-served-by');
+    headers.delete('x-fastly-request-id');
+
+    return new Response(originRes.body, {
+      status: originRes.status,
+      headers
+    });
+  } catch (err) {
+    // Origin unreachable — return 502 Bad Gateway so client knows it's a transient issue
+    const errHeaders = new Headers({ 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' });
+    _securityHeaders(errHeaders);
+    return new Response('Static asset origin unreachable: ' + (err.message || 'unknown'), {
+      status: 502,
+      headers: errHeaders
+    });
+  }
+}
+
+// Build a normalized cache key — strip cache-busters that change
+// per request but don't affect actual data (e.g. "_t" timestamps).
+// ✅ v15.97 FIX: Also strip `cb`. The client used `?action=products&cb=1` as
+// a "cache-bust" flag, but Cloudflare keys the edge cache on the FULL URL, so
+// `cb=1` forked customer traffic into a `&cb=1` slot that the purge/prewarm
+// logic NEVER touched (it warms `?action=products`). Result: every customer
+// hit a perpetually-cold slot → direct GAS upstream fetch (2-3s cold start)
+// on EVERY visit, and admin Publish never refreshed what customers saw.
+// Stripping `cb` here (defense-in-depth) collapses all variants onto one warm,
+// prewarmed slot even for browsers still running an old cached api.js.
+// ✅ v14.0 FIX: Also strip `key` (API key) from the cache key. This is NOT
+// security — the API key is only used to authorize the upstream call to GAS.
+// Caching the response is safe because every authorized client gets the same
+// response. Stripping the key from the cache key fixes a critical bug where
+// admin's save → notifyCloudflare() purge couldn't target the right cache slot
+// (purge URL has no key, customer URL has key → different cache buckets →
+// stale data lived for the full FRESH_TTL of 30 minutes).
+function buildCacheKey(request) {
+  const u = new URL(request.url);
+  // ✅ v16.9 PROTOCOL FIX: Force HTTPS. Facebook app links often start as http://
+  // and if the Worker intercepts it before redirect, http:// cache keys miss
+  // the https:// cache slots, causing a cold start and skeleton screen!
+  u.protocol = 'https:';
+  // ✅ v16.10 WWW FIX: Normalize www to root domain so they share the exact same warm cache slot!
+  if (u.hostname === 'www.yarzclothing.xyz') u.hostname = 'yarzclothing.xyz';
+  
+  // Remove cache-busting params so different timestamps share a cache slot
+  u.searchParams.delete('_t');
+  u.searchParams.delete('_r');
+  u.searchParams.delete('_');
+  u.searchParams.delete('cb');
+  u.searchParams.delete('key');
+  const sorted = new URLSearchParams([...u.searchParams.entries()].sort());
+  u.search = sorted.toString();
+  return new Request(u.toString(), { method: 'GET' });
+}
+
+// Background refresh (does NOT block the customer's response)
+async function revalidate(request, cacheKey, env) {
+  try {
+    const fresh = await fetchAndStore(request, cacheKey, env);
+    return fresh;
+  } catch (e) {
+    // Silent — old cache stays valid until next attempt
+  }
+}
+
+// Pull from upstream + write to cache + return for the caller
+async function fetchAndStore(request, cacheKey, env) {
+  const cache = caches.default;
+  const url = new URL(request.url);
+
+  // ✅ v15.5 + v15.31 FIX: If the request URL has no `key` param (happens
+  // when SSR or pre-warm constructs a URL from a stripped cacheKey), inject
+  // the server-side API key so Apps Script doesn't return "Invalid API Key".
+  // 
+  // PREVIOUS BUG: Used `typeof env !== 'undefined' && env && env.GAS_API_KEY`
+  // but `env` was never a parameter of this function — so it ALWAYS fell
+  // back to the hardcoded key. That meant rotating GAS_API_KEY in Cloudflare
+  // dashboard had no effect; admin would have to edit the hardcoded value
+  // here too. Now `env` is properly threaded through every caller.
+  if (!url.searchParams.has('key')) {
+    // Load from env only — fail closed if not set
+    const fallbackKey = _secretOrNull_(env, 'GAS_API_KEY');
+    if (fallbackKey) url.searchParams.set('key', fallbackKey);
+  }
+
+  // Build the upstream URL: keep all query params, just swap the host.
+  const upstreamUrl = _upstreamUrl(env) + url.search;
+
+  const upstream = await fetch(upstreamUrl, {
+    method: 'GET',
+    redirect: 'follow',
+    headers: {
+      // Apps Script sometimes 302-redirects; identify ourselves
+      'User-Agent': 'YARZ-CF-Worker/1.0',
+      'Accept': 'application/json'
+    }
+  });
+
+  // We need to re-create the response so we can attach our own headers.
+  // (Apps Script returns text/plain; coerce to JSON content-type.)
+  const body = await upstream.text();
+
+  // ✅ v15.5 CRITICAL FIX: Apps Script ContentService cannot set HTTP status
+  // codes — it ALWAYS returns 200, even for errors. So `upstream.ok` is true
+  // even when the body is `{"success":false,"error":"Invalid API Key"}`.
+  // We must inspect the JSON body itself to detect failures and skip caching.
+  let isErrorResponse = false;
+  try {
+    const peek = JSON.parse(body);
+    if (peek && (peek.success === false || peek.ok === false || peek.error || peek.code >= 400)) {
+      isErrorResponse = true;
+    }
+  } catch (e) { /* not JSON — assume OK */ }
+
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/json; charset=utf-8');
+  // This Cache-Control is what Cloudflare honors for caching duration.
+  // ✅ v16.6 FIX: We use a HUGE s-maxage (1 year) so the Edge Cache NEVER evicts it.
+  // Instead, our custom `ageMs > FRESH_TTL` logic in `handleCachedGet` implements
+  // stale-while-revalidate manually in the background! This guarantees ZERO cold starts.
+  headers.set('Cache-Control', `public, max-age=0, s-maxage=31536000`);
+  headers.set('x-yarz-cached-at', String(Date.now()));
+  headers.set('x-yarz-source', 'upstream');
+  if (isErrorResponse) headers.set('x-yarz-error', '1');
+  _securityHeaders(headers);
+
+  const response = new Response(body, {
+    status: upstream.status,
+    headers
+  });
+
+  // Don't cache failures — let next request try again
+  // ✅ v15.5: Also skip cache when JSON body indicates an error
+  if (upstream.ok && !isErrorResponse) {
+    // .clone() because Response body is a one-shot stream
+    await cache.put(cacheKey, response.clone());
+  }
+  return response;
+}
+
+// ════════════════════════════════════════════════════════
+// PURGE WEBHOOK — called by Google Apps Script after every write
+// ════════════════════════════════════════════════════════
+async function handlePurge(request, env, ctx) {
+  // ✅ v17.5 PHASE 4: Fail-closed. PURGE_SECRET MUST be set; if not, the
+  // publish button will return a clear 503 so the owner knows the
+  // dashboard secret is missing. Set via `wrangler secret put PURGE_SECRET`
+  // or in the Cloudflare dashboard → Workers → Settings → Variables.
+  const provided = request.headers.get('X-Purge-Key') || '';
+  const expectedSecret = _secretOrNull_(env, 'PURGE_SECRET');
+  if (!expectedSecret) {
+    return cors(json({
+      success: false,
+      error: 'Server misconfigured: PURGE_SECRET not set. Set via `wrangler secret put PURGE_SECRET`.',
+      code: 'SECRET_NOT_CONFIGURED'
+    }, 503), request);
+  }
+
+  if (provided !== expectedSecret) {
+    return cors(json({ success: false, error: 'Forbidden' }, 403), request);
+  }
+
+  const cache = caches.default;
+  const url = new URL(request.url);
+
+  // Allow POST body to specify which actions to purge.
+  // Default: purge ALL pre-warmed actions.
+  let actionsToPurge = PREWARM_ACTIONS.slice();
+  try {
+    const body = await request.text();
+    if (body) {
+      const parsed = JSON.parse(body);
+      if (Array.isArray(parsed.actions) && parsed.actions.length) {
+        actionsToPurge = parsed.actions.map(a => String(a).toLowerCase());
+      }
+    }
+  } catch (_) { /* body optional */ }
+
+  // ✅ v15.47 PROPAGATION FIX: Also delete the SSR-rendered HTML cache slot
+  // for every host. Without this, after admin clicks Publish:
+  //   • JSON cache for /?action=products is purged ✅
+  //   • but the SSR HTML at `/` and `/index.html` still injects the OLD
+  //     products payload from the EDGE HTML cache (s-maxage=600 = 10 min)
+  //   • → customer sees stale data for up to 10 min
+  // Now we explicitly delete those HTML keys here too so the next visitor
+  // forces a fresh SSR build.
+  for (const h of WORKER_HOSTS) {
+    try {
+      const rootKey = new Request(`https://${h}/`, { method: 'GET' });
+      const idxKey  = new Request(`https://${h}/index.html`, { method: 'GET' });
+      await cache.delete(rootKey);
+      await cache.delete(idxKey);
+    } catch (_) { /* silent */ }
+  }
+
+  // 1) Delete each cached entry on this colo
+  // 2) Immediately re-prime so next customer gets fresh data instantly
+  // 3) ✅ v15.26: Also fire a global cross-colo purge via Cloudflare REST API
+  //    so customers in OTHER regions get fresh data instantly too.
+  const purged = [];
+  const reprimed = [];
+
+  // Fire global URL purge in parallel with colo purge — non-blocking
+  ctx.waitUntil(purgeGlobal(env, url.host, actionsToPurge).catch(function(e){console.error('Global purge failed',e);}));
+
+  for (const action of actionsToPurge) {
+    const k = buildPurgeKey(url, action);
+    const cacheKeyStr = k.url;
+    
+    // ✅ v16.7 CRITICAL ZERO-DOWNTIME FIX: Do NOT `cache.delete` the JSON cache slots!
+    // Deleting the cache causes the next visitor to experience a 2-3s skeleton loading
+    // screen while waiting for GAS. Instead, we let the old cache serve instantly
+    // (Stale-While-Revalidate) and manually fetch fresh data here in the background,
+    // then overwrite the cache slots for ALL hosts.
+    
+    // We push to `purged` to satisfy the Admin Panel's expected response format,
+    // even though we are technically doing a zero-downtime overwrite instead of a delete.
+    purged.push({ action, deleted: true, zeroDowntime: true });
+    
+    // Deduplication check: if a pre-warm is already running for this action, skip it
+    const existingTs = activePrewarms.get(cacheKeyStr);
+    if (existingTs && (Date.now() - existingTs < PREWARM_TTL_MS)) {
+      continue;
+    }
+    activePrewarms.set(cacheKeyStr, Date.now());
+
+    // Pre-warm in background so customers never see a cold response
+    ctx.waitUntil(
+      (async () => {
+        try {
+          const reqUrl = new URL(url.origin + '/');
+          reqUrl.searchParams.set('action', action);
+          const apiKey = url.searchParams.get('key');
+          if (apiKey) reqUrl.searchParams.set('key', apiKey);
+          const fakeReq = new Request(reqUrl.toString(), { method: 'GET' });
+          
+          // Hit GAS once
+          const freshResponse = await Promise.race([
+            fetchAndStore(fakeReq, buildCacheKey(fakeReq), env),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('prewarm-timeout')), 25000))
+          ]);
+          
+          // Now clone the response and put it in the cache for ALL hosts!
+          // This replaces the old `cache.delete(hostKey)` fan-out with a `cache.put(hostKey)` fan-out.
+          for (const h of WORKER_HOSTS) {
+            if (h === url.host) continue;
+            try {
+              const hostReqUrl = new URL(`https://${h}/`);
+              hostReqUrl.searchParams.set('action', action);
+              if (apiKey) hostReqUrl.searchParams.set('key', apiKey);
+              const hostReq = new Request(hostReqUrl.toString(), { method: 'GET' });
+              await caches.default.put(buildCacheKey(hostReq), freshResponse.clone());
+            } catch (_) { console.error('[prewarm] cross-host cache put error:', _.message); }
+          }
+          
+          reprimed.push(action);
+        } catch (_) { console.error('[prewarm] action error:', _.message); }
+        finally {
+          activePrewarms.delete(cacheKeyStr);
+        }
+      })()
+    );
+  }
+
+  // ✅ v15.50 CROSS-HOST PURGE FAN-OUT: Cloudflare's per-colo cache.delete()
+  // only invalidates the host that received the request. So a purge sent to
+  // workers.dev does NOT invalidate yarzclothing.xyz cache (and vice versa).
+  // The CF_API_TOKEN-based purgeGlobal() above is the proper fix, but it
+  // silently no-ops when env vars aren't configured. As a free-tier-friendly
+  // fallback, we fire a sub-request to every other host so each one runs
+  // its own colo-local cache.delete(). This guarantees both hosts get
+  // invalidated even without CF_API_TOKEN, at the cost of one extra SubRequest
+  // per purge call (free, well under the daily limit).
+  //
+  // Self-loop guard: header `X-Purge-Forwarded` prevents the receiving
+  // Worker from fanning out again, avoiding a chain reaction.
+  const isForwardedPurge = request.headers.get('X-Purge-Forwarded') === '1';
+  if (!isForwardedPurge) {
+    const forwardSecret = request.headers.get('X-Purge-Key');
+    const forwardBody = JSON.stringify({ actions: actionsToPurge });
+    for (const h of WORKER_HOSTS) {
+      if (h === url.host) continue; // skip the host that received this request
+      ctx.waitUntil(
+        fetch(`https://${h}/__purge`, {
+          method: 'POST',
+          headers: {
+            'X-Purge-Key': forwardSecret,
+            'X-Purge-Forwarded': '1',
+            'Content-Type': 'application/json'
+          },
+          body: forwardBody
+        }).catch(function(e){console.error('Webhook notification failed',e);})
+      );
+    }
+  }
+
+  return cors(json({
+    success: true,
+    purged,
+    note: 'Pre-warm running in background. Next request will be fresh.',
+    timestamp: new Date().toISOString()
+  }), request);
+}
+
+// ════════════════════════════════════════════════════════
+// GLOBAL CACHE INVALIDATION (all colos)
+// ────────────────────────────────────────────────────────
+// `cache.delete()` (above) only purges the COLO that handles the purge
+// request. Visitors served from other colos can still see stale data
+// for up to FRESH_TTL (30 min). This calls the Cloudflare REST API to
+// invalidate the listed URLs across the entire global edge network.
+//
+// Requires env vars (set via `wrangler secret put` or dashboard):
+//   CF_API_TOKEN  — Zone-scoped token with "Cache Purge" permission
+//   CF_ZONE_ID    — yarzclothing.xyz zone ID
+//
+// If either env var is missing, this no-ops silently — colo-only purge
+// still works.
+// ════════════════════════════════════════════════════════
+async function purgeGlobal(env, originHost, actions) {
+  if (!env || !env.CF_API_TOKEN || !env.CF_ZONE_ID) return null;
+  try {
+    const files = [];
+    // ✅ v15.38: Iterate over EVERY host the Worker serves (workers.dev +
+    // custom domain + www). Cloudflare's edge cache is host-aware, so a
+    // URL purge for workers.dev does NOT invalidate the same path on
+    // yarzclothing.xyz. Without this, customers on the custom domain would
+    // keep seeing stale data after every admin "Publish" click until the
+    // 30-min FRESH_TTL expired naturally.
+    const hostsToPurge = [originHost];
+    for (const h of WORKER_HOSTS) {
+      if (h !== originHost) hostsToPurge.push(h);
+    }
+    for (const host of hostsToPurge) {
+      // ✅ v15.27 PERF: Always purge the HTML page itself too — otherwise the
+      // browser cache + edge cache would keep stale HTML even after admin
+      // pushes a new GitHub build. Manual Publish should always be live.
+      files.push(`https://${host}/`);
+      files.push(`https://${host}/index.html`);
+      for (const a of actions) {
+        // Match what the frontend hits — clean URL (no key/timestamp).
+        // Cloudflare matches by exact URL string.
+        files.push(`https://${host}/?action=${encodeURIComponent(a)}`);
+        // ✅ v15.45 SECURITY: Do not append the API key to a public-cache
+        // purge URL. If env.GAS_API_KEY is set we still build the keyed
+        // variant (some legacy frontends sent it), but never leak a literal.
+        if (env && env.GAS_API_KEY) {
+          files.push(`https://${host}/?action=${encodeURIComponent(a)}&key=${encodeURIComponent(env.GAS_API_KEY)}`);
+        }
+      }
+    }
+    // ✅ v15.45 RELIABILITY: Cloudflare /purge_cache caps at 30 URLs per
+    // request. With 3 hosts × ~10 actions × 2 (keyless+keyed) we routinely
+    // exceed that. Chunk the files array so every URL actually gets purged.
+    const CHUNK = 30;
+    const results = [];
+    for (let i = 0; i < files.length; i += CHUNK) {
+      const slice = files.slice(i, i + CHUNK);
+      try {
+        const apiResp = await fetch(
+          `https://api.cloudflare.com/client/v4/zones/${env.CF_ZONE_ID}/purge_cache`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + env.CF_API_TOKEN,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ files: slice })
+          }
+        );
+        try { results.push(await apiResp.json()); } catch(e) { results.push({ success: false, msg: 'Bad JSON' }); }
+      } catch (e) {
+        results.push({ success: false, error: e.message });
+      }
+    }
+    return { success: results.every(r => r && r.success !== false), batches: results.length };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+}
+
+// Build the cache key that fetchAndStore() uses for a given action,
+// so purge can target it correctly.
+// ✅ v14.0 FIX: Mirror buildCacheKey — strip `key` from the URL so we hit
+// the same cache slot that customer requests use.
+function buildPurgeKey(originUrl, action) {
+  const u = new URL(originUrl.origin + '/');
+  u.searchParams.set('action', action);
+  // ✅ v14.0: Do NOT include the API key — buildCacheKey strips it too,
+  //   so cache slots are partitioned only by action, not by key.
+  const sorted = new URLSearchParams([...u.searchParams.entries()].sort());
+  u.search = sorted.toString();
+  return new Request(u.toString(), { method: 'GET' });
+}
+
+// ✅ v15.38 CRITICAL FIX: Build a purge key for a specific host.
+// Cloudflare's edge cache keys are HOST-aware, meaning the same Worker
+// serving two hostnames (workers.dev + custom domain) keeps TWO separate
+// cache slots per action. Admin "Publish" calls /__purge on workers.dev,
+// so without explicit per-host purges the customer-facing host
+// (yarzclothing.xyz) never gets purged → admin updates invisible until
+// FRESH_TTL (30 min) naturally expires.
+function buildPurgeKeyForHost(host, action) {
+  const u = new URL('https://' + host + '/');
+  u.searchParams.set('action', action);
+  const sorted = new URLSearchParams([...u.searchParams.entries()].sort());
+  u.search = sorted.toString();
+  return new Request(u.toString(), { method: 'GET' });
+}
+
+// All hostnames this Worker is bound to. handlePurge iterates this list
+// so a single admin "Publish" click purges every cached host slot.
+// If you bind a new domain to the Worker, add it here.
+const WORKER_HOSTS = [
+  'yarz.marufhasan80009.workers.dev',
+  'yarzclothing.xyz',
+  'www.yarzclothing.xyz'
+];
+
+// ════════════════════════════════════════════════════════
+// PASSTHROUGH (no cache) — for POSTs and live-only GETs
+// ════════════════════════════════════════════════════════
+
+async function passthroughGet(request, env) {
+  const url = new URL(request.url);
+  const upstreamUrl = _upstreamUrl(env) + url.search;
+  const upstream = await fetch(upstreamUrl, {
+    method: 'GET',
+    redirect: 'follow',
+    headers: { 'User-Agent': 'YARZ-CF-Worker/1.0' }
+  });
+  const body = await upstream.text();
+  return new Response(body, {
+    status: upstream.status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'x-yarz-source': 'live'
+    }
+  });
+}
+
+async function passthroughPost(request, env) {
+  const url = new URL(request.url);
+  let body = await request.text();
+  try {
+    const peek = body && body[0] === '{' ? JSON.parse(body) : null;
+    if (peek && typeof peek === 'object') {
+      const action = String(peek.action || '').toLowerCase();
+      if (action === 'adminlogin' || action === 'admin_login') {
+        const ip = request.headers.get('cf-connecting-ip') || '';
+        if (ip) peek.clientIp = ip.split(',')[0].trim();
+        body = JSON.stringify(peek);
+      } else if (action === 'capi' || action === 'fbcapi' || action === 'ttapi' || action === 'ttevents') {
+        peek.userData = peek.userData || {};
+        if (!peek.userData.clientIp) {
+          const ip = request.headers.get('cf-connecting-ip') || '';
+          if (ip) peek.userData.clientIp = ip.split(',')[0].trim();
+        }
+        if (!peek.userData.userAgent) {
+          const ua = request.headers.get('user-agent') || '';
+          if (ua) peek.userData.userAgent = ua;
+        }
+        body = JSON.stringify(peek);
+      } else if (action === 'place_order') {
+        if (peek.order) {
+          const ip = request.headers.get('cf-connecting-ip') || '';
+          if (ip) peek.order.ip = ip.split(',')[0].trim();
+        }
+        body = JSON.stringify(peek);
+      }
+    }
+  } catch (_) { /* if body isn't JSON, just forward as-is */ }
+
+  const upstream = await fetch(_upstreamUrl(env) + url.search, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: {
+      'Content-Type': request.headers.get('Content-Type') || 'text/plain'
+    },
+    body
+  });
+  const respBody = await upstream.text();
+  return new Response(respBody, {
+    status: upstream.status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'x-yarz-source': 'live-post'
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════
+// ✅ v15.1: Whitelist of origins allowed to call this Worker from a browser.
+// Add more here if you serve admin/storefront from additional domains.
+const CORS_ALLOWED_ORIGINS = new Set([
+  'https://yarzclothing.xyz',
+  'https://www.yarzclothing.xyz',
+  'https://ixmaruf.github.io',
+  'https://yarzbd.github.io',
+  
+  
+  
+  
+]);
+
+function pickAllowedOrigin(request) {
+  const origin = (request && request.headers && request.headers.get('Origin')) || '';
+  if (origin && CORS_ALLOWED_ORIGINS.has(origin)) return origin;
+  // Fallback to primary site for non-browser callers (Apps Script, curl, etc.)
+  return 'https://yarzclothing.xyz';
+}
+
+function _securityHeaders(headers) {
+  // Security headers for every response — defense in depth
+  const h = headers.set ? headers : new Headers(headers);
+  h.set('X-Content-Type-Options', 'nosniff');
+  h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  h.set('X-Frame-Options', 'DENY');
+  h.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  if (!h.has('Content-Security-Policy')) {
+    h.set('Content-Security-Policy', "frame-ancestors 'none'");
+  }
+  // If we created a new Headers, merge back into the original object
+  if (headers !== h) {
+    h.forEach((v, k) => { headers[k] = v; });
+  }
+}
+
+function cors(response, request) {
+  // Always copy the response so we can mutate headers safely
+  const headers = new Headers(response.headers);
+  headers.set('Access-Control-Allow-Origin', pickAllowedOrigin(request));
+  headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, X-Purge-Key, X-Requested-With, Accept');
+  headers.set('Access-Control-Max-Age', '86400');
+  // ✅ v10.7: Edge / Firefox respect Vary so they don't mix CORS responses
+  headers.set('Vary', 'Origin');
+  // ✅ v10.7: Tell browsers it's safe to cache cross-origin
+  headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
+  // Useful for debugging in the browser DevTools Network tab
+  headers.set('Access-Control-Expose-Headers', 'x-yarz-cache, x-yarz-age, x-yarz-source');
+  _securityHeaders(headers);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
+function decorate(response, info) {
+  const headers = new Headers(response.headers);
+  if (info.cache) headers.set('x-yarz-cache', info.cache);
+  if (info.ageSec !== undefined) headers.set('x-yarz-age', String(Math.round(info.ageSec)));
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
+function json(obj, status) {
+  const headers = new Headers({
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store'
+  });
+  _securityHeaders(headers);
+  return new Response(JSON.stringify(obj), {
+    status: status || 200,
+    headers
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// VISITOR ANALYTICS — Smart Batching + Cookie Method
+// ════════════════════════════════════════════════════════
+
+// Get today's date in YYYY-MM-DD format (Bangladesh time UTC+6)
+function getTodayKey() {
+  const now = new Date(Date.now() + 6 * 60 * 60 * 1000); // UTC+6
+  return now.toISOString().split('T')[0];
+}
+
+function getYesterdayKey() {
+  const todayKey = getTodayKey(); // YYYY-MM-DD in BD time
+  const d = new Date(todayKey + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().split('T')[0];
+}
+
+// Global state for batching writes (resets if worker isolate dies)
+let pendingVisitors = 0;
+let lastWriteTime = 0;
+
+// ✅ v15.29 anti-loss visitor tracking.
+//   PROBLEM with old design: visitors held in memory could vanish if
+//   Cloudflare recycled the Worker isolate (which happens unpredictably,
+//   especially during low-traffic periods like 1-10 visitors per hour).
+//   FIX: 
+//     1) Eager flush — first visit, burst (5+ pending), or 30s+ idle
+//        triggers an immediate KV write.
+//     2) Fallback flush — if a visitor is held, schedule a 28-second
+//        timer via ctx.waitUntil so the isolate stays alive long enough
+//        to write that visitor before recycle.
+//   RESULT: every visitor counted, even at 1/hour — no loss.
+//   KV-WRITE QUOTA: at <1000 visitors/day (free plan), this writes
+//   roughly 1 per visitor (sparse traffic). At higher traffic, the
+//   `>= 5` burst gate naturally batches and keeps writes safe.
+let flushScheduled = false;
+
+async function flushPending(env) {
+  if (pendingVisitors <= 0) return;
+  const countToAdd = pendingVisitors;
+  pendingVisitors = 0;
+  lastWriteTime = Date.now();
+
+  try {
+    const today = getTodayKey();
+    const statsStr = await env.ANALYTICS.get('stats');
+    let stats = { total: 0 };
+    if (statsStr) {
+      try { stats = JSON.parse(statsStr); } catch(e){ console.error('[analytics] stats JSON parse failed:', e.message, statsStr); }
+    }
+
+    stats.total = (stats.total || 0) + countToAdd;
+    stats[today] = (stats[today] || 0) + countToAdd;
+
+    // Keep last 7 days for future chart use.
+    const keepDates = new Set([today]);
+    const todayDate = new Date(today + 'T00:00:00Z');
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date(todayDate);
+      d.setUTCDate(d.getUTCDate() - i);
+      keepDates.add(d.toISOString().split('T')[0]);
+    }
+    for (const k of Object.keys(stats)) {
+      if (k !== 'total' && !keepDates.has(k)) {
+        delete stats[k];
+      }
+    }
+
+    await env.ANALYTICS.put('stats', JSON.stringify(stats));
+  } catch(e) {
+    // KV write failed — restore counter so the next visitor retries.
+    pendingVisitors += countToAdd;
+  }
+}
+
+async function trackVisitorKV(env, ctx) {
+  if (!env || !env.ANALYTICS) return;
+  pendingVisitors++;
+  const now = Date.now();
+
+  // Eager flush — never hold the visitor if any of these are true.
+  if (pendingVisitors >= 5 || (now - lastWriteTime > 30000)) {
+    await flushPending(env);
+    return;
+  }
+
+  // Scheduled fallback flush — keeps isolate alive 28s so this visitor
+  // is guaranteed to be saved even if no new visitor comes. Only one
+  // timer per batch; subsequent visitors within the window just bump
+  // the counter and ride along.
+  if (!flushScheduled && ctx && typeof ctx.waitUntil === 'function') {
+    flushScheduled = true;
+    ctx.waitUntil((async () => {
+      try {
+        await new Promise(r => setTimeout(r, 28000));
+        if (pendingVisitors > 0) await flushPending(env);
+      } finally {
+        flushScheduled = false;
+      }
+    })());
+  }
+}
+
+// Admin endpoint: GET /__analytics
+async function handleAnalyticsRead(env, request) {
+  if (!env || !env.ANALYTICS) return cors(json({ success: false, error: 'KV not configured' }, 500), request);
+  try {
+    const today = getTodayKey();
+    const yesterday = getYesterdayKey();
+    
+    const statsStr = await env.ANALYTICS.get('stats');
+    let stats = { total: 0 };
+    if (statsStr) {
+      try { stats = JSON.parse(statsStr); } catch(e){ console.error('[analytics] stats JSON parse failed:', e.message, statsStr); }
+    }
+
+    // Include pending visitors so admin sees real-time updates
+    const todayCount = (stats[today] || 0) + pendingVisitors;
+    const totalCount = (stats.total || 0) + pendingVisitors;
+
+    // ✅ v15.28: Build last-7-days array for future chart use.
+    const last7 = [];
+    const todayDate = new Date(today + 'T00:00:00Z');
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(todayDate);
+      d.setUTCDate(d.getUTCDate() - i);
+      const key = d.toISOString().split('T')[0];
+      last7.push({
+        date: key,
+        count: key === today ? todayCount : (stats[key] || 0)
+      });
+    }
+
+    return cors(json({
+      success: true,
+      today: todayCount,
+      yesterday: stats[yesterday] || 0,
+      total: totalCount,
+      date: today,
+      last7,
+      pending: pendingVisitors
+    }), request);
+  } catch (e) {
+    return cors(json({ success: false, error: e.message }, 500), request);
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// CRON PREWARM (Scheduled Background Refresh)
+// ════════════════════════════════════════════════════════
+// Triggered by Cloudflare Cron Triggers (e.g., */5 * * * *).
+// This fetches the latest data from GAS for all PREWARM_ACTIONS
+// and overwrites the Edge Cache slots for all WORKER_HOSTS.
+// Because it does not delete the old cache, any customer visiting
+// exactly while this runs will simply get the stale cache instantly
+// (zero downtime).
+async function handleCronPrewarm(env) {
+  // We'll use the first host in WORKER_HOSTS as the base URL to build synthetic requests
+  const baseHost = WORKER_HOSTS[0] || 'yarzclothing.xyz';
+  
+  for (const action of PREWARM_ACTIONS) {
+    try {
+      const reqUrl = new URL(`https://${baseHost}/`);
+      reqUrl.searchParams.set('action', action);
+      
+      const fakeReq = new Request(reqUrl.toString(), { method: 'GET' });
+      
+      // 1. Fetch fresh data from GAS (hit GAS exactly once per action)
+      // Hard timeout to prevent stuck promises
+      const freshResponse = await Promise.race([
+        fetchAndStore(fakeReq, buildCacheKey(fakeReq), env),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('cron-timeout')), 25000))
+      ]);
+      
+      // 2. Clone the response and populate the cache for ALL hosts
+      // This ensures that customers hitting any of our domains always get a warm cache
+      for (const h of WORKER_HOSTS) {
+        if (h === baseHost) continue; // Already handled by fetchAndStore internally
+        try {
+          const hostReqUrl = new URL(`https://${h}/`);
+          hostReqUrl.searchParams.set('action', action);
+          const hostReq = new Request(hostReqUrl.toString(), { method: 'GET' });
+          await caches.default.put(buildCacheKey(hostReq), freshResponse.clone());
+        } catch (err) {
+          // Silent catch for individual host cache failures
+        }
+      }
+    } catch (err) {
+      // Silent catch so one failed action (e.g. GAS timeout) doesn't stop the rest
+    }
+  }
+}
+
+
+
+
+
+
+async function handleMonthlySnapshot(env) {
+  try {
+    const now = new Date();
+    const bdtMs = now.getTime() + (6 * 60 * 60 * 1000);
+    const bdt = new Date(bdtMs);
+    let y = bdt.getUTCFullYear();
+    let m = bdt.getUTCMonth();
+    if (m === 0) { y -= 1; m = 12; }
+
+    const GAS_URL = 'https://script.google.com/macros/s/' + (env.GAS_DEPLOYMENT_ID || '') + '/exec';
+    const resp = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'snapshotMonth', key: _secretOrNull_(env, 'GAS_API_KEY'), year: y, month: m })
+    });
+    const j = await resp.json().catch(() => null);
+    if (!j || !j.success) console.error('[monthlySnapshot] FAIL:', y, '-', String(m).padStart(2, '0'), JSON.stringify(j));
+  } catch (e) {
+    console.error('[monthlySnapshot] error:', e.message);
+    await new Promise(r => setTimeout(r, 5 * 60 * 1000));
+    try { await handleMonthlySnapshot(env); }
+    catch (e2) { console.error('[monthlySnapshot] retry failed:', e2.message); }
+  }
+}

@@ -1,0 +1,21 @@
+name = "yarz-api"
+main = "worker-supabase.js"
+compatibility_date = "2024-11-01"
+workers_dev = true
+
+# Plain-text variables (safe to commit)
+[vars]
+SUPABASE_ENABLED = "true"
+TG_OWNER_ID = "8370659578"
+FRESHT_TTL = "60"
+SWR_TTL = "60"
+HARD_TTL = "86400"
+
+# Secrets (set via `wrangler secret put NAME`)
+# SUPABASE_URL
+# SUPABASE_SERVICE_ROLE_KEY
+# TG_BOT_TOKEN
+# TG_WEBHOOK_SECRET
+# PURGE_SECRET
+
+# R2 binding removed (same as main wrangler.toml)

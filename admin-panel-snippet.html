@@ -1,0 +1,46 @@
+﻿<!-- =====================================================================
+     YARZ Admin Panel — Supabase wiring snippet
+     Date: 2026-06-20
+     
+     INSTRUCTIONS:
+       1. Replace this entire file's content into the <head> of
+          Yarz-admin panal/index.html (BEFORE existing scripts).
+       2. Replace the old <script src="supabase_adapter.js"> tag with:
+          <script src="../supabase-adapter-v2.js"></script>
+       3. Fill the SUPABASE_URL and SUPABASE_ANON_KEY placeholders.
+     ===================================================================== -->
+
+<!-- Supabase JS client (v2) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Initialize Supabase client + adapter -->
+<script>
+(function() {
+  // REPLACE THESE TWO VALUES with your Supabase project URL + anon key
+  // (Settings -> API in https://supabase.com/dashboard)
+  var SUPABASE_URL  = "https://YOUR_PROJECT.supabase.co";
+  var SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
+
+  // If user has saved creds in localStorage from a prior session, prefer those
+  try {
+    var stored = JSON.parse(localStorage.getItem("yarz_supabase_creds") || "null");
+    if (stored && stored.url && stored.anonKey) {
+      SUPABASE_URL = stored.url;
+      SUPABASE_ANON_KEY = stored.anonKey;
+    }
+  } catch (e) {}
+
+  window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  if (window.supabaseAdapter && typeof window.supabaseAdapter.init === "function") {
+    window.supabaseAdapter.init({
+      url: SUPABASE_URL,
+      anonKey: SUPABASE_ANON_KEY
+    });
+  }
+})();
+</script>
+
+<!-- Existing admin panel script -->
+<!-- <script src="supabase_adapter.js"></script> -->          <!-- OLD -->
+<script src="../supabase-adapter-v2.js"></script>            <!-- NEW -->

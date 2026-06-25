@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="bn" style="color-scheme: light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- v10.0: GitHub URL redirect guard — prevents github.io URL flash -->
+  <script>if(location.hostname.indexOf('github.io')>-1){location.replace('https://'+('yarzclothing.xyz')+location.pathname+location.search+location.hash);}</script>
+  <!-- ✅ v14.4: iPhone notch + Dynamic Island + Samsung dark mode integration.
+       Light mode: cream paint behind the notch matches header background.
+       Dark mode: deep purple matches dark surface.  prefers-color-scheme
+       lets iOS / Samsung pick the right one automatically.
+       env(safe-area-inset-*) handles ALL future iPhone shapes — no
+       per-model code, OS reports the actual cutout dimensions. -->
+  <!-- ✅ v15.53 FIX: All three theme-color metas now point to cream because
+       this site's design is cream-only (no dark mode skin). Previously the
+       dark-mode variant was #FFFDF8, so customers with system dark theme
+       (Android default for many) saw a BLACK address bar above the cream
+       header — looked broken. JS later syncs to header color on init/scroll;
+       these statics are the boot-time values the browser actually reads
+       BEFORE any JS runs (including FB/IG WebView which often ignores
+       dynamic theme-color updates). -->
+  <!-- ✅ v15.55: Single clean theme-color meta. Combined with the
+       `<meta name="color-scheme" content="light">` below, mobile
+       browsers will paint the address bar cream regardless of the
+       user's system dark-mode setting. -->
+  <meta name="theme-color" content="#FAFAF7">
+  <!-- ✅ v15.55 DARK-MODE FIX: Declare this site as light-only so that
+       1) Mobile browsers (Brave/Chrome/Samsung) do NOT trigger the
+          force-dark / auto-dark "Web contents" feature on system dark
+          mode users — that's what was painting the address bar dark
+          and inverting our theme-color hint.
+       2) Native form controls + scrollbars stay light to match cream UI.
+       The `<html style="color-scheme: light">` mirror at the root forces
+       the same on user-agents that ignore the meta. -->
+  <meta name="color-scheme" content="light">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="mobile-web-app-capable" content="yes">
+  
+  <!-- v10.5: DNS Preconnect for instant API handshake.
+       ✅ v15.37: When site is served via Worker on yarzclothing.xyz, API
+       calls go same-origin so a separate preconnect to workers.dev is
+       wasted (~3ms TLS handshake we never use). Kept as a backup —
+       harmless if Worker domain isn't bound yet. -->
+  <link rel="preconnect" href="https://yarz.marufhasan80009.workers.dev" crossorigin>
+  <link rel="dns-prefetch" href="https://yarz.marufhasan80009.workers.dev">
+  <!-- ✅ v15.33: Apps Script DNS prefetch — cold edge fallback uses GAS direct.
+       Saves ~80-150ms when worker cache is cold or POST submissions fire. -->
+  <link rel="dns-prefetch" href="https://script.google.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- Image CDN + critical asset preload -->
+  <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin>
+  <link rel="dns-prefetch" href="https://lh3.googleusercontent.com">
+  <link rel="preload" href="./js/api.js?v=16.10" as="script">
+  <link rel="preload" href="./css/style.css?v=16.92" as="style">
+
+  <!-- ✅ v13.0 LCP FIX: Preload last-known hero banner URL.
+       On returning visits, this fires the LCP image fetch BEFORE any JS runs,
+       cutting ~500ms off LCP. URL was saved by app.js on the previous visit. -->
+  <!-- Hero Banner Preload injected by Cloudflare Edge SSR -->
+  <!-- ✅ v15.27: For returning visitors, preload last-known hero from localStorage
+       BEFORE any JS runs. Cuts LCP by ~400-500ms on returning customers.
+       Mobile gets a 1000px variant via imagesrcset (saves 150-300 KB) — desktop
+       still gets the full 2000px hero, so quality is identical per device.
+       (Worker SSR also injects a preload for first-time visitors using cached data.)
+       ✅ v15.33 FIX: De-dup guard — if Worker SSR already injected a hero
+       preload (1st-time visitors), skip the localStorage-based one to avoid
+       double-fetching. Worker SSR runs BEFORE inline scripts, so we can detect
+       its preload tag is already in <head>. -->
+  <script>
+    (function(){
+      try {
+        // Check if Worker SSR already injected a hero preload tag
+        var existing = document.querySelector('link[rel="preload"][as="image"][fetchpriority="high"]');
+        if (existing) return; // SSR already added one — skip duplicate
+
+        var heroUrl = localStorage.getItem('yarz_hero_url_v1');
+        if (heroUrl && /^https?:\/\//.test(heroUrl)) {
+          var lk = document.createElement('link');
+          lk.rel = 'preload';
+          lk.as = 'image';
+          lk.href = heroUrl;
+          lk.setAttribute('fetchpriority', 'high');
+          // ✅ v15.36 PERF: imagesrcset MUST mirror the runtime <img> srcset
+          // exactly so the preload-fetched bytes are reused instead of being
+          // discarded. Old code used =s1000 mobile / =s2000 desktop; runtime
+          // <img> requested =s2000 always → preload wasted on every visit.
+          // Now: =s1000 mobile, =s1600 default, =s2000 retina laptops/4K.
+          // Each phone fetches ONE image, used for actual paint.
+          var srcset = heroUrl;
+          if (/=s\d+/.test(heroUrl)) {
+            var hero1000 = heroUrl.replace(/=s\d+/, '=s1000');
+            var hero1600 = heroUrl.replace(/=s\d+/, '=s1600');
+            var hero2000 = heroUrl.replace(/=s\d+/, '=s2000');
+            srcset = hero1000 + ' 1000w, ' + hero1600 + ' 1600w, ' + hero2000 + ' 2000w';
+            lk.setAttribute('imagesrcset', srcset);
+            lk.setAttribute('imagesizes', '(max-width:768px) 100vw, (max-width:1280px) 100vw, 1600px');
+          }
+          document.head.appendChild(lk);
+        }
+      } catch(e){}
+    })();
+  </script>
+  <!-- ✅ v15.84 EARLY FETCH (zero-cache) : Fire the products request
+       immediately during <head> parse, parallel to CSS/JS download. This
+       converts the cold-miss path (Worker SSR didn't have data) from
+       "JS parse → fetch → wait" into "fetch in flight → JS parse → result
+       already arrived". Saves 200-500ms on first visits.
+       
+       IMPORTANT — NO CLIENT-SIDE CACHING:
+       Owner policy: every customer visit must show LATEST data. We do NOT
+       save anything to localStorage / IndexedDB / sessionStorage. This script
+       only fires the request earlier — it doesn't persist. Cloudflare Worker
+       still serves from its server-side edge cache (FRESH_TTL=30min), which
+       admin Publish purges instantly on every save. Result: customers always
+       see updates within a few seconds of admin publishing — no stale snapshot,
+       no manual refresh needed.
+       
+       The previous v15.83 attempt used a localStorage snapshot — REVERTED.
+       Customers were getting stale products on 2nd/3rd visit until refresh,
+       contradicting owner policy. -->
+  <script>
+    (function () {
+      try {
+        // Defensive: clean up any leftover snapshot from a v15.83 visit so
+        // returning customers don't see stale data even for the first paint.
+        try { localStorage.removeItem('yarz_snapshot_v1'); } catch (_e) {}
+
+        // Same-origin Worker URL when proxied through yarzclothing.xyz; falls
+        // back to direct workers.dev otherwise. Match the construction in
+        // api.js _detectWorkerUrl() so the fetch is dedup'd.
+        var base = (location.hostname && location.hostname !== 'localhost' &&
+                    !location.hostname.endsWith('github.io'))
+          ? '/'
+          : 'https://yarz-api.marufhasan80009.workers.dev/';
+        // cb removed (v15.97): `cb=1` forked the edge cache into a slot the
+        // Worker never prewarms/purges → every visit was a cold GAS fetch
+        // (2-3s). Without cb, this normalizes to the SAME warm `?action=
+        // products` slot the admin Publish prewarms → ~50ms edge HIT. `_t`
+        // is stripped by buildCacheKey so it only busts intermediate HTTP
+        // caches, never forks the edge slot.
+        var url = base + '?key=AIzaSyApMtjj2baO6u19AvppjLtJ1GT1G61qo9k&action=products&_t=' + Date.now();
+        // cache:'no-store' so the browser never persists this response either.
+        window.__YARZ_EARLY_FETCH = fetch(url, { cache: 'no-store' }).then(function (r) {
+          return r.ok ? r.json() : null;
+        }).then(function (json) {
+          if (!json || !json.success) return null;
+          // Hand the result to api.js so the deferred _turboPreload IIFE
+          // picks it up synchronously when it runs — same data, earlier.
+          window.__YARZ_INITIAL_STATE = json;
+          return json;
+        }).catch(function () { return null; });
+      } catch (e) {}
+    })();
+  </script>
+  <!-- ⚡ TURBO v1.0: PWA manifest (installable + better caching priority)
+       ✅ v15.27 PERF: Skip manifest tag entirely inside FB/IG/TikTok WebView.
+       Those browsers fetch + parse the manifest then ignore it (can't show
+       install prompt inside the shell), so it's a wasted ~1.2 KB request. -->
+  <script>
+    (function () {
+      try {
+        var ua = navigator.userAgent || '';
+        if (/FBAN|FBAV|FBIOS|FB_IAB|Instagram|MessengerLite|Twitter|TelegramBot|musical_ly|Bytedance|TikTok|MicroMessenger|Line\/|KAKAOTALK|Snapchat|Pinterest/i.test(ua)) {
+          return; // In-app browsers: skip manifest entirely
+        }
+        var lk = document.createElement('link');
+        lk.rel = 'manifest';
+        lk.href = './manifest.webmanifest';
+        lk.onerror = function(){ this.remove(); };
+        document.head.appendChild(lk);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Security: Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval'
+      https://connect.facebook.net https://*.facebook.com https://*.fbcdn.net
+      https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com
+      https://analytics.tiktok.com https://*.tiktok.com
+      https://sc-static.net https://*.snapchat.com
+      https://*.pinterest.com
+      https://*.clarity.ms https://*.hotjar.com
+      https://script.google.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data: blob: https: http:;
+    connect-src 'self'
+      https://script.google.com https://*.googleapis.com https://*.googleusercontent.com
+      https://*.workers.dev
+      https://graph.facebook.com https://*.facebook.com
+      https://analytics.tiktok.com https://*.tiktok.com
+      https://www.google-analytics.com https://analytics.google.com
+      https://*.clarity.ms;
+    frame-src 'self' https://*.facebook.com https://*.tiktok.com;
+  ">
+
+  <meta name="description"
+    content="YARZ (Yarzclothing) — Bangladesh-এর Premium Men's Fashion Brand। Shop authentic শার্ট, টি-শার্ট, পোলো, পাঞ্জাবি (Panjabi, Shirts, T-Shirts, Polo) at yarzclothing.xyz. Cash on Delivery (COD) all over Bangladesh. ইয়ার্জ ক্লোদিং অফিসিয়াল ওয়েবসাইট।">
+  <meta name="keywords" content="YARZ, Yarzclothing, yarzclothing.xyz, yarzclothing.com, yarz.xyz, ইয়ার্জ, ইয়ার্জ ক্লোদিং, yarz bd, yarzbd, yarz clothing, yarz fashion, yarz bangladesh, yarz panjabi, yarz shirt, yarz polo, premium men's fashion bangladesh, men's clothing bangladesh, online clothing store bd, শার্ট, টি-শার্ট, পাঞ্জাবি, পোলো, mens fashion bd, shirt Bangladesh, panjabi online bd, COD bangladesh, cash on delivery clothing">
+  <meta name="author" content="YARZ (Yarzclothing)">
+  <meta name="publisher" content="YARZ">
+  <meta name="copyright" content="YARZ — Yarzclothing">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="bingbot" content="index, follow">
+  <meta name="rating" content="general">
+  <meta name="revisit-after" content="3 days">
+  <meta name="distribution" content="global">
+  <meta name="coverage" content="Worldwide">
+  <meta name="target" content="all">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="format-detection" content="telephone=yes">
+  <link rel="canonical" href="https://yarzclothing.xyz/">
+
+  <!-- Open Graph / Facebook — v15.62: same-origin SVG (Cloudflare Worker serves it).
+       Facebook prefers PNG; SVG works in Twitter/WhatsApp/Telegram/LinkedIn previews.
+       For full FB compatibility, rasterize images/og-banner.svg → og-banner.png locally
+       once via any SVG-to-PNG tool (1200×630) and rename. The SVG path is cache-bust
+       safe via versioned query string. -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="YARZ (Yarzclothing) — ইয়ার্জ ক্লোদিং">
+  <meta property="og:title" content="YARZ | Yarzclothing — Premium Men's Fashion Bangladesh (ইয়ার্জ)">
+  <meta property="og:description" content="YARZ (Yarzclothing) — Bangladesh-এর Premium Men's Fashion brand। Shop শার্ট, পাঞ্জাবি, পোলো, টি-শার্ট with Cash on Delivery.">
+  <meta property="og:image" content="https://yarzclothing.xyz/images/og-banner.png?v=15.74">
+  <meta property="og:image:secure_url" content="https://yarzclothing.xyz/images/og-banner.png?v=15.74">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="YARZ — Premium Men's Fashion Bangladesh (Yarzclothing — ইয়ার্জ ক্লোদিং)">
+  <meta property="og:url" content="https://yarzclothing.xyz/">
+  <meta property="og:locale" content="bn_BD">
+  <meta property="og:locale:alternate" content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="YARZ | Yarzclothing — Premium Men's Fashion Bangladesh">
+  <meta name="twitter:description" content="YARZ (Yarzclothing) — Bangladesh-এর Premium Men's Fashion। শার্ট, পাঞ্জাবি, পোলো, টি-শার্ট with COD.">
+  <meta name="twitter:image" content="https://yarzclothing.xyz/images/og-banner.png?v=15.74">
+  <meta name="twitter:image:alt" content="YARZ — Premium Men's Fashion Bangladesh">
+  <meta name="twitter:site" content="@yarzbd">
+  <meta name="twitter:creator" content="@yarzbd">
+
+  <!-- Geo / Location for Bangladesh SEO -->
+  <meta name="geo.region" content="BD-13">
+  <meta name="geo.placename" content="Narayanganj, Dhaka, Bangladesh">
+  <meta name="geo.position" content="23.6238;90.4990">
+  <meta name="ICBM" content="23.6238, 90.4990">
+  <meta name="language" content="Bengali, English">
+  <link rel="alternate" hreflang="bn-BD" href="https://yarzclothing.xyz/">
+  <link rel="alternate" hreflang="en-BD" href="https://yarzclothing.xyz/">
+  <link rel="alternate" hreflang="x-default" href="https://yarzclothing.xyz/">
+
+  <title>YARZ (Yarzclothing) — Premium Men's Fashion Bangladesh | ইয়ার্জ ক্লোদিং অফিসিয়াল</title>
+
+  <!-- JSON-LD Structured Data — comprehensive @graph for Brand SERP rich results.
+       v15.74: expanded with OnlineStore, Brand, ContactPoint, BreadcrumbList,
+       potential SiteNavigationElement so Google understands the full brand. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": ["Organization", "OnlineStore"],
+        "@id": "https://yarzclothing.xyz/#organization",
+        "name": "YARZ",
+        "alternateName": ["Yarzclothing", "yarz clothing", "yarz xyz", "yarz clothing xyz", "ইয়ার্জ", "ইয়ার্জ ক্লোদিং", "yarz bd", "yarzbd"],
+        "legalName": "YARZ — Yarzclothing", "disambiguatingDescription": "YARZ is a premium men's fashion brand in Bangladesh, distinct from any geographical locations (like Al Yarz) or musical artists sharing the name Yarz.",
+        "url": "https://yarzclothing.xyz/",
+        "logo": { "@type": "ImageObject", "url": "https://yarzclothing.xyz/favicon.svg", "width": 512, "height": 512 },
+        "image": "https://yarzclothing.xyz/images/og-banner.png?v=15.74",
+        "description": "YARZ (Yarzclothing) — Bangladesh-এর Premium Men's Fashion Brand. শার্ট, পাঞ্জাবি, পোলো, টি-শার্ট, with Cash on Delivery (COD).",
+        "slogan": "Premium Men's Fashion. Redefined.",
+        "foundingDate": "2026-05",
+        "founder": {
+          "@type": "Person",
+          "name": "Maruf Hasan",
+          "birthDate": "2004",
+          "jobTitle": "Founder & CEO",
+          "nationality": "Bangladeshi"
+        },
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Narayanganj",
+          "addressRegion": "Dhaka Division",
+          "addressCountry": "BD"
+        },
+        "areaServed": [
+          { "@type": "Country", "name": "Bangladesh" },
+          { "@type": "Thing", "name": "Worldwide" }
+        ],
+        "knowsAbout": [
+          "Men's Fashion",
+          "Premium Shirts",
+          "Panjabi (পাঞ্জাবি)",
+          "Polo Shirts",
+          "T-Shirts",
+          "Bangladesh Fashion",
+          "Global Fashion",
+          "Cash on Delivery"
+        ],
+        "currenciesAccepted": "BDT, USD",
+        "paymentAccepted": ["Cash on Delivery", "bKash", "Nagad"],
+        "hasMerchantReturnPolicy": { "@type": "MerchantReturnPolicy", "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow", "merchantReturnDays": 7, "returnMethod": "https://schema.org/ReturnByMail", "returnFees": "https://schema.org/CustomerResponsibility" }, "shippingDetails": { "@type": "OfferShippingDetails", "shippingDestination": { "@type": "DefinedRegion", "addressCountry": "BD" }, "deliveryTime": { "@type": "ShippingDeliveryTime", "handlingTime": { "@type": "QuantitativeValue", "minValue": 0, "maxValue": 1, "unitCode": "d" }, "transitTime": { "@type": "QuantitativeValue", "minValue": 1, "maxValue": 3, "unitCode": "d" } } }, "contactPoint": [
+          {
+            "@type": "ContactPoint",
+            "contactType": "customer support",
+            "availableLanguage": ["Bengali", "English"],
+            "url": "https://yarzclothing.xyz/contact/"
+          }
+        ],
+        "sameAs": [
+          "https://www.facebook.com/Yarzbd",
+          "https://www.instagram.com/yarzclothing",
+          "https://wa.me/8801601743670",
+          "https://m.me/Yarzbd"
+        ]
+      },
+      {
+        "@type": "Brand",
+        "@id": "https://yarzclothing.xyz/#brand",
+        "name": "YARZ",
+        "alternateName": ["Yarzclothing", "ইয়ার্জ"],
+        "logo": "https://yarzclothing.xyz/favicon.svg",
+        "url": "https://yarzclothing.xyz/",
+        "description": "Premium Men's Fashion brand from Bangladesh"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://yarzclothing.xyz/#website",
+        "url": "https://yarzclothing.xyz/",
+        "name": "YARZ",
+        "alternateName": ["Yarzclothing", "ইয়ার্জ ক্লোদিং"],
+        "description": "YARZ — Bangladesh-এর Premium Men's Fashion store. Shop online with Cash on Delivery.",
+        "inLanguage": ["bn-BD", "en-BD", "en-US"],
+        "publisher": { "@id": "https://yarzclothing.xyz/#organization" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://yarzclothing.xyz/?search={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://yarzclothing.xyz/#webpage",
+        "url": "https://yarzclothing.xyz/",
+        "name": "YARZ (Yarzclothing) — Premium Men's Fashion Bangladesh",
+        "isPartOf": { "@id": "https://yarzclothing.xyz/#website" },
+        "about": { "@id": "https://yarzclothing.xyz/#organization" },
+        "primaryImageOfPage": "https://yarzclothing.xyz/images/og-banner.png?v=15.74",
+        "inLanguage": ["bn-BD", "en-US"],
+        "description": "Shop YARZ — Bangladesh-এর Premium Men's Fashion. শার্ট, পাঞ্জাবি, পোলো, টি-শার্ট with Cash on Delivery."
+      }
+    ]
+  }
+  </script>
+
+  
+  <!-- Favicon — v15.61 YARZ shirt-button mark (centered, larger holes, fixed Safari mask-icon) -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon.svg">
+  <link rel="mask-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M8 1.6 a6.4 6.4 0 1 0 0 12.8 a6.4 6.4 0 1 0 0 -12.8 z M5.7 5.7 m-1.45 0 a1.45 1.45 0 1 0 2.9 0 a1.45 1.45 0 1 0 -2.9 0 z M10.3 5.7 m-1.45 0 a1.45 1.45 0 1 0 2.9 0 a1.45 1.45 0 1 0 -2.9 0 z M5.7 10.3 m-1.45 0 a1.45 1.45 0 1 0 2.9 0 a1.45 1.45 0 1 0 -2.9 0 z M10.3 10.3 m-1.45 0 a1.45 1.45 0 1 0 2.9 0 a1.45 1.45 0 1 0 -2.9 0 z'/%3E%3C/svg%3E" color="#C8102E">
+  <meta name="apple-mobile-web-app-title" content="YARZ">
+  <meta name="application-name" content="YARZ">
+  <meta name="msapplication-TileColor" content="#FBF8F1">
+
+
+  <!-- v13.1: Restored Playfair Display weights 400/600/700 (both regular + italic).
+       The previous v13.0 trim was too aggressive — CSS uses 600/700 for headings
+       like "Curated for You" / section titles / "REDEFINE YOUR STYLE" → those
+       were falling back to Georgia (NOT premium). Now: Inter 400/600/700,
+       Hind Siliguri 400, Playfair Display 0,400;0,600;0,700;1,400;1,600;1,700.
+       Still saves ~40 KB vs the old SC family (4 vs 9 woff2 files). -->
+  <!-- v15.74: Added Cormorant Garamond 700 (Bold) for the YARZ wordmark.
+       Without 700, browsers were synthesizing fake-bold which looked thin/blurry on mobile. -->
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Hind+Siliguri:wght@400&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Hind+Siliguri:wght@400&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&display=swap"></noscript>
+
+  <!-- Core CSS — v15.48 FOUC FIX: Use blocking <link rel="stylesheet"> so
+       the page never paints unstyled. The earlier preload-swap pattern
+       (rel="preload" + onload swap) was non-blocking, which made the
+       browser render plain HTML for ~50–200 ms before CSS applied — that's
+       the brief "glitch / flash" customers reported on refresh.
+       Performance impact is minimal because:
+         (a) Cloudflare edge serves CSS in <50 ms with HTTP/2 multiplexing
+         (b) The CSS is versioned + cached for 1 year by the Worker
+         (c) HTTP/2 priority headers from CF push it ahead of JS anyway
+       Net: clean first paint, no visible FOUC. -->
+  <link rel="stylesheet" href="./css/style.css?v=16.92">
+
+  <!-- ════════════════════════════════════════════════════════════════
+       v15.13 — DEFINITIVE HERO BANNER FIX (single-shot)
+       ────────────────────────────────────────────────────────────────
+       Goals:
+         1) Edge-to-edge full-width on desktop AND mobile (no cream gaps)
+         2) Taller, more prominent banner on mobile (4:5 aspect-ratio)
+       Approach:
+         • Inline <style> AFTER main stylesheet so it always wins cascade
+         • Full-bleed break-out (width:100vw + negative margin) on the
+           hero-section AND every ancestor that could ever clip it
+         • Mobile uses aspect-ratio 4/5 → 400px phone shows ~500px tall
+           banner (≈60vh on 832px iPhone) — model is prominent
+         • Desktop uses 1406/738 (~1.905:1) — owner's upload ratio
+         • Image: object-fit:cover so it fills edge-to-edge (no letterbox)
+       Why this can't be defeated:
+         • Loaded AFTER style.css link → wins cascade order tiebreaker
+         • Selectors use #hero-slider (id) + .hero-section + html prefix
+           = highest reasonable specificity for !important rules
+         • Sister JS sets element.style with !important (inline style is
+           the highest priority in the cascade — only beaten by another
+           inline !important on the same element)
+       ════════════════════════════════════════════════════════════════ -->
+  <style id="yarz-banner-v15-13-fullwidth">
+    /* ── 1. Break ancestors out of any possible width constraint.
+       Even though the CSS audit shows no max-width on <main>, we
+       defensively force every ancestor of .hero-section to span the
+       full viewport width. Cost is zero — these elements are already
+       100% wide by default; this just blocks any future regression. */
+    html body main#main-content,
+    html body main#main-content > div#home-content {
+      width: 100% !important;
+      max-width: 100vw !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+    }
+
+    /* ── 2. .hero-section itself — full-bleed, edge-to-edge.
+       The negative-margin technique keeps the section flush with the
+       viewport edges regardless of any padding/margin its parent has. */
+    html body .hero-section,
+    html body section.hero-section {
+      position: relative !important;
+      width: 100vw !important;
+      max-width: 100vw !important;
+      min-width: 100vw !important;
+      left: 50% !important;
+      right: 50% !important;
+      margin-left: -50vw !important;
+      margin-right: -50vw !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      overflow: hidden !important;
+      background: #F4F2EC !important;
+      /* Desktop ratio = owner's upload ratio (1406:738) */
+      aspect-ratio: 1406 / 738 !important;
+      contain: none !important;
+    }
+
+    /* ── 3. Slider wrapper fills the section completely. */
+    html body .hero-section #hero-slider {
+      position: absolute !important;
+      inset: 0 !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+      min-width: 0 !important;
+      max-height: none !important;
+      min-height: 0 !important;
+      aspect-ratio: auto !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    /* ── 4. Slider track fills the wrapper. */
+    html body #hero-slider .slider-track {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      display: flex !important;
+      flex-direction: row !important;
+      transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1) !important;
+    }
+
+    /* ── 5. Each slide fills the wrapper completely. No aspect-ratio
+       on the slide itself — it inherits its size from the section. */
+    html body #hero-slider .slide,
+    html body .hero-section #hero-slider .slide {
+      flex: 0 0 100% !important;
+      width: 100% !important;
+      height: 100% !important;
+      max-height: none !important;
+      min-height: 0 !important;
+      aspect-ratio: auto !important;
+      position: relative !important;
+      background: #F4F2EC !important;
+    }
+
+    /* When there's only a placeholder (no track wrapper), the slide
+       is positioned absolutely so it still fills #hero-slider. */
+    html body #hero-slider > .slide {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+    }
+
+    /* ── 6. Inner placeholder gradient div / banner-link <a> fill slide. */
+    html body #hero-slider .slide > div:not(.banner-overlay),
+    html body #hero-slider .slide > a,
+    html body #hero-slider .slide .banner-link {
+      width: 100% !important;
+      height: 100% !important;
+      max-height: none !important;
+      min-height: 0 !important;
+      aspect-ratio: auto !important;
+      display: block !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    /* ── 7. The image: object-fit:cover so it fills slide edge-to-edge.
+       Image's intrinsic width/height attrs do NOT affect display when
+       width/height CSS are set explicitly. */
+    html body #hero-slider .slide img,
+    html body .hero-section #hero-slider .slide img {
+      width: 100% !important;
+      height: 100% !important;
+      max-width: none !important;
+      max-height: none !important;
+      min-width: 0 !important;
+      min-height: 0 !important;
+      aspect-ratio: auto !important;
+      object-fit: cover !important;
+      object-position: center center !important;
+      display: block !important;
+      border: 0 !important;
+      outline: 0 !important;
+    }
+
+    /* ── 8. MOBILE: taller aspect-ratio so the model is prominent.
+       v15.14 OWNER REQUEST: Use 1406/738 on ALL devices, no mobile change. */
+    @media (max-width: 768px) {
+      html body .hero-section,
+      html body section.hero-section {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        min-width: 100vw !important;
+        left: 50% !important;
+        right: 50% !important;
+        margin-left: -50vw !important;
+        margin-right: -50vw !important;
+        padding: 0 !important;
+        aspect-ratio: 1406 / 738 !important;
+      }
+    }
+
+    /* ── 9. SMALL PHONES (≤480px): same 1406/738 — keep ratio identical
+       on every device per owner request. */
+    @media (max-width: 480px) {
+      html body .hero-section,
+      html body section.hero-section {
+        aspect-ratio: 1406 / 738 !important;
+      }
+    }
+
+    /* ── 10. Banner overlay positioning unchanged (text overlays). */
+    html body #hero-slider .banner-overlay {
+      position: absolute !important;
+      inset: 0 !important;
+      pointer-events: none !important;
+    }
+
+    /* ── 11. Touch / swipe affordance preserved. */
+    html body #hero-slider,
+    html body #hero-slider .slider-track,
+    html body #hero-slider .slide {
+      touch-action: pan-y !important;
+    }
+    html body #hero-slider .slide a {
+      pointer-events: auto !important;
+    }
+  </style>
+
+
+  <style>
+    /* Inline critical styles for instant render */
+    body {
+      background: #FBF8F1;
+      margin: 0;
+      font-family: 'Inter', 'Hind Siliguri', sans-serif
+    }
+
+    /* ✅ v12.0: iPhone notch / Dynamic Island — first-paint critical CSS
+       Status bar background filler (paints behind notch before main CSS loads) */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: env(safe-area-inset-top, 0px);
+      background: #FFFDF8;
+      z-index: 99;
+      pointer-events: none;
+    }
+    body.has-announcement::before {
+      background: #FFFDF8;
+    }
+
+    .site-header {
+      background: #FFFDF8;
+      border-bottom: 1px solid #E8E4DC;
+      box-sizing: content-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      transition: padding-top 0.25s ease;
+    }
+    /* ✅ v13.0: Match mobile header height to avoid flicker (CSS overrides to 56px on mobile) */
+    @media (max-width: 768px) {
+      .site-header { height: 56px; }
+    }
+    @media (max-width: 480px) {
+      .site-header { height: 52px; }
+    }
+    /* When announcement bar is active, it owns the notch — header drops its padding */
+    body.has-announcement .site-header {
+      padding-top: 0;
+    }
+    .announcement-bar {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+
+    .brand-logo .logo-text {
+      font-weight: 800;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: #FFFDF8;
+    }
+    
+    #main-content {
+      min-height: 100vh;
+    }
+
+    /* ✅ Anti-CLS: Prevent page shaking during load */
+    /* v12.1: When the announcement bar was previously active (cached in localStorage),
+       reserve its full 40px height ON FIRST PAINT. The JS sets html.has-saved-announcement
+       BEFORE body parses, so the bar shows up at the right size from frame 1.
+       For first-time visitors with no cache, the bar starts at 0 and animates in. */
+    .announcement-bar {
+      min-height: 0;
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.3s ease, padding-top 0.25s ease;
+    }
+    .announcement-bar.active {
+      max-height: calc(40px + env(safe-area-inset-top, 0px));
+      min-height: auto;
+    }
+    /* Pre-reserve space when localStorage says the bar was active last time
+       (eliminates ~40px CLS on repeat visits) */
+    html.has-saved-announcement .announcement-bar {
+      max-height: calc(40px + env(safe-area-inset-top, 0px));
+      padding: 6px 16px;
+      min-height: auto;
+    }
+    /* Same idea for free-ship and countdown bars */
+    html.has-saved-freeship #yarz-freeship-bar,
+    html.has-saved-countdown #yarz-countdown-bar {
+      min-height: 32px;
+    }
+
+    /* ✅ v15.13 CLS FIX: Hero reserves space matching desktop banner
+       ratio (1406:738). The dedicated v15.13 stylesheet overrides this
+       on mobile to 4/5 / 1/1, but here we ONLY set the placeholder
+       fallback used before the full stylesheet loads. No `contain` —
+       it can interfere with the negative-margin full-bleed trick. */
+    .hero-section {
+      aspect-ratio: 1406 / 738;
+      width: 100%;
+      overflow: hidden;
+      background: #F4F2EC;
+    }
+    .hero-slider, .hero-slider .slide, .hero-slider .slide > * {
+      width: 100%;
+      height: 100%;
+    }
+    .hero-slider .slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* ✅ v12.1 CLS FIX: Reserve space for dynamic category sections.
+       When the previous visit had dynamic sections, html.has-dyn-sections is
+       set BEFORE first paint → wrapper holds 280px (one row of category cards) →
+       no layout shift when content renders. */
+    #dynamic-sections-wrapper:empty {
+      min-height: 0;
+    }
+    html.has-dyn-sections #dynamic-sections-wrapper {
+      min-height: 280px;
+    }
+
+    /* Prevent font-swap text reflow jitter */
+    .fashion-typo-section {
+      contain: layout style;
+    }
+
+    /* ✅ v15.40 FOUC FIX: Hide all overlays/drawers/popups from FIRST PAINT.
+       Without this, CSS load lag (50-200ms before style.css applies) made
+       customers see the search overlay, cart drawer, filter drawer, and
+       modals briefly flash on every page load. The full stylesheet has
+       these same rules, but it loads non-blocking — so this inline copy
+       is what prevents the flash.
+
+       Note: rules use the same default-state selectors as style.css
+       (none for overlays, off-canvas for drawers). When JS adds .active
+       or .open the bigger stylesheet's rules take over. */
+    .search-overlay:not(.active),
+    .cart-overlay:not(.active),
+    .filter-overlay:not(.active),
+    .modal-overlay:not(.active),
+    .yarz-popup-overlay:not(.active),
+    #yarz-newsletter-popup:not(.active),
+    #yarz-promo-popup:not(.active) {
+      display: none;
+    }
+    /* ✅ v15.85 FIX: Maintenance + Holiday overlays are runtime-injected by JS
+       (never present in initial HTML), so the FOUC `:not(.active)` rule was
+       wrongly hiding them after JS appended them with no `.active` class.
+       The screenshot showed an empty footer-only page because the overlay
+       existed in DOM but was display:none-ed by the rule above. Removing
+       these from the FOUC list lets the overlay's own CSS govern visibility. */
+    .cart-drawer:not(.open),
+    #filter-drawer:not(.open),
+    #cart-drawer:not(.open) {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 100%;
+      max-width: 420px;
+      height: 100vh;
+      background: #FFF;
+      z-index: 250;
+      /* ✅ v15.48 FOUC FIX: Use `:not(.open)` scope so when JS toggles the
+         `.open` class, ALL these inline rules disable themselves and the
+         full stylesheet's open-state rules (smooth slide-in, right:0,
+         visibility:visible) take over cleanly. Previously this rule fired
+         even when `.open` was on, leaving `transform:translateX(110%)`
+         winning over `style.css`'s `.cart-drawer.open { right:0 }` —
+         drawer never appeared. */
+      transform: translateX(110%);
+      visibility: hidden;
+      transition: none;
+    }
+    /* When JS opens them, the bigger stylesheet's rules apply (right:0 etc).
+       This minimal off-canvas keeps them invisible until then. */
+  </style>
+
+  <!-- Instant hash-route check: hide home content if on a product page -->
+  <style id="hash-route-style"></style>
+  <script>
+    if (
+      (window.location.hash && /^#(product|category|collection|wishlist)/.test(window.location.hash)) ||
+      (window.location.search && /[?&](product|collection)=/.test(window.location.search))
+    ) {
+      document.getElementById('hash-route-style').textContent = '#home-content{display:none}';
+    }
+  </script>
+
+  <!-- ✅ v12.0 / v15.26: iPhone Notch / Dynamic Island — NO-DOM detection.
+       The previous version created/measured/removed a probe div which
+       forced a synchronous layout (5-15ms on mid-range Android). We now
+       just check CSS.supports for `env(safe-area-inset-top)`. The actual
+       inset width is still applied via CSS env() so notched devices get
+       proper padding regardless. has-notch class only used by JS that
+       wants to behave differently when a cutout is present.
+       v12.1: Also pre-flags announcement / free-ship / countdown bars so they
+       reserve their proper height from the very first paint (eliminates CLS). -->
+  <script>
+    (function () {
+      try {
+        // Notch probe: zero-DOM CSS feature check.
+        // Apple/Samsung devices always support env(safe-area-inset-*).
+        // For an actual cutout (notch/island), env() returns >0 only on those
+        // hardware models — but since our CSS uses env(...) directly with a
+        // sane fallback, we do NOT need to know in JS at first paint. We only
+        // tag has-notch for the rare JS code paths that branch on it.
+        if (CSS && CSS.supports && CSS.supports('padding-top: env(safe-area-inset-top)')) {
+          document.documentElement.classList.add('has-notch');
+        }
+
+        // Pre-flag UI bars from previous-visit cache → CSS reserves space → ZERO CLS
+        var ls = window.localStorage;
+        if (ls.getItem('yarz_announcement_active') === '1') {
+          document.documentElement.classList.add('has-announcement-pending', 'has-saved-announcement');
+        }
+        if (ls.getItem('yarz_freeship_active') === '1') {
+          document.documentElement.classList.add('has-saved-freeship');
+        }
+        if (ls.getItem('yarz_countdown_active') === '1') {
+          document.documentElement.classList.add('has-saved-countdown');
+        }
+        if (ls.getItem('yarz_has_dyn_sections') === '1') {
+          document.documentElement.classList.add('has-dyn-sections');
+        }
+      } catch (e) { /* graceful fallback — CSS still works without this */ }
+    })();
+  </script>
+
+  <!-- EARLY FETCH REMOVED - Data is now injected via Cloudflare Edge SSR -->
+
+  <!-- ✅ v15.27 PERF FIX: Gate SW update IIFE behind in-app-browser detection.
+       FB/IG/TikTok/Messenger WebView do NOT register SW (boot.js skips them),
+       so calling navigator.serviceWorker.getRegistrations() here was a 100-800ms
+       head-of-line stall for nothing inside those browsers. Skip entirely. -->
+  <script>
+    (function () {
+      try {
+        if (!('serviceWorker' in navigator)) return;
+        // Same UA list as boot.js — keep in sync if you add new in-app browsers.
+        var ua = navigator.userAgent || '';
+        if (/FBAN|FBAV|FBIOS|FB_IAB|Instagram|MessengerLite|Twitter|TelegramBot|musical_ly|Bytedance|TikTok|MicroMessenger|Line\/|KAKAOTALK|Snapchat|Pinterest/i.test(ua)) {
+          return; // In-app browsers don't register SW → don't poke it either
+        }
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (reg) {
+            if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            reg.update();
+          });
+        }).catch(function(){});
+      } catch (e) {}
+    })();
+  </script>
+
+<style id="yarz-premium-skeleton">
+/* ── Premium Skeleton Loading (Anti-CLS, Shimmer) ── */
+.skeleton {
+  background-color: #E2E2E2 !important; /* Distinct Grey Base */
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.7) 50%,
+    rgba(255, 255, 255, 0) 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: ultra-fast-shimmer 1s ease-in-out infinite !important;
+  border-radius: 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes ultra-fast-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+</style>
+</head>
+
+<body>
+  <!-- ✅ SEO H1: Hidden visually, but read by Googlebot immediately to associate the brand name -->
+  <h1 style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">YARZ — Premium Men's Fashion Brand Bangladesh</h1>
+  
+  <!-- ✅ GEO (Generative Engine Optimization) Context Block: Hidden visually, but feeds policy data to ChatGPT/Gemini/AI crawlers -->
+  <div style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;" data-purpose="ai-crawler-context">
+    <h2>About YARZ & Company Policies</h2>
+    <p>YARZ is a 100% online-based Premium Men's Fashion Brand operating from Narayanganj, Dhaka Division, Bangladesh. As a modern direct-to-consumer e-commerce brand, we operate entirely online without a physical retail storefront, ensuring premium quality at the best value. YARZ strictly adheres to all national e-commerce guidelines with fully documented policies.</p>
+    <ul>
+      <li><strong>Brand Founder & Creation:</strong> YARZ was created and founded by Maruf Hasan in 2026.</li>
+      <li><strong>Shipping Policy:</strong> We offer nationwide delivery across Bangladesh. Cash on Delivery (COD) is fully supported. Inside Dhaka delivery takes 2-3 days, and outside Dhaka takes 3-5 days.</li>
+      <li><strong>Return & Refund Policy:</strong> We provide a transparent 7-day return and exchange policy for all our premium clothing items to ensure 100% customer satisfaction.</li>
+      <li><strong>Privacy Policy & Terms of Service:</strong> YARZ enforces strict data protection. All customer data is secured. We do not sell data to third parties. Secure checkout is guaranteed.</li>
+      <li><strong>Customer Support & Community:</strong> Our 24/7 customer support is available via WhatsApp (+8801601743670) and Facebook Messenger. We have clear Community Guidelines for our users.</li>
+    </ul>
+    <p>For full details, users can navigate to the respective policy pages linked in our website footer (/privacy, /terms, /shipping, /return-policy).</p>
+  </div>
+
+  <!-- ✅ v12.0: Transfer notch detection class from <html> to <body>
+       (runs immediately after <body> opens — before any content paints) -->
+  <script>
+    (function () {
+      try {
+        if (document.documentElement.classList.contains('has-announcement-pending')) {
+          document.body.classList.add('has-announcement');
+          document.documentElement.classList.remove('has-announcement-pending');
+        }
+        if (document.documentElement.classList.contains('has-notch')) {
+          document.body.classList.add('has-notch');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <a href="#main-content" class="skip-to-content">Skip to main content</a>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Announcement Bar -->
+  <div class="announcement-bar" id="announcement-bar">
+    <span>Welcome to YARZ</span>
+  </div>
+
+  <!-- ✅ v15.61: Reusable shirt-button SVG mark — refined geometry per design audit
+       (holes 14% → 17% of disc, ring opacity 0.55 → 0.85, ring radius 70% → 82%).
+       via <use href="#yarz-button-mark"/>. Pure CSS+SVG. No raster assets. -->
+  <svg width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+      <!-- v16.3 luxe sheen for the brand disc — shared so every <use>
+           instance (header/footer/cart/hero) inherits it. Favicons are
+           separate flat data-URIs and intentionally stay flat. -->
+      <radialGradient id="yarzDisc" cx="35%" cy="32%" r="78%">
+        <stop offset="0%"   stop-color="#E84C5F"/>
+        <stop offset="45%"  stop-color="#C8102E"/>
+        <stop offset="100%" stop-color="#8E0A1F"/>
+      </radialGradient>
+      <symbol id="yarz-button-mark" viewBox="0 0 24 24">
+        <!-- v16.3 PREMIUM shirt-button. Cardinal-red disc (r=10) with a luxe
+             offset radial sheen (light catches top-left, richness pools
+             bottom-right — like a polished cabochon button), a hairline
+             outline, a clearly-separated cream rim groove (r=6.2), and 4 SMALL
+             holes (r=1.2, ~12% of disc) clustered near the centre at ±2.2.
+             Rim/hole colors still follow CSS vars. -->
+        <circle cx="12" cy="12" r="10" fill="url(#yarzDisc)" stroke="var(--yarz-mark-ring, #9B0C23)" stroke-width="0.6"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="var(--yarz-mark-hole, #FBF8F1)" stroke-width="0.7" opacity="0.85"/>
+        <circle cx="9.8"  cy="9.8"  r="1.2" fill="var(--yarz-mark-hole, #FBF8F1)"/>
+        <circle cx="14.2" cy="9.8"  r="1.2" fill="var(--yarz-mark-hole, #FBF8F1)"/>
+        <circle cx="9.8"  cy="14.2" r="1.2" fill="var(--yarz-mark-hole, #FBF8F1)"/>
+        <circle cx="14.2" cy="14.2" r="1.2" fill="var(--yarz-mark-hole, #FBF8F1)"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- ===== HEADER ===== -->
+  <header class="site-header">
+    <div class="header-inner">
+      <!-- Logo — v16.0 clean shirt-button + YARZ wordmark lockup.
+           Static (sewing animation removed). The disc uses the shared
+           #yarz-button-mark symbol so it recolors from CSS vars.
+           a11y: <span aria-hidden> not <h1>. -->
+      <a href="#" class="brand-logo yarz-mark" onclick="YARZ.goHome();return false;" aria-label="YARZ — Premium Men's Fashion">
+        <svg class="yarz-mark__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <use href="#yarz-button-mark"/>
+        </svg>
+        <span class="yarz-mark__word" aria-hidden="true" style="line-height:1;display:inline;">YARZ</span>
+      </a>
+
+      <!-- Hamburger Menu Button (Mobile Only) -->
+      <button class="hamburger" id="hamburger" aria-label="Open menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <!-- Navigation -->
+      <nav class="main-nav" id="main-nav" role="navigation" aria-label="Main navigation">
+        <a href="#" class="active" onclick="YARZ.goHome();return false;">Home</a>
+        <a href="#" onclick="YARZ.filterCategory('');return false;">Shop</a>
+        <div class="nav-dropdown" id="nav-categories-dropdown">
+          <a href="#" class="nav-dropdown-trigger" onclick="return false;">Categories <span class="dropdown-arrow">▾</span></a>
+          <div class="nav-dropdown-menu" id="nav-categories-menu">
+            <!-- Dynamically filled by JS -->
+          </div>
+        </div>
+        <a href="#" onclick="YARZ.openTracking();return false;">Track Order</a>
+        <a href="./contact/">Contact</a>
+      </nav>
+
+      <!-- Actions -->
+      <div class="header-actions">
+        <button class="header-icon-btn" onclick="YARZ.openSearch()" title="Search" aria-label="Search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8" />
+            <path d="m21 21-4.35-4.35" />
+          </svg>
+        </button>
+        <button class="header-icon-btn" id="user-btn" onclick="YARZ.openProfile()" title="Account" aria-label="Account">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </button>
+        <button class="header-icon-btn" id="yarz-wishlist-btn" onclick="YARZ.openWishlistPage()" title="Wishlist" aria-label="Wishlist" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+          <span class="wishlist-count" id="wishlist-count" style="display:none">0</span>
+        </button>
+        <button class="header-icon-btn" onclick="YARZ.toggleCart(true)" title="Cart" aria-label="Cart">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+            <path d="M3 6h18" />
+            <path d="M16 10a4 4 0 0 1-8 0" />
+          </svg>
+          <span class="cart-count" id="cart-count">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== SEARCH OVERLAY ===== -->
+  <div class="search-overlay" id="search-overlay" onclick="if(event.target===this)YARZ.closeSearch()">
+    <div class="search-box">
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+          stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+        <input type="text" placeholder="Search products..." oninput="YARZ.handleSearch(this.value)" onkeydown="if(event.key==='Enter'){YARZ.submitSearch(this.value)}" autofocus aria-label="Search products" id="search-input">
+        <button onclick="YARZ.closeSearch()" aria-label="Close search" style="padding:4px;color:var(--text-muted);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
+
+  <!-- ===== CART DRAWER ===== -->
+  <div class="cart-overlay" id="cart-overlay" onclick="YARZ.toggleCart(false)"></div>
+  <aside class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">
+      <div style="display:inline-flex;align-items:center;gap:10px;min-width:0;">
+        <svg class="yarz-mark__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="width:24px;height:24px;flex-shrink:0;"><use href="#yarz-button-mark"/></svg>
+        <h3 style="margin:0;">Shopping Cart</h3>
+      </div>
+      <button onclick="YARZ.toggleCart(false)" style="color:var(--text-muted);padding:4px;" aria-label="Close cart">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="cart-body" id="cart-body"></div>
+    <div class="cart-footer">
+      <div class="cart-total-row">
+        <span>Subtotal</span>
+        <span id="cart-footer-total">৳0</span>
+      </div>
+      <button class="btn btn-primary btn-block btn-lg" onclick="YARZ.openCheckout()">Checkout</button>
+      <p style="text-align:center;font-size:10px;color:var(--text-muted);margin-top:8px;">Delivery charge will be added
+        at checkout</p>
+    </div>
+  </aside>
+
+  <!-- ===== FILTER DRAWER ===== -->
+  <div class="cart-overlay" id="filter-overlay" onclick="YARZ.toggleFilterDrawer(false)"></div>
+  <aside class="cart-drawer" id="filter-drawer">
+    <div class="cart-header">
+      <h3>Filter & Sort</h3>
+      <button onclick="YARZ.toggleFilterDrawer(false)" aria-label="Close filters" style="color:var(--text-muted);padding:4px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
+        </svg>
+      </button>
+    </div>
+    <div class="cart-body" style="padding:16px;">
+      <div style="margin-bottom:24px;">
+        <h4 style="font-size:13px; font-weight:700; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Sort By Price</h4>
+        <div class="filter-options">
+          <label class="filter-radio">
+            <input type="radio" name="sort_price" value="default" checked onchange="YARZ.applyFilters()">
+            <span>Default</span>
+          </label>
+          <label class="filter-radio">
+            <input type="radio" name="sort_price" value="low_high" onchange="YARZ.applyFilters()">
+            <span>Low to High</span>
+          </label>
+          <label class="filter-radio">
+            <input type="radio" name="sort_price" value="high_low" onchange="YARZ.applyFilters()">
+            <span>High to Low</span>
+          </label>
+        </div>
+      </div>
+      <div>
+        <h4 style="font-size:13px; font-weight:700; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-secondary);">Filter By Size</h4>
+        <div class="filter-options size-filter-options">
+          <label class="filter-radio">
+            <input type="radio" name="filter_size" value="" checked onchange="YARZ.applyFilters()">
+            <span>All Sizes</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="cart-footer">
+      <button class="btn btn-primary btn-block btn-lg" onclick="YARZ.toggleFilterDrawer(false)">Show Results</button>
+      <button class="btn btn-outline btn-block" style="margin-top:8px;" onclick="YARZ.clearFilters()">Clear Filters</button>
+    </div>
+  </aside>
+
+  <!-- ===== CHECKOUT MODAL ===== -->
+  <div class="modal-overlay" id="checkout-modal" onclick="if(event.target===this)YARZ.closeCheckout()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Complete Your Order</h3>
+        <button class="modal-close" onclick="YARZ.closeCheckout()" aria-label="Close checkout">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Order Summary -->
+        <div style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-light);">
+          <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">Order Summary</div>
+          <div id="checkout-items"></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border-light);font-size:12px;color:var(--text-secondary);">
+            <span>Delivery Charge</span>
+            <span id="checkout-delivery">৳0</span>
+          </div>
+          <div
+            style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border-light);font-size:14px;font-weight:700;">
+            <span>Total</span>
+            <span id="checkout-total">৳0</span>
+          </div>
+        </div>
+
+        <!-- Coupon Code -->
+        <div id="checkout-coupon-section" style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border-light);display:none;">
+          <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">Have a Coupon Code?</div>
+          <div style="display:flex;gap:8px;">
+            <input type="text" class="form-input" id="co-coupon-code" placeholder="Enter code here (Optional)" style="text-transform:uppercase;">
+            <button class="btn btn-outline" onclick="YARZ.applyCoupon()" style="padding:0 16px;white-space:nowrap;">Apply</button>
+          </div>
+          <div id="co-coupon-msg" style="font-size:11px;margin-top:6px;"></div>
+        </div>
+
+        <!-- Customer Info — v16.5: simple placeholder hints INSIDE each box.
+             No floating labels (finicky), no separate labels below (confusing).
+             The hint text lives as the placeholder so the customer always sees
+             what goes where, the form stays compact, and nothing can desync. -->
+        <div class="form-group co-field">
+          <input type="text" class="form-input" id="co-name" placeholder="Your Name *" autocomplete="off">
+          <!-- Honeypot Field (Anti-Bot) -->
+          <input type="text" id="co-website" style="display:none" tabindex="-1" autocomplete="off" placeholder="Leave empty">
+        </div>
+        <div class="form-row">
+          <div class="form-group co-field">
+            <input type="tel" class="form-input" id="co-phone" placeholder="Phone Number (01XXXXXXXXX) *" autocomplete="off">
+          </div>
+          <div class="form-group co-field">
+            <input type="email" class="form-input" id="co-email" placeholder="Email (optional)" autocomplete="off">
+          </div>
+        </div>
+        <div class="form-group co-field">
+          <textarea class="form-input" id="co-address" placeholder="Full Address — House, Road, Area *" autocomplete="off"></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:13px;">
+            <div style="font-size:12.5px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">Select Delivery Area <span class="required" style="color:var(--accent)">*</span></div>
+            <!-- v16: radio-style zone cards (no dropdown). The hidden <select>
+                 below keeps every existing value-reading code path working;
+                 the visible cards drive it via YARZ.selectZone(). -->
+            <div id="co-zone-cards" class="yarz-zone-cards"></div>
+            <select id="co-location" onchange="YARZ.renderCheckoutSummary()" style="display:none" aria-hidden="true" tabindex="-1">
+              <!-- Options injected dynamically from DELIVERY_CHARGES sheet -->
+            </select>
+        </div>
+        <div class="form-group co-field">
+            <input type="text" class="form-input" id="co-city" placeholder="City / Area (e.g. Mirpur, Bandar)" autocomplete="off">
+        </div>
+        <div class="form-group co-field co-field--select">
+          <!-- ✅ v15.93: Same custom chevron treatment for payment select. -->
+          <div style="font-size:12.5px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">Payment Method</div>
+          <div class="yarz-select-wrap">
+            <select class="form-select" id="co-payment" onchange="YARZ.showPaymentInfo(this.value)">
+              <option value="COD">Cash on Delivery (COD)</option>
+              <option value="bKash">bKash</option>
+              <option value="Nagad">Nagad</option>
+            </select>
+            <svg class="yarz-select-chevron" viewBox="0 0 12 8" aria-hidden="true" focusable="false">
+              <path d="M1 1.5L6 6.5L11 1.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <!-- Payment info box injected here by JS -->
+        </div>
+        <!-- ✅ v15.93: Animated "Place Order" — pure-CSS truck animation
+             (adapted from owner-supplied reference at /Animated Order Button/).
+             jQuery dependency removed; toggled via classList from submitOrder().
+             Class .yarz-place-order is the new structural class; the legacy
+             id="checkout-submit-btn" + .btn .btn-primary classes are preserved
+             so all existing JS that disables/enables it still works. -->
+        <button class="btn btn-primary btn-block btn-lg yarz-place-order" id="checkout-submit-btn"
+                onclick="YARZ.submitOrder()" style="margin-top:8px;">
+          <span class="po-default">PLACE ORDER</span>
+          <span class="po-success">Order Placed
+            <svg viewBox="0 0 12 10" aria-hidden="true" focusable="false">
+              <polyline points="1.5 6 4.5 9 10.5 1"></polyline>
+            </svg>
+          </span>
+          <div class="po-box" aria-hidden="true"></div>
+          <div class="po-truck" aria-hidden="true">
+            <div class="po-back"></div>
+            <div class="po-front"><div class="po-window"></div></div>
+            <div class="po-light po-light--top"></div>
+            <div class="po-light po-light--bottom"></div>
+          </div>
+          <div class="po-lines" aria-hidden="true"></div>
+        </button>
+        <p style="text-align:center;font-size:10px;color:var(--text-muted);margin-top:10px;">By placing an order you
+          agree to our <a href="./terms/" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;font-weight:500;">terms and conditions</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CUSTOM CONFIRM MODAL ===== -->
+  <div class="modal-overlay" id="custom-confirm-modal">
+    <div class="modal-box" style="max-width: 380px; text-align: center; padding: 32px 24px;">
+      <div style="width: 56px; height: 56px; background: var(--accent-light); color: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 8v4"></path>
+          <path d="M12 16h.01"></path>
+        </svg>
+      </div>
+      <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px; font-family: var(--font-bengali);">অর্ডারটি কনফার্ম করতে চান?</h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; font-family: var(--font-bengali);" id="custom-confirm-msg">
+        <!-- Message will be injected here -->
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button class="btn btn-outline" style="flex: 1; border-color: var(--border-light);" onclick="document.getElementById('custom-confirm-modal').classList.remove('active');">বাতিল</button>
+        <button class="btn btn-primary" style="flex: 1;" id="custom-confirm-yes-btn">হ্যাঁ, কনফার্ম করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main id="main-content">
+    <div id="home-content">
+
+      <!-- Hero Section -->
+      <section class="hero-section">
+        <div class="hero-slider" id="hero-slider">
+          <!-- Default placeholder slides — will be replaced by API data.
+               v15.13: No aspect-ratio here; the .hero-section wrapper owns
+               the device-aware ratio (1406:738 desktop / 4:5 mobile / 1:1 tiny). -->
+          <div class="slide active">
+            <div class="skeleton" style="width:100%;height:100%;border-radius:0;"></div>
+          </div>
+        </div>
+        <!-- Slider Controls -->
+        <button class="slider-arrow prev" aria-label="Previous slide">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+        <button class="slider-arrow next" aria-label="Next slide">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+        <div class="slider-nav" id="slider-dots">
+          <button class="slider-dot active" aria-label="Slide 1"></button>
+        </div>
+      </section>
+
+      <!-- Dynamic Sections Wrapper -->
+      <div id="dynamic-sections-wrapper"></div>
+
+      <!-- ✅ Premium Fashion Typography Quote -->
+      <div class="fashion-typo-section" id="fashion-typo" style="position:relative; min-height:100px;">
+        <div class="fashion-typo-inner" id="fashion-typo-content" style="opacity: 0; transition: opacity 0.5s;">
+          <span class="fashion-typo-line fashion-typo-main">"Style is a way to say who you are</span>
+          <span class="fashion-typo-line fashion-typo-sub">without having to speak."</span>
+          <span class="fashion-typo-accent">— YARZ</span>
+        </div>
+        <div id="fashion-typo-skeleton" style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; pointer-events:none;">
+           <div class="skeleton" style="width:280px; height:20px; border-radius:4px;"></div>
+           <div class="skeleton" style="width:200px; height:20px; border-radius:4px;"></div>
+           <div class="skeleton" style="width:80px; height:12px; border-radius:4px;"></div>
+        </div>
+      </div>
+
+      <!-- Category Tabs and Filter - Always visible -->
+      <div class="container" id="shop-controls-wrapper" style="padding-top:24px;">
+        <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+          <button class="btn btn-outline filter-toggle-btn" onclick="YARZ.toggleFilterDrawer(true)" style="padding:6px 16px; font-size:13px; display:flex; align-items:center; gap:8px; border-color:var(--border-light); border-radius:30px; box-shadow:0 2px 8px rgba(0,0,0,0.04); font-weight:600;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            Filter &amp; Sort
+          </button>
+        </div>
+        <div class="category-tabs" id="category-tabs" style="margin-bottom:24px; width:100%;">
+          <button class="category-tab active" onclick="YARZ.filterCategory('')">All</button>
+        </div>
+      </div>
+
+      <!-- All Products Section -->
+      <section class="page-section" id="all-products-section" style="padding-top:0;">
+        <div class="container">
+          <!-- Product Grid -->
+          <div class="product-grid" id="product-grid" aria-live="polite" aria-busy="false">
+            <!-- ✅ v10.11 SUPER POWERFUL: 0ms Perceived Load Shimmer Skeletons -->
+            <div class="product-card" style="border:none; box-shadow:0 4px 20px rgba(0,0,0,0.03);">
+              <div class="skeleton" style="width:100%; aspect-ratio:4/5; border-radius:12px 12px 0 0;"></div>
+              <div style="padding:16px;">
+                <div class="skeleton" style="width:80%; height:20px; border-radius:4px; margin-bottom:12px;"></div>
+                <div class="skeleton" style="width:50%; height:16px; border-radius:4px; margin-bottom:16px;"></div>
+                <div class="skeleton" style="width:100%; height:40px; border-radius:8px;"></div>
+              </div>
+            </div>
+            <div class="product-card" style="border:none; box-shadow:0 4px 20px rgba(0,0,0,0.03);">
+              <div class="skeleton" style="width:100%; aspect-ratio:4/5; border-radius:12px 12px 0 0;"></div>
+              <div style="padding:16px;">
+                <div class="skeleton" style="width:80%; height:20px; border-radius:4px; margin-bottom:12px;"></div>
+                <div class="skeleton" style="width:50%; height:16px; border-radius:4px; margin-bottom:16px;"></div>
+                <div class="skeleton" style="width:100%; height:40px; border-radius:8px;"></div>
+              </div>
+            </div>
+            <div class="product-card" style="border:none; box-shadow:0 4px 20px rgba(0,0,0,0.03); display:none; @media(min-width: 480px){display:block;}">
+              <div class="skeleton" style="width:100%; aspect-ratio:4/5; border-radius:12px 12px 0 0;"></div>
+              <div style="padding:16px;">
+                <div class="skeleton" style="width:80%; height:20px; border-radius:4px; margin-bottom:12px;"></div>
+                <div class="skeleton" style="width:50%; height:16px; border-radius:4px; margin-bottom:16px;"></div>
+                <div class="skeleton" style="width:100%; height:40px; border-radius:8px;"></div>
+              </div>
+            </div>
+            <div class="product-card" style="border:none; box-shadow:0 4px 20px rgba(0,0,0,0.03); display:none; @media(min-width: 480px){display:block;}">
+              <div class="skeleton" style="width:100%; aspect-ratio:4/5; border-radius:12px 12px 0 0;"></div>
+              <div style="padding:16px;">
+                <div class="skeleton" style="width:80%; height:20px; border-radius:4px; margin-bottom:12px;"></div>
+                <div class="skeleton" style="width:50%; height:16px; border-radius:4px; margin-bottom:16px;"></div>
+                <div class="skeleton" style="width:100%; height:40px; border-radius:8px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ===== COLLECTION VIEW ===== -->
+    <div id="collection-view" style="display:none;">
+      <div class="collection-header" id="collection-header" style="padding: 20px 16px; background-color: #F8F9FA; margin-bottom: 0; display:flex; align-items:center;">
+        <button onclick="YARZ.goHome()" aria-label="Go back to home" style="background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:50%; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,0.05); color:var(--text-main); margin-right:16px; flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <h1 id="collection-title" style="font-size: 24px; margin:0; color: var(--text-main); text-align:left; flex:1; font-family:'Inter', sans-serif;">Collection Name</h1>
+      </div>
+      
+      <!-- ✅ v10.4: Collection Filter Bar -->
+      <div class="collection-controls" style="padding: 12px 16px; margin-bottom: 24px; display:flex; justify-content:flex-end; border-bottom: 1px solid var(--border-light);">
+        <button class="btn btn-outline filter-toggle-btn" onclick="YARZ.toggleFilterDrawer(true)" style="padding:6px 16px; font-size:13px; display:flex; align-items:center; gap:8px; border-color:var(--border-light); border-radius:30px; box-shadow:0 2px 8px rgba(0,0,0,0.04); font-weight:600;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+          Filter &amp; Sort
+        </button>
+      </div>
+
+      <div class="container">
+        <!-- Collection Product Grid -->
+        <div class="product-grid" id="collection-product-grid">
+          <!-- Products loaded via JS -->
+        </div>
+        
+        <!-- Pagination UI -->
+        <div id="collection-pagination" style="display:flex; justify-content:center; gap:8px; margin: 32px 0;"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== BOTTOM SHOWCASE ===== -->
+  <div id="bottom-showcase-container" style="width: 100%; display: none;"></div>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="footer-brand yarz-mark yarz-mark--stacked yarz-mark--inverse" style="display:inline-flex;margin-bottom:10px;"><svg class="yarz-mark__icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="width:48px;height:48px;"><use href="#yarz-button-mark"/></svg><span class="yarz-mark__word" aria-hidden="true" style="font-size:18px;letter-spacing:0.26em;color:#FFFFFF;border-bottom:1px solid rgba(255,255,255,0.45);padding-bottom:6px;">YARZ</span></div>
+        <p>Premium men's fashion brand from Bangladesh. Quality clothing for the modern gentleman.</p>
+        <p style="font-family:'Hind Siliguri',sans-serif;">বাংলাদেশের প্রিমিয়াম পুরুষদের ফ্যাশন ব্র্যান্ড</p>
+      </div>
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <a href="#" onclick="YARZ.goHome();return false;">Home</a>
+        <a href="#" onclick="YARZ.filterCategory('');return false;">All Products</a>
+        <a href="#" onclick="YARZ.filterCategory('Shirt');return false;">Shirts</a>
+        <a href="#" onclick="YARZ.filterCategory('T-Shirt');return false;">T-Shirts</a>
+        <a href="#" onclick="YARZ.filterCategory('Panjabi');return false;">Panjabi</a>
+        <a href="#" onclick="YARZ.openTracking();return false;">Track Order</a>
+      </div>
+      <div class="footer-col">
+        <h4>Information</h4>
+        <a href="./about/">About Us</a>
+        <a href="./contact/">Contact Us</a>
+        <a href="./privacy/">Privacy Policy</a>
+        <a href="./terms/">Terms & Conditions</a>
+        <a href="./return-policy/">Return & Refund Policy</a>
+        <a href="shipping/index.html">Shipping Policy</a>
+        <a href="./community/">Community Guidelines</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contact &amp; Social</h4>
+        <a href="tel:+8801601743670" class="footer-contact-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          +880 1601 743670
+        </a>
+        <a href="mailto:yarzzzbd@gmail.com" class="footer-contact-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          yarzzzbd@gmail.com
+        </a>
+        <div class="footer-social-icons">
+          <a href="https://www.facebook.com/Yarzbd" target="_blank" rel="noopener" aria-label="Facebook" title="Facebook" style="--brand-color:#1877F2;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg></a>
+          <a href="https://www.instagram.com/yarzclothing" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram" style="--brand-color:#E1306C;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg></a>
+          <a href="https://wa.me/8801601743670" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp" style="--brand-color:#25D366;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.24 8.23-1.48 0-2.93-.39-4.19-1.15l-.3-.17-3.12.82.83-3.04-.2-.31a8.188 8.188 0 0 1-1.26-4.38c.01-4.54 3.7-8.24 8.25-8.25M8.53 7.33c-.16 0-.43.06-.66.31-.22.25-.87.86-.87 2.07 0 1.22.89 2.39 1 2.56.14.17 1.76 2.67 4.25 3.73.59.27 1.05.42 1.41.53.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.07-.1-.23-.16-.48-.27-.25-.14-1.47-.74-1.69-.82-.23-.08-.37-.12-.56.12-.16.25-.64.81-.78.97-.15.17-.29.19-.53.07-.26-.13-1.06-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.12-.24-.01-.39.11-.5.11-.11.27-.29.37-.44.13-.14.17-.25.25-.41.08-.17.04-.31-.02-.44-.07-.1-.56-1.34-.76-1.84-.22-.48-.42-.42-.56-.43h-.48z"/></svg></a>
+          <a href="https://m.me/Yarzbd" target="_blank" rel="noopener" aria-label="Messenger" title="Messenger" style="--brand-color:#0099FF;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 4.974 0 11.111c0 3.498 1.744 6.614 4.469 8.652V24l4.088-2.242c1.092.301 2.246.464 3.443.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8l3.131 3.259L19.752 8l-6.561 6.963z"/></svg></a>
+          <a href="https://tiktok.com/@yarzbd" target="_blank" rel="noopener" aria-label="TikTok" title="TikTok" style="--brand-color:#000000;"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5.8 20.1a6.34 6.34 0 0 0 10.86-4.43V8.81a8.16 8.16 0 0 0 4.77 1.52V6.89a4.85 4.85 0 0 1-1.84-.2z"/></svg></a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2025–2026 YARZ. All rights reserved.</span>
+      <span style="margin:0 8px;">|</span>
+      <a href="./community/">Community Guidelines</a>
+      <span style="margin:0 4px;">&middot;</span>
+      <a href="./privacy/">Privacy</a>
+      <span style="margin:0 4px;">&middot;</span>
+      <a href="./terms/">Terms</a>
+      <span style="margin:0 4px;">&middot;</span>
+      <a href="./return-policy/">Returns</a>
+    </div>
+  </footer>
+
+  <!-- Floating WhatsApp Button — v5.0: Replaces Messenger (WhatsApp works better) -->
+  <a href="https://wa.me/8801601743670" id="floating-whatsapp-btn"
+     class="floating-whatsapp-btn"
+     title="Chat on WhatsApp" aria-label="WhatsApp Chat"
+     target="_blank" rel="noopener"
+     style="display:none;">
+    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="16" cy="16" r="16" fill="#25D366"/>
+      <path fill="#FFFFFF" d="M23.3 8.7C21.4 6.8 18.8 5.7 16 5.7c-5.5 0-10 4.5-10 10 0 1.8.5 3.5 1.3 5L6 26.3l5.8-1.5c1.4.8 3.1 1.2 4.8 1.2h0c5.5 0 10-4.5 10-10 0-2.7-1-5.2-2.9-7.1l-.4-.2zM16 24.4c-1.5 0-3-.4-4.3-1.2l-.3-.2-3.2.8.8-3.1-.2-.3c-.8-1.3-1.3-2.9-1.3-4.5 0-4.6 3.7-8.3 8.3-8.3 2.2 0 4.3.9 5.9 2.4 1.5 1.6 2.4 3.6 2.4 5.9 0 4.6-3.7 8.3-8.3 8.3l.2.2zm4.6-6.2c-.3-.1-1.5-.8-1.8-.9-.3-.1-.5-.1-.7.1-.2.3-.8.9-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.2-.4-2.2-1.4-.8-.7-1.4-1.6-1.5-1.9-.2-.3 0-.4.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2.1-.3 0-.5-.1-.2-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.3-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.5-.6 1.8-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.6-.3z"/>
+    </svg>
+  </a>
+  <script>
+    /* v5.0: WhatsApp floating button — opens WhatsApp app directly on mobile */
+    (function(){
+      var btn = document.getElementById('floating-whatsapp-btn');
+      if (!btn) return;
+      /* Show button after 1.5s delay (avoids layout shift) */
+      setTimeout(function() { btn.style.display = 'flex'; }, 1500);
+    })();
+  </script>
+
+  <!-- v5.1: Sticky Mobile Add to Cart Bar -->
+  <div class="sticky-buy-bar" id="sticky-buy-bar">
+    <div class="sbb-info">
+      <div class="sbb-name" id="sbb-name">Product Name</div>
+      <div class="sbb-price">
+        <span id="sbb-price">৳0</span>
+        <span class="sbb-old-price" id="sbb-old-price"></span>
+      </div>
+    </div>
+    <div class="sbb-actions">
+      <button class="sbb-btn sbb-btn-cart" onclick="YARZ.addToCart()">Cart</button>
+      <button class="sbb-btn sbb-btn-buy" onclick="YARZ.buyNow()">Buy Now</button>
+    </div>
+  </div>
+
+
+  <!-- Security: Armor — v5.3: defer added (it already uses DOMContentLoaded, safe to defer) -->
+  <!-- ⚡ v13.0: armor/pixel/shield deferred to post-load via JS loader at bottom of body -->
+
+  <!-- ⚡ v16.14 INSTANT FIRST PAINT (no preview-then-load):
+       This inline script runs DURING HTML parse — BEFORE the deferred JS
+       bundle (api.js … app.js, ~9k lines) even starts downloading/parsing.
+       It reads the Cloudflare-Worker–injected window.__YARZ_INITIAL_STATE
+       (products + storeInfo + hero banners) and paints the hero banner +
+       product grid SYNCHRONOUSLY, so visitors see real products instantly
+       instead of the static shell for 2-3s. app.js later re-renders the SAME
+       data with its full renderer (identical markup → no flicker). Fully
+       wrapped in try/catch: if anything fails, it silently does nothing and
+       app.js renders normally — zero regression risk. NO localStorage is
+       used; the data is the fresh edge-injected state only. -->
+  <script>
+  (function _yarzInstantPaint() {
+    function paint(S) {
+    try {
+      if (!S) return;
+      var data = S.data || S;
+      var products = data.products || S.products || [];
+      var storeInfo = data.storeInfo || S.storeInfo || {};
+      if (!products.length) return;
+
+      // ---- tiny helpers (mirror app.js, kept minimal) ----
+      function esc(s){ if(s==null) return ''; return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+      function escAttr(s){ return esc(s).replace(/'/g,"\\'"); }
+      function bool(v){ if(v===true) return true; if(v==null||v==='') return false; var t=String(v).toLowerCase().trim(); return t==='true'||t==='yes'||t==='1'||t==='on'||t==='enabled'||t==='chalu'||t==='চালু'; }
+      function gi(k){ return storeInfo[k] !== undefined ? storeInfo[k] : storeInfo[k.replace(/_/g,' ')]; }
+      var CUR = String(gi('currency') || '\u09F3');
+      function price(n){ var x=parseFloat(n)||0; return CUR + x.toLocaleString('en-IN'); }
+      function imgSrc(url, size){
+        if(!url) return ''; url=String(url).trim(); if(!url) return '';
+        size = parseInt(size,10) || 1600;
+        if(!/^https?:|^data:|^\/\//.test(url)) url='https://'+url;
+        if(/\.(jpe?g|png|webp|avif|gif|bmp|svg)(\?.*)?$/i.test(url)) return url;
+        if(url.indexOf('drive.google.com')!==-1){ var m=url.match(/d\/([a-zA-Z0-9_-]+)/)||url.match(/id=([a-zA-Z0-9_-]+)/); if(m) return 'https://lh3.googleusercontent.com/d/'+m[1]+'=s'+size+'-rw'; }
+        if(url.indexOf('lh3.googleusercontent.com')!==-1){ url=url.replace(/=[swh]\d+(-[a-z0-9]+)*$/i,''); return url+'=s'+size+'-rw'; }
+        return url;
+      }
+      function badgeClass(b){ if(!b) return ''; var x=String(b).toLowerCase(); if(x.indexOf('sale')>-1||x.indexOf('hot')>-1) return 'badge-sale'; if(x.indexOf('new')>-1) return 'badge-new'; if(x.indexOf('best')>-1||x.indexOf('top')>-1) return 'badge-best'; return 'badge-default'; }
+      function isAcc(p){ return p && String(p.accessory||'').trim().toLowerCase()==='yes'; }
+      function isOneSize(p){ return p && String(p.hiddenSizes||'').trim().toUpperCase()==='__ONESIZE__'; }
+      var PANT_CATS = ['pant','pants','trouser','trousers','jeans','gabardine','chino','chinos'];
+      function isPant(cat){ var c=String(cat||'').toLowerCase(); for(var i=0;i<PANT_CATS.length;i++){ if(c.indexOf(PANT_CATS[i])>-1) return true; } return false; }
+      function pantLabel(s){ var map={S:'28',M:'30',L:'32',XL:'34',XXL:'36','3XL':'38'}; return map[s]||s; }
+
+      var hoverEffect = String(gi('hover_effect') || '');
+      var wishlistActive = bool(gi('wishlist_active'));
+      var quickViewActive = bool(gi('quick_view_active')) || bool(gi('quick_view'));
+      var SIZES = ['S','M','L','XL','XXL','3XL'];
+
+      function card(p, index){
+        var isOut = !p.inStock;
+        var salePrice = parseFloat(p.salePrice)||0;
+        var regPrice = parseFloat(p.regularPrice)||0;
+        var hasDisc = parseFloat(p.discountPercent)>0 && regPrice>salePrice;
+        var safeName = escAttr(p.name);
+        var eager = (typeof index==='number' && index<4) ? 'fetchpriority="high" loading="eager"' : 'loading="lazy"';
+        var hoverAttr = hoverEffect ? ' data-hover="'+esc(hoverEffect)+'"' : '';
+        var h = '<article class="product-card'+(isOut?' out-of-stock':'')+'"'+hoverAttr+' onclick="YARZ.openProduct(\''+safeName+'\')">';
+        h += '<div class="card-image">';
+        var i400=esc(imgSrc(p.image1,400)), i800=esc(imgSrc(p.image1,800)), i1200=esc(imgSrc(p.image1,1200));
+        h += '<img src="'+i800+'" srcset="'+i400+' 400w, '+i800+' 800w, '+i1200+' 1200w" sizes="(max-width:480px) 50vw, (max-width:768px) 33vw, (max-width:1024px) 25vw, 240px" width="800" height="1000" alt="'+esc(p.name)+'" '+eager+' onerror="this.style.display=\'none\'">';
+        if(p.badge) h += '<span class="product-badge '+badgeClass(p.badge)+'">'+esc(p.badge)+'</span>';
+        if(wishlistActive) h += '<button class="wishlist-heart" data-prod="'+safeName+'" onclick="event.stopPropagation();YARZ.toggleWishlist(\''+safeName+'\');this.classList.toggle(\'active\')" title="Add to wishlist" aria-label="Toggle wishlist"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 11c0 5.65-7 10-7 10z"/></svg></button>';
+        if(quickViewActive) h += '<button class="quick-view-btn" onclick="event.stopPropagation();YARZ.openQuickView(\''+safeName+'\')" aria-label="Quick view"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Quick View</button>';
+        h += '</div><div class="card-info">';
+        h += '<div class="product-category">'+esc(p.category||'')+'</div>';
+        h += '<div class="product-name">'+esc(p.name)+'</div>';
+        h += '<div class="price-row"><span class="sale-price">'+price(salePrice)+'</span>';
+        if(hasDisc){ h += '<span class="regular-price">'+price(regPrice)+'</span><span class="discount-tag">-'+Math.round(p.discountPercent)+'%</span>'; }
+        h += '</div><div class="card-sizes">';
+        if(!isOneSize(p)){
+          var pant = isPant(p.category);
+          SIZES.forEach(function(s){ var avail=p.sizes && p.sizes[s]; var lbl=pant?pantLabel(s):s; h+='<span class="size-dot'+(avail?' available':' out')+'">'+lbl+'</span>'; });
+        }
+        h += '</div></div></article>';
+        return h;
+      }
+
+      // ---- product grid (group by category, 12 per group + View All) ----
+      var grid = document.getElementById('product-grid');
+      if (grid) {
+        var shopProducts = products.filter(function(p){ return !isAcc(p) && p.status==='Active'; });
+        if (shopProducts.length) {
+          var grouped = {}, order = [];
+          shopProducts.forEach(function(p){ var raw=(p.category||'Other').trim(); var c=raw.charAt(0).toUpperCase()+raw.slice(1).toLowerCase(); if(!grouped[c]){grouped[c]=[];order.push(c);} grouped[c].push(p); });
+          var html=''; var gidx=0;
+          order.forEach(function(c){
+            html += '<div style="grid-column: 1 / -1; font-size: 22px; font-weight: 800; margin: 32px 0 12px; color: var(--text-main); font-family: var(--font-bengali); border-bottom: 2px solid var(--border-light); padding-bottom: 8px;">'+esc(c)+'</div>';
+            var items = grouped[c]; var more = items.length>12; if(more) items=items.slice(0,12);
+            items.forEach(function(p){ html += card(p, gidx++); });
+            if(more) html += '<div style="grid-column: 1 / -1; text-align: center; margin: 16px 0 24px 0;"><button class="btn btn-outline" onclick="YARZ.openCategoryPage(\''+escAttr(c)+'\', 1)" style="padding: 10px 32px; border-radius: 30px; font-weight: 600;">View All</button></div>';
+          });
+          grid.innerHTML = html;
+          var cards = grid.querySelectorAll('.product-card');
+          for(var ci=0; ci<cards.length; ci++){ cards[ci].style.setProperty('--card-index', ci); }
+          grid.setAttribute('aria-busy','false');
+        }
+      }
+
+      // ---- hero banner (first slide only — slider hydrates in app.js) ----
+      var slider = document.getElementById('hero-slider');
+      if (slider) {
+        var bn = [];
+        for (var i=1;i<=5;i++){ var u=gi('hero_banner_'+i); if(u) bn.push({image:u,title:gi('banner_title_'+i)||'',link:gi('banner_link_'+i)||'',color:gi('banner_text_color_'+i)||'#ffffff'}); }
+        if (bn.length){
+          var sh = bn.map(function(b,i){
+            var s1000=esc(imgSrc(b.image,1000)), s1600=esc(imgSrc(b.image,1600)), s2000=esc(imgSrc(b.image,2000));
+            var srcset=s1000+' 1000w, '+s1600+' 1600w, '+s2000+' 2000w';
+            var eager = i===0 ? 'fetchpriority="high" loading="eager" decoding="async"' : 'loading="lazy" decoding="async"';
+            var imgH='<img src="'+s1600+'" srcset="'+srcset+'" sizes="(max-width:768px) 100vw, (max-width:1280px) 100vw, 1600px" alt="'+esc(b.title)+'" '+eager+' style="width:100%;height:100%;object-fit:cover;object-position:center center;display:block;" onerror="this.style.display=\'none\'">';
+            var ov='';
+            if(b.title){ var col=/^#[0-9a-f]{3,8}$/i.test(b.color)?b.color:'#ffffff'; ov='<div class="banner-overlay"><div class="banner-content" style="--banner-text-color:'+col+';"><h2 class="banner-title">'+esc(b.title)+'</h2></div></div>'; }
+            var inner=imgH+ov;
+            if(b.link) inner='<a href="'+esc(b.link)+'" class="banner-link">'+inner+'</a>';
+            return '<div class="slide'+(i===0?' active':'')+'" style="width:100%;height:100%;">'+inner+'</div>';
+          }).join('');
+          slider.innerHTML = '<div class="slider-track">'+sh+'</div>';
+          var dots = document.getElementById('slider-dots');
+          if(dots) dots.innerHTML = bn.map(function(_,i){ return '<button class="slider-dot'+(i===0?' active':'')+'" aria-label="Slide '+(i+1)+'"></button>'; }).join('');
+        }
+      }
+
+      window._yarzInstantPainted = true;
+    } catch (e) { /* graceful: app.js will render normally */ }
+    }
+
+    // Driver: paint NOW if the edge already injected state (warm cache);
+    // otherwise wait for the in-flight early-fetch promise (cold cache) and
+    // paint the moment it resolves — still before the heavy app.js finishes.
+    try {
+      if (window.__YARZ_INITIAL_STATE) {
+        paint(window.__YARZ_INITIAL_STATE);
+      } else if (window.__YARZ_EARLY_FETCH && typeof window.__YARZ_EARLY_FETCH.then === 'function') {
+        window.__YARZ_EARLY_FETCH.then(function (json) {
+          if (json && !window._yarzInstantPainted && !window._turboFirstPaintDone) paint(json);
+        }).catch(function () {});
+      }
+    } catch (e) {}
+  })();
+  </script>
+
+  <!-- ⚡ v10.6: All scripts deferred — early fetch already fired in <head> inline script.
+       This means HTML/CSS render INSTANTLY, scripts execute when DOM is ready. -->
+  <script src="./js/api.js?v=16.10" defer></script>
+
+  <!-- TURBO: Boot loader + cache engine + image optimizer -->
+  <script src="./js/boot.js?v=15.97" defer></script>
+  <script src="./js/turbo-core.js?v=12.1" defer></script>
+  <script src="./js/image-turbo.js?v=12.1" defer></script>
+
+  <!-- Core Scripts -->
+  <script src="./js/api-turbo.js?v=12.1" defer></script>
+  <script src="./js/turbo.js?v=12.1" defer></script>
+  <script src="./js/app.js?v=16.13"  defer></script>
+
+  <!-- ✅ v15.27 PERF: Removed dead `forceBannerSize` IIFE (was 170 lines of
+       JS gated by an immediate `return;` — disabled for mobile perf in v15.14).
+       Saves ~5 KB HTML payload + parse time on every visit. The CSS-only
+       hero rules above handle banner layout reliably. -->
+
+  <!-- ✅ v13.1: Pixel/Armor/Shield deferred to ~200ms after `load` event.
+       Tradeoff balance:
+         - Was 1500ms → too aggressive → ad-click bouncers missed PageView (lost attribution)
+         - Now 200ms  → after LCP, before any meaningful interaction
+         - Plus an event-queue stub: any event called BEFORE pixel.js loads
+           (e.g. user clicks product instantly) is queued and replayed on init.
+       This preserves ad attribution AND keeps the perf win. -->
+  <script>
+    (function () {
+      // ── Event queue stub: catch early calls so nothing is lost ──
+      var _q = [];
+      // ✅ v15.7: Added setUserData, addPaymentInfo, viewedManyProducts, lead
+      // — these were calling stub.unknown() and silently throwing before pixel.js loaded.
+      var stubMethods = ['viewContent','addToCart','addToWishlist','search',
+        'sizeSelected','timeOnPage','whatsAppClick','trackCustom',
+        'initiateCheckout','purchase','lead',
+        'setUserData','addPaymentInfo','viewedManyProducts',
+        'engagedSession','sessionEnd'];
+      window.YARZ_PIXEL = window.YARZ_PIXEL || (function () {
+        var stub = { _q: _q, _stub: true };
+        stubMethods.forEach(function (name) {
+          stub[name] = function () { _q.push([name, Array.prototype.slice.call(arguments)]); };
+        });
+        return stub;
+      })();
+
+      function _yarzLoadLater(src, onload) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.defer = true;
+        if (onload) s.onload = onload;
+        document.body.appendChild(s);
+      }
+      function _yarzDeferredScripts() {
+        // ✅ v15.28 CRITICAL FIX: pixel.js MUST load inside FB/IG/TikTok
+        // WebView too. Facebook's ad algorithm needs ViewContent / AddToCart /
+        // InitiateCheckout events to optimize conversion campaigns. Skipping
+        // pixel.js in WebView would silently break ad optimization and inflate
+        // CPA over a few days. The 50KB load happens AFTER LCP (load+200ms),
+        // so it doesn't affect first-paint speed anyway.
+        // Pixel loads first — when ready, init it and replay any queued events
+        _yarzLoadLater('./js/pixel.js?v=15.75', function () {
+          try {
+            // After pixel.js loads, window.YARZ_PIXEL is now the REAL module
+            // (pixel.js's IIFE overwrites our stub)
+            if (window.YARZ_PIXEL && typeof YARZ_PIXEL.init === 'function') {
+              if (window.YARZ && window.YARZ.state && window.YARZ.state.storeInfo) {
+                YARZ_PIXEL.init(YARZ.state.storeInfo);
+              }
+              // Replay queued events
+              _q.forEach(function (call) {
+                try {
+                  var fn = YARZ_PIXEL[call[0]];
+                  if (typeof fn === 'function') fn.apply(YARZ_PIXEL, call[1]);
+                } catch (e) {}
+              });
+              _q.length = 0;
+            }
+          } catch (e) {}
+        });
+        _yarzLoadLater('./js/armor.js?v=15.74');
+        _yarzLoadLater('./js/shield.js?v=15.74');
+        _yarzLoadLater('./js/fortress.js?v=17.5');
+      }
+      // ✅ v13.1: 200ms instead of 1500ms — keeps ad attribution intact
+      if (document.readyState === 'complete') {
+        setTimeout(_yarzDeferredScripts, 200);
+      } else {
+        window.addEventListener('load', function () {
+          setTimeout(_yarzDeferredScripts, 200);
+        });
+      }
+    })();
+  </script>
+
+  <!-- ✅ v12.1: Service Worker registration moved to boot.js to prevent
+       double-registration race that caused page reload after first paint
+       (the old controllerchange handler in boot.js was calling location.reload). -->
+
+  <!-- Noscript fallback -->
+  <noscript>
+    <div
+      style="position:fixed;inset:0;background:#FBF8F1;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:9999;">
+      <div>
+        <div style="display:inline-flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:16px;">
+          <svg viewBox="0 0 24 24" style="width:56px;height:56px;" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#C8102E" stroke="#9B0C23" stroke-width="0.6"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#FBF8F1" stroke-width="0.7" opacity="0.85"/><circle cx="9.8" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="9.8" cy="14.2" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="14.2" r="1.2" fill="#FBF8F1"/></svg>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-weight:600;letter-spacing:0.26em;color:#C8102E;text-transform:uppercase;border-bottom:1px solid rgba(200, 16, 46,0.4);padding-bottom:6px;">YARZ</div>
+        </div>
+        <p style="font-size:14px;color:#56524C;margin-bottom:12px;"><strong>YARZ (Yarzclothing)</strong> is Bangladesh's Premium Men's Fashion Brand. Shop exclusive premium shirts, panjabis, polo shirts, and t-shirts online.</p>
+        <p style="font-size:14px;color:#56524C;">Please enable JavaScript to view this website and shop our collections.</p>
+      </div>
+    </div>
+  </noscript>
+  <script>
+    (function() {
+      var typoCheck = setInterval(function() {
+        var grid = document.getElementById('product-grid');
+        if (window._turboFirstPaintDone || (grid && !grid.querySelector('.skeleton'))) {
+          clearInterval(typoCheck);
+          var content = document.getElementById('fashion-typo-content');
+          var skeleton = document.getElementById('fashion-typo-skeleton');
+          if (content) content.style.opacity = '1';
+          if (skeleton) skeleton.style.display = 'none';
+        }
+      }, 100);
+    })();
+  </script>
+</body>
+
+</html>
+
+
+
+

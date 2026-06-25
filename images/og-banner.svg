@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" preserveAspectRatio="xMidYMid slice">
+  <!-- Background — cream paper texture -->
+  <rect width="1200" height="630" fill="#FBF8F1"/>
+  <!-- Subtle radial wash for depth (no busy texture, premium feel) -->
+  <defs>
+    <radialGradient id="wash" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#F4F2EC" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#wash)"/>
+
+  <!-- Centered shirt-button mark — large hero badge (v16.1 cardinal red + rim groove) -->
+  <g transform="translate(600,250)">
+    <circle cx="0" cy="0" r="112" fill="#C8102E" stroke="#9B0C23" stroke-width="6.7"/>
+    <circle cx="0" cy="0" r="69.4" fill="none" stroke="#FBF8F1" stroke-width="7.8" opacity="0.85"/>
+    <circle cx="-24.6" cy="-24.6" r="13.4" fill="#FBF8F1"/>
+    <circle cx="24.6"  cy="-24.6" r="13.4" fill="#FBF8F1"/>
+    <circle cx="-24.6" cy="24.6"  r="13.4" fill="#FBF8F1"/>
+    <circle cx="24.6"  cy="24.6"  r="13.4" fill="#FBF8F1"/>
+  </g>
+
+  <!-- Wordmark + hairline rule + tagline (Cormorant Garamond serif lockup) -->
+  <text x="600" y="440" font-family="'Cormorant Garamond', Georgia, serif" font-size="72" font-weight="600" fill="#1A1411" text-anchor="middle" letter-spacing="22">YARZ</text>
+  <line x1="525" y1="465" x2="675" y2="465" stroke="#C8102E" stroke-width="1.2" opacity="0.55"/>
+  <text x="600" y="510" font-family="'Cormorant Garamond', Georgia, serif" font-size="26" font-style="italic" font-weight="500" fill="#C8102E" text-anchor="middle" letter-spacing="2">Premium Men's Fashion</text>
+  <text x="600" y="555" font-family="'Inter', sans-serif" font-size="13" font-weight="600" fill="#6B6660" text-anchor="middle" letter-spacing="6">YARZCLOTHING.XYZ · BANGLADESH</text>
+</svg>
