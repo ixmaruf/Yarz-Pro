@@ -12115,7 +12115,7 @@ YARZ.settings = {
    const wrap = $('pin-setup-state'); if(!wrap) return;
    try {
     const res = await appsPost('hasAdminPin', {});
-    this._pinHasPin = !!(res && res.hasPin);
+    this._pinHasPin = !!(res && res.data && res.data.hasPin);
     this._renderPinUi(this._pinHasPin);
    } catch(e){
     this._pinHasPin = false;
@@ -12207,7 +12207,7 @@ YARZ.settings = {
    showLoader('Saving PIN...');
    try {
     const res = await appsPost('setAdminPin', { pin: n1 });
-    if(res && res.success === false) throw new Error(res.error || res.msg || 'Failed');
+    if((res && res.success === false) || (res && res.data && res.data.success === false)) throw new Error((res && res.data && res.data.error) || res.error || res.msg || (res && res.data && res.data.msg) || 'Failed');
     this._pinHasPin = true;
     this._renderPinUi(true);
     this._setPinMsg('✅ PIN saved. Sensitive tabs are now protected.', 'success');
@@ -12230,7 +12230,7 @@ YARZ.settings = {
    showLoader('Updating PIN...');
    try {
     const res = await appsPost('changeAdminPin', { oldPin, newPin: n1 });
-    if(res && res.success === false) throw new Error(res.error || res.msg || 'Failed');
+    if((res && res.success === false) || (res && res.data && res.data.success === false)) throw new Error((res && res.data && res.data.error) || res.error || res.msg || (res && res.data && res.data.msg) || 'Failed');
     this._pinHasPin = true;
     this.hideChangePinForm();
     this._setPinMsg('✅ PIN updated. Use the new PIN to unlock sensitive tabs.', 'success');
@@ -12248,7 +12248,7 @@ YARZ.settings = {
    showLoader('Removing PIN...');
    try {
     const res = await appsPost('setAdminPin', { pin: '' });
-    if(res && res.success === false) throw new Error(res.error || res.msg || 'Failed');
+    if((res && res.success === false) || (res && res.data && res.data.success === false)) throw new Error((res && res.data && res.data.error) || res.error || res.msg || (res && res.data && res.data.msg) || 'Failed');
     this._pinHasPin = false;
     this._renderPinUi(false);
     this._setPinMsg('✅ PIN removed.', 'success');
@@ -13673,7 +13673,7 @@ window.publishToWebsiteAction = async function() {
         this._pendingCallback = callback;
         try {
          const res = await appsPost('hasAdminPin', {});
-         const hasPin = !!(res && res.hasPin);
+         const hasPin = !!(res && res.data && res.data.hasPin);
          if(!hasPin){
           this.setUnlock();
           if(callback) callback();
@@ -13722,7 +13722,8 @@ window.publishToWebsiteAction = async function() {
         if(!/^\d{4,8}$/.test(pin)){ this._setError('PIN must be 4–8 digits.'); return; }
         try {
          const res = await appsPost('verifyAdminPin', { pin });
-         if(res && res.success === false) throw new Error(res.error || res.msg || 'Incorrect PIN');
+         if((res && res.success === false) || (res && res.data && res.data.success === false)) throw new Error((res && res.data && res.data.error) || res.error || res.msg || (res && res.data && res.data.msg) || 'Incorrect PIN');
+         if(!(res && ((res.data && res.data.verified === true) || res.verified === true))) throw new Error((res && res.data && res.data.msg) || 'Incorrect PIN');
          this.setUnlock();
          this.hide();
          if(typeof this._pendingCallback === 'function'){
