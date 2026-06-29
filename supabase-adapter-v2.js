@@ -317,6 +317,48 @@
     }
   }
 
+  // ✅ v11.4: Admin self-service credential change.
+  // Calls the change_admin_password / change_admin_username SECURITY DEFINER RPCs
+  // defined in supabase/rpc.sql. Returns {success, msg} from the RPC.
+  async function changeAdminPassword(p) {
+    var db = getWriteDb(); if (!db) throw new Error("Supabase not initialized");
+    var current = String(p.currentPassword || p.current_password || "");
+    var next = String(p.newPassword || p.new_password || "");
+    if (!current) throw new Error("Current password is required");
+    if (!next)    throw new Error("New password is required");
+    if (next.length < 6) throw new Error("New password must be at least 6 characters");
+    if (current === next) throw new Error("New password must differ from current password");
+    var tok = p.sessionToken || getSessionToken();
+    if (!tok) throw new Error("Not signed in");
+    var r = await db.rpc("change_admin_password", {
+      p_token: tok,
+      p_current_password: current,
+      p_new_password: next
+    });
+    if (r.error) throw new Error(r.error.message);
+    var row = Array.isArray(r.data) ? r.data[0] : r.data;
+    if (!row) throw new Error("Password change failed");
+    if (!row.success) throw new Error(row.msg || "Password change failed");
+    return ok({ msg: row.msg, changed: true });
+  }
+
+  async function changeAdminUsername(p) {
+    var db = getWriteDb(); if (!db) throw new Error("Supabase not initialized");
+    var next = String(p.newUsername || p.new_username || "").trim();
+    if (!next) throw new Error("New username is required");
+    var tok = p.sessionToken || getSessionToken();
+    if (!tok) throw new Error("Not signed in");
+    var r = await db.rpc("change_admin_username", {
+      p_token: tok,
+      p_new_username: next
+    });
+    if (r.error) throw new Error(r.error.message);
+    var row = Array.isArray(r.data) ? r.data[0] : r.data;
+    if (!row) throw new Error("Username change failed");
+    if (!row.success) throw new Error(row.msg || "Username change failed");
+    return ok({ msg: row.msg, changed: true, newUsername: next });
+  }
+
   async function saveProductFromForm(p) {
     var db = getWriteDb();
     await ensureAuth();
@@ -774,6 +816,8 @@
         case "adminlogin": case "admin_login": return await adminLogin(payload || {});
         case "adminlogout": case "admin_logout": return await adminLogout();
         case "verify_auth": return await verifyAuth();
+        case "changeadminpassword": case "changeAdminPassword": return await changeAdminPassword(payload || {});
+        case "changeadminusername": case "changeAdminUsername": return await changeAdminUsername(payload || {});
         case "delete_activity_logs": return await deleteActivityLogs(payload || {});
         case "saveproductfromform": return await saveProductFromForm(payload || {});
         case "saveproducteditfromform": return await saveProductEditFromForm(payload || {});
