@@ -13452,6 +13452,9 @@ window.publishToWebsiteAction = async function() {
 
   // Expose appsPost to global scope so modules defined outside this IIFE (like YARZ.pinLock and YARZ.firewall) can call it.
   window.appsPost = appsPost;
+  // Expose $ and toast as well so post-IIFE modules (YARZ.pinLock) can use them.
+  if (typeof $ !== 'undefined') window.$ = $;
+  if (typeof toast !== 'undefined') window.toast = toast;
 })();
 
     // ============ YARZ FIREWALL (Fortress) ============
