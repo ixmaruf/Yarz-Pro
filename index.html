@@ -13624,25 +13624,22 @@ window.publishToWebsiteAction = async function() {
     };
 
     // Auto-init on first nav to firewall
-    (function(){
-      const origGoPage = YARZ.goPage;
-      YARZ.goPage = function(page) {
-        origGoPage.call(this, page);
-        if (page === 'firewall') {
-          YARZ.firewall.refresh();
-          YARZ.firewall.startAutoRefresh();
-        } else if (page === 'customers') {
-          YARZ.cust.load();
-        } else if (page === 'product-analytics') {
-          YARZ.pa.load();
-        }
-      };
+    const __origGoPageForFirewall = YARZ.goPage;
+    YARZ.goPage = function(page) {
+      __origGoPageForFirewall.call(this, page);
+      if (page === 'firewall') {
+        YARZ.firewall.refresh();
+        YARZ.firewall.startAutoRefresh();
+      } else if (page === 'customers') {
+        YARZ.cust.load();
+      } else if (page === 'product-analytics') {
+        YARZ.pa.load();
+      }
+    };
 
-      // ✅ Admin PIN Lock module: attached here so it lives inside the IIFE and
-      // can access appsPost/toast/$ directly. The goPage wrapper that enforces
-      // PIN protection lives in the next <script> tag and calls YARZ.pinLock
-      // through the global YARZ object.
-      YARZ.pinLock = {
+    // ✅ Admin PIN Lock module: attached here so it lives inside the main IIFE and
+    // can access appsPost/toast/$ directly.
+    YARZ.pinLock = {
        _PROTECTED: ['web-control','activity','settings','ej'],
        _pendingPage: null,
        _pendingCallback: null,
@@ -13738,7 +13735,6 @@ window.publishToWebsiteAction = async function() {
         }
        }
       };
-    })();
 
 </script>
 
