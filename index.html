@@ -13450,6 +13450,8 @@ window.publishToWebsiteAction = async function() {
   }
   };
 
+  // Expose appsPost to global scope so modules defined outside this IIFE (like YARZ.pinLock and YARZ.firewall) can call it.
+  window.appsPost = appsPost;
 })();
 
     // ============ YARZ FIREWALL (Fortress) ============
