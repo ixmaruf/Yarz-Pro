@@ -5029,6 +5029,17 @@ table tbody tr:hover{ background:var(--surface-2); }
    </div>
   </div>
 
+  <!-- ✅ Admin PIN Lock: protect sensitive tabs -->
+  <div class="card" id="admin-pin-card" style="padding:22px;margin-bottom:14px;border:1px solid rgba(16,185,129,0.25)">
+   <div class="section-title"><h2><i class="ri-lock-password-line" style="color:var(--success)"></i> Admin PIN Lock</h2></div>
+   <div style="font-size:12.5px;color:var(--ink-3);margin-bottom:16px;line-height:1.7">
+     <i class="ri-information-line"></i> Protect sensitive tabs (Website Control, Activity Log, Settings) with a 4–8 digit PIN. The PIN stays unlocked for 15 minutes in this browser session.
+   </div>
+   <div id="pin-setup-state">
+     <div style="font-size:12px;color:var(--ink-3)"><i class="ri-loader-2-line spin"></i> Checking PIN status…</div>
+   </div>
+  </div>
+
   <!-- ✅ v11.4: Steadfast Courier API — auto-create courier orders -->
   <div class="card" style="padding:22px">
   <div class="section-title"><h2><i class="ri-truck-line" style="color:#10B981"></i> Steadfast Courier API <span style="font-size:11px;font-weight:500;color:var(--ink-3);margin-left:8px">— Send orders in one click</span></h2></div>
@@ -5238,6 +5249,24 @@ table tbody tr:hover{ background:var(--surface-2); }
 <!-- Modal Container -->
 <div id="modal-overlay" class="modal-overlay">
  <div id="modal-content" class="modal"></div>
+</div>
+
+<!-- Admin PIN Lock Modal -->
+<div id="pin-lock-modal" class="modal-overlay" style="z-index:3000">
+ <div class="modal" style="max-width:420px">
+  <div class="modal-header">
+   <h3><i class="ri-lock-password-line" style="color:var(--success)"></i> Enter Admin PIN</h3>
+  </div>
+  <p style="font-size:12.5px;color:var(--ink-2);margin-bottom:14px;line-height:1.6">This area is PIN-protected. Enter your 4–8 digit PIN to continue.</p>
+  <div class="field">
+   <input id="pin-lock-input" class="input" type="password" inputmode="numeric" pattern="\\d*" maxlength="8" placeholder="Enter PIN" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();YARZ.pinLock.unlock();}">
+  </div>
+  <div id="pin-lock-error" style="font-size:12px;color:var(--danger);margin-top:8px;min-height:16px"></div>
+  <div class="modal-actions" style="margin-top:18px">
+   <button class="btn btn-ghost" onclick="YARZ.pinLock.cancel()">Cancel</button>
+   <button class="btn btn-primary" onclick="YARZ.pinLock.unlock()"><i class="ri-lock-unlock-line"></i> Unlock</button>
+  </div>
+ </div>
 </div>
 
 <!-- Toast -->
@@ -11728,6 +11757,9 @@ YARZ.settings = {
   // ✅ v11.4: Populate Steadfast credentials
   const sfApi = $('sf-api-key'); if(sfApi) sfApi.value = s['Steadfast API Key'] || '';
   const sfSec = $('sf-secret'); if(sfSec) sfSec.value = s['Steadfast Secret Key'] || '';
+
+  // ✅ Admin PIN Lock: render setup UI
+  this.renderPinCard();
   },
 
   saveConn(){
@@ -12073,6 +12105,158 @@ YARZ.settings = {
    } catch(e){
     this._setUserMsg('❌ ' + (e.message || 'Failed to update username'), 'error');
     toast(e.message || 'Failed to update username', 'error');
+   } finally { hideLoader(); }
+  },
+
+  /* ===== Admin PIN Lock ===== */
+  _pinHasPin: false,
+
+  async renderPinCard(){
+   const wrap = $('pin-setup-state'); if(!wrap) return;
+   try {
+    const res = await appsPost('hasAdminPin', {});
+    this._pinHasPin = !!(res && res.hasPin);
+    this._renderPinUi(this._pinHasPin);
+   } catch(e){
+    this._pinHasPin = false;
+    this._renderPinUi(false, 'Could not check PIN status: ' + (e.message||'unknown'));
+   }
+  },
+
+  _setPinMsg(text, kind){
+   const el = $('pin-setup-msg'); if(!el) return;
+   el.textContent = text || '';
+   el.style.color = kind === 'error' ? 'var(--danger)' : (kind === 'success' ? 'var(--success)' : 'var(--ink-3)');
+  },
+
+  _renderPinUi(hasPin, statusMsg){
+   const wrap = $('pin-setup-state'); if(!wrap) return;
+   if(statusMsg){
+    this._setPinMsg(statusMsg, 'error');
+   }
+   if(!hasPin){
+    wrap.innerHTML = `
+     <div class="grid grid-2" style="gap:18px">
+      <div class="field" style="padding:16px;border-radius:16px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.18)">
+       <div style="font-weight:700;font-size:13.5px;margin-bottom:10px;color:var(--success)"><i class="ri-lock-password-line"></i> Set Admin PIN</div>
+       <label style="font-size:12px">New PIN <span class="req">*</span> <span style="opacity:0.55">(4–8 digits)</span></label>
+       <input id="pin-set-new" class="input" type="password" inputmode="numeric" pattern="\\d*" maxlength="8" placeholder="e.g. 1234" autocomplete="off">
+       <label style="font-size:12px;margin-top:10px;display:block">Confirm PIN <span class="req">*</span></label>
+       <input id="pin-set-confirm" class="input" type="password" inputmode="numeric" pattern="\\d*" maxlength="8" placeholder="Re-enter PIN" autocomplete="off">
+       <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="YARZ.settings.setAdminPin()"><i class="ri-save-line"></i> Save PIN</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('pin-set-new').value='';document.getElementById('pin-set-confirm').value='';"><i class="ri-close-line"></i> Clear</button>
+       </div>
+       <div id="pin-setup-msg" style="font-size:12px;margin-top:10px;min-height:16px"></div>
+      </div>
+      <div style="font-size:12px;color:var(--ink-3);line-height:1.7;padding:16px;border-radius:16px;background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.12)">
+       <p style="margin-bottom:8px"><i class="ri-shield-check-line" style="color:var(--success)"></i> <b>Why set a PIN?</b></p>
+       <p style="margin-bottom:6px">Website Control, Activity Log and Settings tabs will require this PIN before opening.</p>
+       <p>The PIN is stored per admin user and is valid for 15 minutes after each successful unlock.</p>
+      </div>
+     </div>`;
+   } else {
+    wrap.innerHTML = `
+     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      <button class="btn btn-primary" onclick="YARZ.settings.showChangePinForm()"><i class="ri-lock-password-line"></i> Change PIN</button>
+      <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="YARZ.settings.removeAdminPin()"><i class="ri-delete-bin-line"></i> Remove PIN</button>
+     </div>
+     <div id="pin-change-form" style="display:none">
+      <div class="grid grid-2" style="gap:18px">
+       <div class="field" style="padding:16px;border-radius:16px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.18)">
+        <div style="font-weight:700;font-size:13.5px;margin-bottom:10px;color:var(--success)"><i class="ri-lock-password-line"></i> Change Admin PIN</div>
+        <label style="font-size:12px">Current PIN <span class="req">*</span></label>
+        <input id="pin-change-old" class="input" type="password" inputmode="numeric" pattern="\\d*" maxlength="8" placeholder="Current PIN" autocomplete="off">
+        <label style="font-size:12px;margin-top:10px;display:block">New PIN <span class="req">*</span> <span style="opacity:0.55">(4–8 digits)</span></label>
+        <input id="pin-change-new" class="input" type="password" inputmode="numeric" pattern="\\d*" maxlength="8" placeholder="New PIN" autocomplete="off">
+        <label style="font-size:12px;margin-top:10px;display:block">Confirm New PIN <span class="req">*</span></label>
+        <input id="pin-change-confirm" class="input" type="password" inputmode="numeric" pattern="\\d*" maxlength="8" placeholder="Re-enter new PIN" autocomplete="off">
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+         <button class="btn btn-primary" onclick="YARZ.settings.changeAdminPin()"><i class="ri-save-line"></i> Update PIN</button>
+         <button class="btn btn-ghost" onclick="YARZ.settings.hideChangePinForm()"><i class="ri-close-line"></i> Cancel</button>
+        </div>
+       </div>
+      </div>
+     </div>
+     <div id="pin-setup-msg" style="font-size:12px;margin-top:10px;min-height:16px"></div>`;
+   }
+  },
+
+  showChangePinForm(){
+   const f = $('pin-change-form'); if(f) f.style.display = 'block';
+   this._setPinMsg('', 'info');
+  },
+
+  hideChangePinForm(){
+   const f = $('pin-change-form'); if(f) f.style.display = 'none';
+   this._setPinMsg('', 'info');
+  },
+
+  _validatePinPair(a, b, label){
+   if(!/^\d{4,8}$/.test(a)) return 'PIN must be 4–8 digits.';
+   if(a !== b) return label + ' do not match.';
+   return '';
+  },
+
+  async setAdminPin(){
+   const n1 = ($('pin-set-new')?.value || '').trim();
+   const n2 = ($('pin-set-confirm')?.value || '').trim();
+   this._setPinMsg('');
+   const err = this._validatePinPair(n1, n2, 'PINs');
+   if(err){ this._setPinMsg(err, 'error'); return; }
+   showLoader('Saving PIN...');
+   try {
+    const res = await appsPost('setAdminPin', { pin: n1 });
+    if(res && res.success === false) throw new Error(res.error || res.msg || 'Failed');
+    this._pinHasPin = true;
+    this._renderPinUi(true);
+    this._setPinMsg('✅ PIN saved. Sensitive tabs are now protected.', 'success');
+    toast('Admin PIN saved.', 'success');
+   } catch(e){
+    this._setPinMsg('❌ ' + (e.message || 'Failed to save PIN'), 'error');
+    toast(e.message || 'Failed to save PIN', 'error');
+   } finally { hideLoader(); }
+  },
+
+  async changeAdminPin(){
+   const oldPin = ($('pin-change-old')?.value || '').trim();
+   const n1 = ($('pin-change-new')?.value || '').trim();
+   const n2 = ($('pin-change-confirm')?.value || '').trim();
+   this._setPinMsg('');
+   if(!/^\d{4,8}$/.test(oldPin)){ this._setPinMsg('Current PIN must be 4–8 digits.', 'error'); return; }
+   const err = this._validatePinPair(n1, n2, 'New PINs');
+   if(err){ this._setPinMsg(err, 'error'); return; }
+   if(oldPin === n1){ this._setPinMsg('New PIN must differ from current PIN.', 'error'); return; }
+   showLoader('Updating PIN...');
+   try {
+    const res = await appsPost('changeAdminPin', { oldPin, newPin: n1 });
+    if(res && res.success === false) throw new Error(res.error || res.msg || 'Failed');
+    this._pinHasPin = true;
+    this.hideChangePinForm();
+    this._setPinMsg('✅ PIN updated. Use the new PIN to unlock sensitive tabs.', 'success');
+    toast('Admin PIN updated.', 'success');
+    // Force re-lock so the old unlock window doesn't linger
+    try { sessionStorage.removeItem('yarz_pin_unlocked_until'); } catch(e){}
+   } catch(e){
+    this._setPinMsg('❌ ' + (e.message || 'Failed to update PIN'), 'error');
+    toast(e.message || 'Failed to update PIN', 'error');
+   } finally { hideLoader(); }
+  },
+
+  async removeAdminPin(){
+   if(!confirm('Remove the Admin PIN lock? Sensitive tabs will no longer require a PIN.')) return;
+   showLoader('Removing PIN...');
+   try {
+    const res = await appsPost('setAdminPin', { pin: '' });
+    if(res && res.success === false) throw new Error(res.error || res.msg || 'Failed');
+    this._pinHasPin = false;
+    this._renderPinUi(false);
+    this._setPinMsg('✅ PIN removed.', 'success');
+    toast('Admin PIN removed.', 'success');
+    try { sessionStorage.removeItem('yarz_pin_unlocked_until'); } catch(e){}
+   } catch(e){
+    this._setPinMsg('❌ ' + (e.message || 'Failed to remove PIN'), 'error');
+    toast(e.message || 'Failed to remove PIN', 'error');
    } finally { hideLoader(); }
   }
 };
@@ -14087,6 +14271,112 @@ YARZ.goPage = function(page) {
   if (page === 'courier') YARZ.courier.load();
   if (page === 'activity') YARZ.activity.load();
   if (page === 'marketing') YARZ.marketing.load();
+};
+
+/* ===== Admin PIN Lock: gate sensitive tabs ===== */
+YARZ.pinLock = {
+ _PROTECTED: ['web-control','activity','settings','ej'],
+ _pendingPage: null,
+ _pendingCallback: null,
+
+ isProtected(page){
+  return this._PROTECTED.indexOf(page) !== -1;
+ },
+
+ isUnlocked(){
+  try {
+   const until = parseInt(sessionStorage.getItem('yarz_pin_unlocked_until') || '0', 10);
+   return until && Date.now() < until;
+  } catch(e){ return false; }
+ },
+
+ setUnlock(){
+  try {
+   sessionStorage.setItem('yarz_pin_unlocked_until', String(Date.now() + 15*60*1000));
+  } catch(e){}
+ },
+
+ clearUnlock(){
+  try { sessionStorage.removeItem('yarz_pin_unlocked_until'); } catch(e){}
+ },
+
+ async check(page, callback){
+  this._pendingPage = page;
+  this._pendingCallback = callback;
+  try {
+   const res = await appsPost('hasAdminPin', {});
+   const hasPin = !!(res && res.hasPin);
+   if(!hasPin){
+    this.setUnlock();
+    if(callback) callback();
+    return;
+   }
+   if(this.isUnlocked()){
+    if(callback) callback();
+    return;
+   }
+   this.show();
+  } catch(e){
+   // Network/auth hiccup: allow navigation to avoid lockout, but warn
+   console.warn('[PIN] hasAdminPin failed:', e);
+   if(callback) callback();
+  }
+ },
+
+ show(){
+  const modal = $('pin-lock-modal');
+  const input = $('pin-lock-input');
+  const err = $('pin-lock-error');
+  if(modal) modal.classList.add('show');
+  if(err) err.textContent = '';
+  if(input){ input.value = ''; setTimeout(()=>input.focus(), 50); }
+ },
+
+ hide(){
+  const modal = $('pin-lock-modal');
+  if(modal) modal.classList.remove('show');
+  this._pendingPage = null;
+  this._pendingCallback = null;
+ },
+
+ cancel(){
+  this.hide();
+ },
+
+ _setError(text){
+  const el = $('pin-lock-error'); if(el) el.textContent = text || '';
+ },
+
+ async unlock(){
+  const input = $('pin-lock-input');
+  const pin = (input?.value || '').trim();
+  this._setError('');
+  if(!/^\d{4,8}$/.test(pin)){ this._setError('PIN must be 4–8 digits.'); return; }
+  try {
+   const res = await appsPost('verifyAdminPin', { pin });
+   if(res && res.success === false) throw new Error(res.error || res.msg || 'Incorrect PIN');
+   this.setUnlock();
+   this.hide();
+   if(typeof this._pendingCallback === 'function'){
+    const cb = this._pendingCallback;
+    this._pendingCallback = null;
+    cb();
+   }
+   toast('Admin PIN accepted.', 'success');
+  } catch(e){
+   this._setError('❌ ' + (e.message || 'Incorrect PIN'));
+   if(input){ input.value = ''; input.focus(); }
+  }
+ }
+};
+
+const __origGoPageForPin = YARZ.goPage;
+YARZ.goPage = function(page) {
+  if (YARZ.pinLock && YARZ.pinLock.isProtected(page)) {
+    YARZ.pinLock.check(page, () => __origGoPageForPin.call(this, page));
+    return;
+  }
+  __origGoPageForPin.call(this, page);
 };
 
 setTimeout(() => {
