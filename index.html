@@ -13639,7 +13639,11 @@ window.publishToWebsiteAction = async function() {
       };
     })();
 
-
+    // ✅ Expose helpers needed by the PIN-lock module in the following script tag.
+    // The main app wraps everything in an IIFE, so appsPost/toast/$ are local there.
+    window.appsPost = appsPost;
+    window.toast = toast;
+    window.$ = $;
 
 </script>
 
