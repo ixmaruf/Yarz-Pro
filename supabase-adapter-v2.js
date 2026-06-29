@@ -359,6 +359,74 @@
     return ok({ msg: row.msg, changed: true, newUsername: next });
   }
 
+  // v11.5: Admin PIN protection.  All calls use the service-role write DB and
+  // the SECURITY DEFINER RPCs in supabase/migrations/2026_06_29_admin_pin.sql.
+  async function setAdminPin(p) {
+    var db = getWriteDb(); if (!db) throw new Error("Supabase not initialized");
+    var pin = String(p.pin || "").trim();
+    if (!/^\d{4,8}$/.test(pin)) throw new Error("PIN must be 4-8 digits");
+    var tok = p.sessionToken || getSessionToken();
+    if (!tok) throw new Error("Not signed in");
+    var r = await db.rpc("set_admin_pin", { p_token: tok, p_pin: pin });
+    if (r.error) throw new Error(r.error.message);
+    var row = Array.isArray(r.data) ? r.data[0] : r.data;
+    if (!row) throw new Error("PIN setup failed");
+    if (!row.success) throw new Error(row.msg || "PIN setup failed");
+    return ok({ msg: row.msg, set: true });
+  }
+
+  async function verifyAdminPin(p) {
+    var db = getWriteDb(); if (!db) throw new Error("Supabase not initialized");
+    var pin = String(p.pin || "").trim();
+    if (!pin) throw new Error("PIN is required");
+    var tok = p.sessionToken || getSessionToken();
+    if (!tok) throw new Error("Not signed in");
+    var r = await db.rpc("verify_admin_pin", { p_token: tok, p_pin: pin });
+    if (r.error) throw new Error(r.error.message);
+    var row = Array.isArray(r.data) ? r.data[0] : r.data;
+    if (!row) throw new Error("PIN verification failed");
+    if (!row.success) {
+      var err = new Error(row.msg || "PIN verification failed");
+      err.locked = !!row.locked;
+      err.attemptsRemaining = (row.attempts_remaining === null || row.attempts_remaining === undefined)
+        ? 0 : Number(row.attempts_remaining);
+      throw err;
+    }
+    return ok({ msg: row.msg, verified: true, attemptsRemaining: Number(row.attempts_remaining) });
+  }
+
+  async function hasAdminPin(p) {
+    var db = getWriteDb(); if (!db) throw new Error("Supabase not initialized");
+    var tok = (p && p.sessionToken) || getSessionToken();
+    if (!tok) throw new Error("Not signed in");
+    var r = await db.rpc("has_admin_pin", { p_token: tok });
+    if (r.error) throw new Error(r.error.message);
+    // RPC returns a scalar boolean via PostgREST.
+    var hasPin = r.data === true || r.data === "true" || (Array.isArray(r.data) && r.data.length > 0 && r.data[0] === true);
+    return ok({ hasPin: hasPin });
+  }
+
+  async function changeAdminPin(p) {
+    var db = getWriteDb(); if (!db) throw new Error("Supabase not initialized");
+    var oldPin = String(p.oldPin || p.old_pin || "").trim();
+    var newPin = String(p.newPin || p.new_pin || "").trim();
+    if (!oldPin) throw new Error("Current PIN is required");
+    if (!/^\d{4,8}$/.test(newPin)) throw new Error("New PIN must be 4-8 digits");
+    if (oldPin === newPin) throw new Error("New PIN must differ from current PIN");
+    var tok = p.sessionToken || getSessionToken();
+    if (!tok) throw new Error("Not signed in");
+    var r = await db.rpc("change_admin_pin", {
+      p_token: tok,
+      p_old_pin: oldPin,
+      p_new_pin: newPin
+    });
+    if (r.error) throw new Error(r.error.message);
+    var row = Array.isArray(r.data) ? r.data[0] : r.data;
+    if (!row) throw new Error("PIN change failed");
+    if (!row.success) throw new Error(row.msg || "PIN change failed");
+    return ok({ msg: row.msg, changed: true });
+  }
+
   async function saveProductFromForm(p) {
     var db = getWriteDb();
     await ensureAuth();
@@ -818,6 +886,10 @@
         case "verify_auth": return await verifyAuth();
         case "changeadminpassword": case "changeAdminPassword": return await changeAdminPassword(payload || {});
         case "changeadminusername": case "changeAdminUsername": return await changeAdminUsername(payload || {});
+        case "setadminpin": case "setAdminPin": return await setAdminPin(payload || {});
+        case "verifyadminpin": case "verifyAdminPin": return await verifyAdminPin(payload || {});
+        case "hasadminpin": case "hasAdminPin": return await hasAdminPin(payload || {});
+        case "changeadminpin": case "changeAdminPin": return await changeAdminPin(payload || {});
         case "delete_activity_logs": return await deleteActivityLogs(payload || {});
         case "saveproductfromform": return await saveProductFromForm(payload || {});
         case "saveproducteditfromform": return await saveProductEditFromForm(payload || {});
