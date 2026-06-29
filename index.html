@@ -5252,7 +5252,7 @@ table tbody tr:hover{ background:var(--surface-2); }
 </div>
 
 <!-- Admin PIN Lock Modal -->
-<div id="pin-lock-modal" class="modal-overlay" style="z-index:3000">
+<div id="pin-lock-modal" class="modal-overlay hidden" style="z-index:3000">
  <div class="modal" style="max-width:420px">
   <div class="modal-header">
    <h3><i class="ri-lock-password-line" style="color:var(--success)"></i> Enter Admin PIN</h3>
@@ -14372,7 +14372,10 @@ YARZ.pinLock = {
 
 const __origGoPageForPin = YARZ.goPage;
 YARZ.goPage = function(page) {
-  if (YARZ.pinLock && YARZ.pinLock.isProtected(page)) {
+  // Only enforce PIN for sensitive tabs when the user is actually logged in.
+  // The login screen itself must remain reachable before any session exists.
+  const hasSession = !!(localStorage.getItem('yarz_session_token') || '');
+  if (hasSession && YARZ.pinLock && YARZ.pinLock.isProtected(page)) {
     YARZ.pinLock.check(page, () => __origGoPageForPin.call(this, page));
     return;
   }
