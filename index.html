@@ -13637,13 +13637,14 @@ window.publishToWebsiteAction = async function() {
           YARZ.pa.load();
         }
       };
-    })();
 
-    // ✅ Expose helpers needed by the PIN-lock module in the following script tag.
-    // The main app wraps everything in an IIFE, so appsPost/toast/$ are local there.
-    window.appsPost = appsPost;
-    window.toast = toast;
-    window.$ = $;
+      // ✅ Expose helpers needed by the PIN-lock module in the next <script> tag.
+      // The main app wraps code in an IIFE; appsPost/toast/$ are local there.
+      window.appsPost = appsPost;
+      window.$ = $;
+      // Use a unique name for toast to avoid conflict with the DOM element <div id="toast">.
+      window._yarzToast = toast;
+    })();
 
 </script>
 
@@ -14366,7 +14367,7 @@ YARZ.pinLock = {
     this._pendingCallback = null;
     cb();
    }
-   toast('Admin PIN accepted.', 'success');
+   try { window._yarzToast('Admin PIN accepted.', 'success'); } catch(e){}
   } catch(e){
    this._setError('❌ ' + (e.message || 'Incorrect PIN'));
    if(input){ input.value = ''; input.focus(); }
