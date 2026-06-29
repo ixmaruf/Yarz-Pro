@@ -13638,12 +13638,105 @@ window.publishToWebsiteAction = async function() {
         }
       };
 
-      // ✅ Expose helpers needed by the PIN-lock module in the next <script> tag.
-      // The main app wraps code in an IIFE; appsPost/toast/$ are local there.
-      window.appsPost = appsPost;
-      window.$ = $;
-      // Use a unique name for toast to avoid conflict with the DOM element <div id="toast">.
-      window._yarzToast = toast;
+      // ✅ Admin PIN Lock module: attached here so it lives inside the IIFE and
+      // can access appsPost/toast/$ directly. The goPage wrapper that enforces
+      // PIN protection lives in the next <script> tag and calls YARZ.pinLock
+      // through the global YARZ object.
+      YARZ.pinLock = {
+       _PROTECTED: ['web-control','activity','settings','ej'],
+       _pendingPage: null,
+       _pendingCallback: null,
+
+       isProtected(page){
+        return this._PROTECTED.indexOf(page) !== -1;
+       },
+
+       isUnlocked(){
+        try {
+         const until = parseInt(sessionStorage.getItem('yarz_pin_unlocked_until') || '0', 10);
+         return until && Date.now() < until;
+        } catch(e){ return false; }
+       },
+
+       setUnlock(){
+        try {
+         sessionStorage.setItem('yarz_pin_unlocked_until', String(Date.now() + 15*60*1000));
+        } catch(e){}
+       },
+
+       clearUnlock(){
+        try { sessionStorage.removeItem('yarz_pin_unlocked_until'); } catch(e){}
+       },
+
+       async check(page, callback){
+        this._pendingPage = page;
+        this._pendingCallback = callback;
+        try {
+         const res = await appsPost('hasAdminPin', {});
+         const hasPin = !!(res && res.hasPin);
+         if(!hasPin){
+          this.setUnlock();
+          if(callback) callback();
+          return;
+         }
+         if(this.isUnlocked()){
+          if(callback) callback();
+          return;
+         }
+         this.show();
+        } catch(e){
+         // Network/auth hiccup: allow navigation to avoid lockout, but warn
+         console.warn('[PIN] hasAdminPin failed:', e);
+         if(callback) callback();
+        }
+       },
+
+       show(){
+        const modal = $('pin-lock-modal');
+        const input = $('pin-lock-input');
+        const err = $('pin-lock-error');
+        if(modal) modal.classList.add('show');
+        if(err) err.textContent = '';
+        if(input){ input.value = ''; setTimeout(()=>input.focus(), 50); }
+       },
+
+       hide(){
+        const modal = $('pin-lock-modal');
+        if(modal) modal.classList.remove('show');
+        this._pendingPage = null;
+        this._pendingCallback = null;
+       },
+
+       cancel(){
+        this.hide();
+       },
+
+       _setError(text){
+        const el = $('pin-lock-error'); if(el) el.textContent = text || '';
+       },
+
+       async unlock(){
+        const input = $('pin-lock-input');
+        const pin = (input?.value || '').trim();
+        this._setError('');
+        if(!/^\d{4,8}$/.test(pin)){ this._setError('PIN must be 4–8 digits.'); return; }
+        try {
+         const res = await appsPost('verifyAdminPin', { pin });
+         if(res && res.success === false) throw new Error(res.error || res.msg || 'Incorrect PIN');
+         this.setUnlock();
+         this.hide();
+         if(typeof this._pendingCallback === 'function'){
+          const cb = this._pendingCallback;
+          this._pendingCallback = null;
+          cb();
+         }
+         toast('Admin PIN accepted.', 'success');
+        } catch(e){
+         this._setError('❌ ' + (e.message || 'Incorrect PIN'));
+         if(input){ input.value = ''; input.focus(); }
+        }
+       }
+      };
     })();
 
 </script>
@@ -13681,7 +13774,7 @@ window.publishToWebsiteAction = async function() {
 <script>
 window.YARZ = window.YARZ || {};
 const __SUPA_URL = "https://xdzduowhwubogaavraap.supabase.co/rest/v1/";
-const __SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkemR1b3dod3Vib2dhYXZyYWFwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTEwNzgxNiwiZXhwIjoyMDk2NjgzODE2fQ.7UlQv2dKyKq-ZllQH1LJ4SFgAYXbl0dNHkV1xpH5G00";
+const __SUPA_KEY = "REMOVED-LEGACY-SERVICE-ROLE-KEY";
 
 const __supaHeaders = {
   'apikey': __SUPA_KEY,
@@ -13717,6 +13810,7 @@ async function __supaDelete(table, idCol, idVal) {
     if(!res.ok) throw new Error(await res.text());
     return true;
   } catch(e) { console.error("delete err:", table, e); return false; }
+}
 async function __supaDeleteBulk(table, ids) {
   try {
     const res = await fetch(__SUPA_URL + table + '?id=in.(' + ids.join(',') + ')', { method: 'DELETE', headers: __supaHeaders });
@@ -14278,107 +14372,11 @@ YARZ.goPage = function(page) {
   if (page === 'marketing') YARZ.marketing.load();
 };
 
-/* ===== Admin PIN Lock: gate sensitive tabs ===== */
-YARZ.pinLock = {
- _PROTECTED: ['web-control','activity','settings','ej'],
- _pendingPage: null,
- _pendingCallback: null,
-
- isProtected(page){
-  return this._PROTECTED.indexOf(page) !== -1;
- },
-
- isUnlocked(){
-  try {
-   const until = parseInt(sessionStorage.getItem('yarz_pin_unlocked_until') || '0', 10);
-   return until && Date.now() < until;
-  } catch(e){ return false; }
- },
-
- setUnlock(){
-  try {
-   sessionStorage.setItem('yarz_pin_unlocked_until', String(Date.now() + 15*60*1000));
-  } catch(e){}
- },
-
- clearUnlock(){
-  try { sessionStorage.removeItem('yarz_pin_unlocked_until'); } catch(e){}
- },
-
- async check(page, callback){
-  this._pendingPage = page;
-  this._pendingCallback = callback;
-  try {
-   const res = await appsPost('hasAdminPin', {});
-   const hasPin = !!(res && res.hasPin);
-   if(!hasPin){
-    this.setUnlock();
-    if(callback) callback();
-    return;
-   }
-   if(this.isUnlocked()){
-    if(callback) callback();
-    return;
-   }
-   this.show();
-  } catch(e){
-   // Network/auth hiccup: allow navigation to avoid lockout, but warn
-   console.warn('[PIN] hasAdminPin failed:', e);
-   if(callback) callback();
-  }
- },
-
- show(){
-  const modal = $('pin-lock-modal');
-  const input = $('pin-lock-input');
-  const err = $('pin-lock-error');
-  if(modal) modal.classList.add('show');
-  if(err) err.textContent = '';
-  if(input){ input.value = ''; setTimeout(()=>input.focus(), 50); }
- },
-
- hide(){
-  const modal = $('pin-lock-modal');
-  if(modal) modal.classList.remove('show');
-  this._pendingPage = null;
-  this._pendingCallback = null;
- },
-
- cancel(){
-  this.hide();
- },
-
- _setError(text){
-  const el = $('pin-lock-error'); if(el) el.textContent = text || '';
- },
-
- async unlock(){
-  const input = $('pin-lock-input');
-  const pin = (input?.value || '').trim();
-  this._setError('');
-  if(!/^\d{4,8}$/.test(pin)){ this._setError('PIN must be 4–8 digits.'); return; }
-  try {
-   const res = await appsPost('verifyAdminPin', { pin });
-   if(res && res.success === false) throw new Error(res.error || res.msg || 'Incorrect PIN');
-   this.setUnlock();
-   this.hide();
-   if(typeof this._pendingCallback === 'function'){
-    const cb = this._pendingCallback;
-    this._pendingCallback = null;
-    cb();
-   }
-   try { window._yarzToast('Admin PIN accepted.', 'success'); } catch(e){}
-  } catch(e){
-   this._setError('❌ ' + (e.message || 'Incorrect PIN'));
-   if(input){ input.value = ''; input.focus(); }
-  }
- }
-};
-
 const __origGoPageForPin = YARZ.goPage;
 YARZ.goPage = function(page) {
   // Only enforce PIN for sensitive tabs when the user is actually logged in.
   // The login screen itself must remain reachable before any session exists.
+  // YARZ.pinLock is defined inside the main IIFE so it has access to appsPost/toast/$.
   const hasSession = !!(localStorage.getItem('yarz_admin_session_v2') || '');
   if (hasSession && YARZ.pinLock && YARZ.pinLock.isProtected(page)) {
     YARZ.pinLock.check(page, () => __origGoPageForPin.call(this, page));
