@@ -5016,8 +5016,8 @@ table tbody tr:hover{ background:var(--surface-2); }
     </div>
     <div class="field" style="padding:16px;border-radius:16px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.18)">
      <div style="font-weight:700;font-size:13.5px;margin-bottom:10px;color:var(--success)"><i class="ri-user-line"></i> Change Username</div>
-     <label style="font-size:12px">Current Username</label>
-     <input id="adm-cur-user" class="input" type="text" readonly value="" style="opacity:0.7;cursor:not-allowed">
+     <label style="font-size:12px">Current Username <span style="opacity:0.6;font-weight:500">(display only)</span></label>
+     <div id="adm-cur-user" class="input" style="display:flex;align-items:center;height:40px;background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.22);color:var(--ink-1);cursor:default;user-select:all" title="Current admin username (display only)"></div>
      <label style="font-size:12px;margin-top:10px;display:block">New Username <span class="req">*</span></label>
      <input id="adm-new-user" class="input" type="text" placeholder="Enter new username" autocomplete="username">
      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
@@ -12001,7 +12001,7 @@ YARZ.settings = {
   // Populate the current-username field on render. Safe to call repeatedly.
   _fillAdminIdentity(){
    try {
-    const u = $('adm-cur-user'); if (u) u.value = (window._adminUser || state.adminUser || (state.data && state.data.adminUser) || '').toString();
+    const u = $('adm-cur-user'); if (u) u.textContent = (window._adminUser || state.adminUser || (state.data && state.data.adminUser) || '').toString();
    } catch(e) {}
   },
 
@@ -12052,7 +12052,7 @@ YARZ.settings = {
   },
 
   async changeUsername(){
-   const cur = ($('adm-cur-user')?.value || '');
+   const cur = ($('adm-cur-user')?.textContent || '');
    const next = ($('adm-new-user')?.value || '').trim();
    this._setUserMsg('');
    if (!next)            { this._setUserMsg('Please enter a new username.', 'error'); return; }
@@ -12067,7 +12067,7 @@ YARZ.settings = {
     this._setUserMsg('✅ ' + (res?.msg || 'Username updated.'), 'success');
     // Update local state and refresh the field
     try { window._adminUser = next; state.adminUser = next; } catch(e) {}
-    $('adm-cur-user').value = next;
+    $('adm-cur-user').textContent = next;
     $('adm-new-user').value = '';
     toast('Username updated.', 'success');
    } catch(e){
