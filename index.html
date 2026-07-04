@@ -5150,6 +5150,25 @@ table tbody tr:hover{ background:var(--surface-2); }
    </div>
   </div>
 
+  <!-- ✅ v18.8: Manual Block Section -->
+  <div class="card" style="padding:18px; margin-bottom:14px; border:2px dashed rgba(230,0,35,0.3); background:rgba(230,0,35,0.02)">
+   <div style="font-size:14px; font-weight:700; color:var(--danger); margin-bottom:12px"><i class="ri-forbid-line"></i> Manually Block a Device</div>
+   <div style="font-size:12px; color:var(--ink-2); margin-bottom:12px">Enter a Device ID, Composite Hash, IP Address, or Visitor ID to permanently block. The customer will see a fake success page and never receive their order.</div>
+   <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end">
+    <div style="flex:1; min-width:250px">
+     <label style="font-size:11px; font-weight:600; color:var(--ink-3); display:block; margin-bottom:4px">Device ID / IP / Composite Hash / Visitor ID</label>
+     <input id="manual-block-input" class="input" placeholder="e.g. a1b2c3d4... or 192.168.1.1" style="font-size:13px; font-family:monospace">
+    </div>
+    <div style="min-width:160px">
+     <label style="font-size:11px; font-weight:600; color:var(--ink-3); display:block; margin-bottom:4px">Reason</label>
+     <input id="manual-block-reason" class="input" placeholder="e.g. Fake order" style="font-size:13px">
+    </div>
+    <button class="btn btn-red" onclick="YARZ.firewall.blockManually()" style="height:38px; white-space:nowrap">
+     <i class="ri-forbid-line"></i> Block Now
+    </button>
+   </div>
+  </div>
+
   <!-- Device Fingerprints Section -->
   <div class="card" style="padding:18px; margin-bottom:14px">
    <div class="section-title" style="margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px">
@@ -9126,7 +9145,7 @@ Team YARZ`;
           ${o.riskSignals ? `<div style="font-size:11px;color:var(--ink-2);margin-top:2px">${esc(o.riskSignals)}</div>` : ''}
         </div>
       </div>
-      <button class="btn btn-red btn-xs" style="margin-left:auto" onclick="event.stopPropagation();YARZ.goPage('firewall');setTimeout(()=>{document.getElementById('firewall-search').value='${esc(o.deviceId)}';YARZ.firewall.filter();},200)" title="View in Firewall">Block</button>
+       <button class="btn btn-red btn-xs" style="margin-left:auto" onclick="event.stopPropagation();YARZ.ord.blockFromOrder('${esc(o.orderId)}','${esc(o.deviceId||'')}','${esc(o.ip||'')}','${esc(o.customer||'')}',${o.riskScore||0})" title="Block this customer"><i class="ri-forbid-line"></i> Block</button>
     </div>` : ''}
   </div>
   ` : ''}
@@ -9710,22 +9729,86 @@ Team YARZ`;
  });
  },
 
- async _permanentlyDeleteWebOrder(orderId){
- showLoader('Deleting order...');
- try {
- const res = await appsPost('deleteWebsiteOrder', { orderId });
- if(res && res.success===false) throw new Error(res.error||res.msg||'Failed');
- // ✅ v15.51 MULTI-ITEM FIX: A multi-item order has N rows sharing the
- // same orderId — remove ALL of them locally so the cart disappears
- // entirely instead of leaving 2 orphan items visible until refresh.
- state.data.websiteOrders = state.data.websiteOrders.filter(x => x.orderId !== orderId);
- this.updateCounts();
- this.renderWebsite();
- YARZ.updateBadges();
-  toast('Order deleted','success');
-  try{ if(window.YARZ_API && YARZ_API.flushAllCaches) YARZ_API.flushAllCaches(); }catch(e){}
-  } catch(e){ toast(e.message,'error'); }
-  finally { hideLoader(); }
+  async _permanentlyDeleteWebOrder(orderId){
+  showLoader('Deleting order...');
+  try {
+  const res = await appsPost('deleteWebsiteOrder', { orderId });
+  if(res && res.success===false) throw new Error(res.error||res.msg||'Failed');
+  // ✅ v15.51 MULTI-ITEM FIX: A multi-item order has N rows sharing the
+  // same orderId — remove ALL of them locally so the cart disappears
+  // entirely instead of leaving 2 orphan items visible until refresh.
+  state.data.websiteOrders = state.data.websiteOrders.filter(x => x.orderId !== orderId);
+  this.updateCounts();
+  this.renderWebsite();
+  YARZ.updateBadges();
+   toast('Order deleted','success');
+   try{ if(window.YARZ_API && YARZ_API.flushAllCaches) YARZ_API.flushAllCaches(); }catch(e){}
+   } catch(e){ toast(e.message,'error'); }
+   finally { hideLoader(); }
+   },
+
+  // ✅ v18.8: Block customer directly from Orders section
+  blockFromOrder(orderId, deviceId, ip, customerName, riskScore) {
+    if (!deviceId && !ip) {
+      toast('No Device ID or IP found for this order. Customer may not have fortress.js loaded.', 'warning');
+      return;
+    }
+    const identifier = deviceId || ip;
+    const riskLabel = riskScore >= 70 ? '🔴 HIGH' : riskScore >= 40 ? '🟡 MEDIUM' : '🟢 LOW';
+    const html = `
+      <div class="modal-header">
+        <h3><i class="ri-forbid-line" style="color:var(--danger)"></i> Block Customer</h3>
+        <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
+      </div>
+      <div style="padding:4px 0">
+        <div style="background:rgba(230,0,35,0.06);border:1px solid rgba(230,0,35,0.2);border-radius:8px;padding:14px;margin-bottom:14px">
+          <div style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:8px">⚠️ You are about to permanently block this customer</div>
+          <div style="font-size:12px;color:var(--ink-2);line-height:1.6">
+            <b>Customer:</b> ${esc(customerName || 'Unknown')}<br>
+            <b>Order:</b> #${esc(orderId)}<br>
+            ${deviceId ? `<b>Device ID:</b> <code style="font-size:11px;word-break:break-all">${esc(deviceId)}</code><br>` : ''}
+            ${ip ? `<b>IP Address:</b> <code style="font-size:11px">${esc(ip)}</code><br>` : ''}
+            <b>Risk Score:</b> ${riskLabel} (${riskScore}/100)
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <label style="font-size:12px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px">Block Reason (optional)</label>
+          <input id="block-reason-input" class="input" placeholder="e.g. Fake order, repeated cancellation..." style="font-size:13px">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-ghost" onclick="YARZ.closeModal()">Cancel</button>
+          <button class="btn btn-red" onclick="YARZ.ord._confirmBlockFromOrder('${esc(identifier)}','${esc(customerName||'')}',document.getElementById('block-reason-input').value)">
+            <i class="ri-forbid-line"></i> Block Permanently
+          </button>
+        </div>
+      </div>
+    `;
+    $('modal-content').innerHTML = html;
+    $('modal-overlay').classList.add('show');
+  },
+
+  async _confirmBlockFromOrder(deviceId, customerName, reason) {
+    YARZ.closeModal();
+    showLoader('Blocking customer...');
+    try {
+      const res = await appsPost('__fortress_block', {
+        deviceId: deviceId,
+        blockedBy: 'admin',
+        reason: reason || 'fake_order_from_orders_tab',
+        blockType: 'hard',
+        expiresAt: ''
+      });
+      if (res && res.ok) {
+        toast('🚫 Customer blocked permanently: ' + (customerName || deviceId.slice(0, 16) + '…'), 'success');
+        if (YARZ.firewall && YARZ.firewall.refresh) YARZ.firewall.refresh();
+      } else {
+        toast('Block failed: ' + (res.msg || 'unknown error'), 'error');
+      }
+    } catch (e) {
+      toast('Block error: ' + e.message, 'error');
+    } finally {
+      hideLoader();
+    }
   },
 
   async archiveCompleted() {
@@ -14232,6 +14315,21 @@ window.publishToWebsiteAction = async function() {
       async blockFromFp(deviceId) {
         if (!confirm('Block this device permanently?\n\n' + deviceId + '\n\nIt will be added to the shadow-ban list.')) return;
         await this.block(deviceId, { reason: 'admin_panel', by: 'admin' });
+      },
+      // ✅ v18.8: Manual block from Protection tab input
+      async blockManually() {
+        const input = document.getElementById('manual-block-input');
+        const reasonInput = document.getElementById('manual-block-reason');
+        const identifier = (input ? input.value : '').trim();
+        const reason = (reasonInput ? reasonInput.value : '').trim();
+        if (!identifier) {
+          toast('Please enter a Device ID, IP, Composite Hash, or Visitor ID', 'warning');
+          return;
+        }
+        if (!confirm('Block this device permanently?\n\n' + identifier + '\n\nThe customer will see a fake success page and never receive orders.')) return;
+        await this.block(identifier, { reason: reason || 'manual_block_from_protection_tab', by: 'admin' });
+        if (input) input.value = '';
+        if (reasonInput) reasonInput.value = '';
       },
       async confirmClearAll() {
         if (!confirm('⚠️ Clear ALL blocked devices?\n\nThis archives every entry (sets status=archived). You can still find them in the archive view later.')) return;

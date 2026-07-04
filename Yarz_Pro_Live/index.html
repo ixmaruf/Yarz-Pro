@@ -9088,7 +9088,7 @@ Team YARZ`;
           ${o.riskSignals ? `<div style="font-size:11px;color:var(--ink-2);margin-top:2px">${esc(o.riskSignals)}</div>` : ''}
         </div>
       </div>
-      <button class="btn btn-red btn-xs" style="margin-left:auto" onclick="event.stopPropagation();YARZ.goPage('firewall');setTimeout(()=>{document.getElementById('firewall-search').value='${esc(o.deviceId)}';YARZ.firewall.filter();},200)" title="View in Firewall">Block</button>
+       <button class="btn btn-red btn-xs" style="margin-left:auto" onclick="event.stopPropagation();YARZ.ord.blockFromOrder('${esc(o.orderId)}','${esc(o.deviceId||'')}','${esc(o.ip||'')}','${esc(o.customer||'')}',${o.riskScore||0})" title="Block this customer"><i class="ri-forbid-line"></i> Block</button>
     </div>` : ''}
   </div>
   ` : ''}
