@@ -811,6 +811,14 @@
   async function fortressClearAll(){ return passthroughOrRpc("fortress_clear_all"); }
   async function fortressLogEvent(p){ return passthroughOrRpc("fortress_log_event", p); }
 
+  async function fortressGetFingerprints(p) {
+    var db = getWriteDb(); await ensureAuth();
+    var limit = (p && p.limit) || 200;
+    var r = await db.from("device_fingerprints").select("*").order("last_seen", { ascending: false }).limit(limit);
+    if (r.error) throw new Error(r.error.message);
+    return ok({ fingerprints: r.data || [] });
+  }
+
   async function passthroughOrRpc(fn, args) {
     var db = getWriteDb(); await ensureAuth();
     try {
@@ -927,6 +935,7 @@
         case "clearfinancialsonly": return await clearFinancialsOnly();
         case "clearinventoryonly": return await clearInventoryOnly();
         case "__fortress_lookup": return await fortressLookup();
+        case "__fortress_get_fingerprints": return await fortressGetFingerprints(payload || {});
         case "__fortress_block": return await fortressBlock(payload || {});
         case "__fortress_unblock": return await fortressUnblock(payload || {});
         case "__fortress_clear_all": return await fortressClearAll();
