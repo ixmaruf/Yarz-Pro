@@ -15,6 +15,7 @@
  * ✅ FIX #29: Form field name aliases (oid/cust/ph/prod/cat/amt, etc.)
  * ✅ FIX #31: delete_customers no longer misroutes to deleteProduct
  * ✅ FIX #33: No-op handlers for diagnoseS3XL/githubSyncNow/publishToCloudflare
+ * ✅ v2.1: Bulk Edit now syncs delivery charges to delivery_charges table
  * =====================================================================
  */
 (function() {
@@ -663,6 +664,15 @@
       }
       if (p.sizeType !== null && p.sizeType !== undefined) shared.size_type = p.sizeType;
       if (p.accessory)      shared.accessory = p.accessory === "yes" ? "Yes" : (p.accessory === "no" ? "No" : p.accessory);
+      
+      // ✅ SYNC: Also update delivery_charges table so website shows new charges
+      if (p.delInside !== undefined && p.delInside !== null && p.delInside !== "") {
+        await db.from("delivery_charges").update({ charge: Number(p.delInside) || 0 }).eq("id", "inside_narayanganj");
+      }
+      if (p.delOutside !== undefined && p.delOutside !== null && p.delOutside !== "") {
+        await db.from("delivery_charges").update({ charge: Number(p.delOutside) || 0 }).eq("id", "outside_narayanganj");
+      }
+      
       for (var i = 0; i < p.names.length; i++) {
         products.push(Object.assign({ product: p.names[i] }, shared));
       }
