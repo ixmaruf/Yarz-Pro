@@ -6157,9 +6157,10 @@ const state = {
  adTracker: [],
  expenses: [],
   monthlySummaries: [],
- deliveryCharges: [],
- settings: {}
- },
+  deliveryCharges: [],
+  settings: {},
+  deviceModels: {}
+  },
  loaded: false,
  currentPage: 'home'
 };
@@ -6704,6 +6705,13 @@ async function loadMonthlySummaries(){
  } catch(e){ state.data.monthlySummaries = []; }
 }
 
+async function loadDeviceModels(){
+  try {
+    var map = await appsPost('load_device_models');
+    if (map && typeof map === 'object') state.data.deviceModels = map;
+  } catch(e) {}
+}
+
 async function loadSettings(){
  try {
  const rows = await sheetReadFormatted('SETTINGS!A2:B2000');
@@ -6766,14 +6774,15 @@ const YARZ = window.YARZ = {
  // own state.data.* to [] on failure, so the panel renders with whatever
  // loaded and the owner is never staring at a blank dashboard.
  await Promise.allSettled([
-  loadInventory(),
-  loadOrders(),
-  loadWebsiteOrders(),
-  loadTransactions(),
-  loadAdTracker(),
-  loadExpenses(),
-   loadMonthlySummaries(),
-  loadSettings()
+   loadInventory(),
+   loadOrders(),
+   loadWebsiteOrders(),
+   loadTransactions(),
+   loadAdTracker(),
+   loadExpenses(),
+    loadMonthlySummaries(),
+   loadSettings(),
+   loadDeviceModels()
  ]);
  await loadDeliveryCharges().catch(()=>{});
    if(typeof YARZ._patchInventoryPendingOrders === 'function') YARZ._patchInventoryPendingOrders();
@@ -9122,7 +9131,10 @@ Team YARZ`;
     </div>
     ${o.deviceInfo?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${(()=>{
      try{const di=typeof o.deviceInfo==='string'?JSON.parse(o.deviceInfo):o.deviceInfo;const c=[];
-     if(di.brand){var db=di.brand;if(db==='Android'&&di.modelCode){var mc=di.modelCode;if(/^SM-|^SC-|^GT-/i.test(mc))db='Samsung';else if(/^M\d{4}/i.test(mc))db='Xiaomi';else if(/^RMX/i.test(mc))db='Realme';else if(/^CPH/i.test(mc))db='Oppo';else if(/^V\d{4}/i.test(mc))db='Vivo';else if(/^IN\d{4}|^LE\d{4,5}/i.test(mc))db='OnePlus';}c.push('<span class="oc-chip b" style="font-size:10px"><i class="ri-smartphone-line"></i><b>'+esc(db)+'</b>'+(di.model?' '+esc(di.model):'')+'</span>');}
+     if(di.brand){var db=di.brand;if(db==='Android'&&di.modelCode){var mc=di.modelCode;if(/^SM-|^SC-|^GT-/i.test(mc))db='Samsung';else if(/^M\d{4}/i.test(mc))db='Xiaomi';else if(/^RMX/i.test(mc))db='Realme';else if(/^CPH/i.test(mc))db='Oppo';else if(/^V\d{4}/i.test(mc))db='Vivo';else if(/^IN\d{4}|^LE\d{4,5}/i.test(mc))db='OnePlus';}
+      var mn = (state.data.deviceModels && di.modelCode && state.data.deviceModels[di.modelCode]) ? state.data.deviceModels[di.modelCode] : '';
+      var modelDisplay = mn || di.model || '';
+      c.push('<span class="oc-chip b" style="font-size:10px"><i class="ri-smartphone-line"></i><b>'+esc(db)+'</b>'+(modelDisplay?' '+esc(modelDisplay):'')+'</span>');}
      if(di.gpu)c.push('<span class="oc-chip p" style="font-size:10px"><i class="ri-cpu-line"></i>'+esc(di.gpu)+'</span>');
      if(di.isMobile==='true'||di.isMobile===true)c.push('<span class="oc-chip g" style="font-size:10px">📱</span>');
      if(di.isDesktop==='true'||di.isDesktop===true)c.push('<span class="oc-chip o" style="font-size:10px">🖥️</span>');

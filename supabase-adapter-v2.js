@@ -837,6 +837,18 @@
   async function fortressClearAll(){ return passthroughOrRpc("fortress_clear_all"); }
   async function fortressLogEvent(p){ return passthroughOrRpc("fortress_log_event", p); }
 
+  // v2.6: Fetch all known device models for marketing name lookup
+  async function loadDeviceModels() {
+    try {
+      var db = getWriteDb(); await ensureAuth();
+      var r = await db.from("device_models").select("model_code,brand,marketing_name");
+      if (r.error) throw r.error;
+      var map = {};
+      (r.data || []).forEach(function(d) { map[d.model_code] = d.brand + " " + d.marketing_name; });
+      return map;
+    } catch(e) { return {}; }
+  }
+
   async function fortressGetFingerprints(p) {
     var db = getWriteDb(); await ensureAuth();
     var limit = (p && p.limit) || 200;
@@ -962,6 +974,7 @@
         case "clearinventoryonly": return await clearInventoryOnly();
         case "__fortress_lookup": return await fortressLookup();
         case "__fortress_get_fingerprints": return await fortressGetFingerprints(payload || {});
+        case "load_device_models": return await loadDeviceModels();
         case "__fortress_block": return await fortressBlock(payload || {});
         case "__fortress_unblock": return await fortressUnblock(payload || {});
         case "__fortress_clear_all": return await fortressClearAll();
