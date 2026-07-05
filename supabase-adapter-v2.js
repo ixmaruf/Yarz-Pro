@@ -598,8 +598,8 @@
   }
 
   async function saveOrderFromForm(p) {
-    var db = getWriteDb();
-    await ensureAuth();
+    var db = getDb();
+    if (!db) throw new Error("Supabase not initialized");
     // FIX #29: Accept both short (GAS) and long (Supabase) field names
     var _oid = p.orderId || p.oid || ("MAN-" + Date.now());
     var _cust = p.custName || p.cust || p.customer || "";
@@ -626,8 +626,7 @@
   }
 
   async function recordSale(p) {
-    var db = getWriteDb();
-    await ensureAuth();
+    var db = getDb();
     var name = p.product; if (!name) throw new Error("product required");
     var size = (p.size || "").toUpperCase();
     var qty = Number(p.qty) || 0;
