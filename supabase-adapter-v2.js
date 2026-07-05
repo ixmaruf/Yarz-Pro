@@ -982,7 +982,7 @@
         case "deletewebsiteorder": return await deleteWebsiteOrder(payload || {});
         case "deletemanualorder": return await deleteManualOrder(payload || {});
         case "archivecompletedorders": return await archiveCompletedOrders();
-        case "saveorderfromform": return await saveOrderFromForm(payload || {});
+        case "saveorderfromform": case "saveOrderFromForm": return await saveOrderFromForm(payload || {});
         case "saveadfromform": return await saveAdFromForm(payload || {});
         case "saveexpensefromform": return await saveExpenseFromForm(payload || {});
         case "savereturnfromform": return await saveReturnFromForm(payload || {});
