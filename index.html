@@ -14044,9 +14044,9 @@ window.publishToWebsiteAction = async function() {
         }
       },
       render() {
-        this._renderFingerprints();
-        this._renderThreats();
-        this._renderBlocks();
+        try { this._renderFingerprints(); } catch(e) {}
+        try { this._renderThreats(); } catch(e) {}
+        try { this._renderBlocks(); } catch(e) {}
       },
       _riskBadge(score) {
         if (score >= 70) return '<span style="background:var(--danger);color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">HIGH ' + score + '</span>';
