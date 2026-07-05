@@ -6533,8 +6533,11 @@ async function loadOrders(){
     var r = await db.from("orders").select("*").order("created_at", { ascending: false });
     if (r.error) throw r.error;
     state.data.orders = (r.data || []).map(function(row) {
+      // Convert Supabase timestamp to ISO format for JS Date parsing
+      var createdDate = '';
+      try { createdDate = row.created_at ? new Date(row.created_at).toISOString() : ''; } catch(e) { createdDate = row.created_at || ''; }
       return {
-        date: row.date || row.created_at || '',
+        date: createdDate,
         orderId: row.order_id || '',
         customer: row.cust_name || '',
         phone: row.cust_phone || '',
