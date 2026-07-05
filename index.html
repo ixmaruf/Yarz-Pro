@@ -14144,7 +14144,7 @@ window.publishToWebsiteAction = async function() {
           const addressesUsed = f.addresses_used || [];
           const riskSignals = f.risk_signals || {};
           const triggeredSignals = Object.entries(riskSignals).filter(([k, v]) => v === true || v === 1).map(([k]) => k.replace(/_/g, ' '));
-          const lastSeen = f.last_seen || f.updated_at || f.created_at || '';
+          const lastSeen = f.last_seen_at || f.last_seen || f.updated_at || f.created_at || '';
           const createdAt = f.created_at || '';
           return `
             <div class="card" style="padding:14px;border-left:4px solid ${borderColor};${isBlocked ? 'background:rgba(230,0,35,0.04);' : ''}">

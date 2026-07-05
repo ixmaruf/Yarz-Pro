@@ -814,7 +814,7 @@
   async function fortressGetFingerprints(p) {
     var db = getWriteDb(); await ensureAuth();
     var limit = (p && p.limit) || 200;
-    var r = await db.from("device_fingerprints").select("*").order("last_seen", { ascending: false }).limit(limit);
+    var r = await db.from("device_fingerprints").select("*").order("last_seen_at", { ascending: false }).limit(limit);
     if (r.error) throw new Error(r.error.message);
     return ok({ fingerprints: r.data || [] });
   }
