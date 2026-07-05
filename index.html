@@ -1179,6 +1179,29 @@ body.light .load-overlay p{color:var(--ink)}
 }
 .copy-btn:active{transform:scale(0.95)}
 
+/* Order Detail — v2.0 Compact Sections */
+.oc-sec{margin-bottom:10px}
+.oc-sec-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-3);margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.oc-sec-title i{font-size:12px}
+.oc-cust{background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.oc-cust-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.oc-cust-name{font-size:14px;font-weight:700;color:var(--ink)}
+.oc-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:5px 14px;font-size:12px;line-height:1.5}
+.oc-grid-2>div{display:inline-flex;align-items:center;gap:4px}
+.oc-k{color:var(--ink-3);font-size:11px}
+.oc-v{font-weight:600;color:var(--ink)}
+.oc-chip{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:3px 8px;font-size:11px;border:1px solid var(--line);background:var(--surface-1,rgba(0,0,0,0.02))}
+.oc-chip i{font-size:12px;opacity:0.6}
+.oc-chip.b{background:rgba(59,130,246,0.06);border-color:rgba(59,130,246,0.18)}
+.oc-chip.p{background:rgba(168,85,247,0.06);border-color:rgba(168,85,247,0.18)}
+.oc-chip.o{background:rgba(249,115,22,0.06);border-color:rgba(249,115,22,0.18)}
+.oc-chip.g{background:rgba(34,197,94,0.06);border-color:rgba(34,197,94,0.18)}
+.oc-chip.r{background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.18);color:var(--danger)}
+.oc-risk{background:rgba(239,68,68,0.03);border:1px solid rgba(239,68,68,0.12);border-radius:8px;padding:8px 10px}
+.oc-risk-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.oc-sig{display:inline-flex;align-items:center;gap:3px;border-radius:4px;padding:2px 6px;font-size:10px;border:1px solid rgba(239,68,68,0.1);background:rgba(239,68,68,0.04)}
+.oc-sig b{font-weight:700}
+
 /* Price breakdown box */
 .oc-price-box{
  background:linear-gradient(135deg, rgba(34,197,94,0.06), rgba(34,197,94,0.02));
@@ -9072,126 +9095,50 @@ Team YARZ`;
   </div>`;
  }).join('') }
 
- <!-- Customer Info — Compact Receipt Style -->
- <div class="oc-customer-section" style="margin:10px 0;padding:10px 12px;background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px">
-   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-     <div style="font-size:14px;font-weight:700;color:var(--ink)">${esc(o.customer||'—')}</div>
-     <button class="copy-btn" style="width:26px;height:26px;padding:4px 6px;font-size:11px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.customer||'')}',this,'Copied')" title="Copy name"><i class="ri-file-copy-line"></i></button>
+ <!-- Customer + Device + Risk — Compact Professional Layout -->
+ <div class="oc-cust">
+   <div class="oc-cust-top">
+     <div class="oc-cust-name">${esc(o.customer||'—')}</div>
+     <button class="copy-btn" style="width:26px;height:26px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.customer||'')}',this,'Copied')"><i class="ri-file-copy-line"></i></button>
    </div>
-   <div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink-2)">
-     <div style="display:inline-flex;align-items:center;gap:4px">
-       <i class="ri-phone-line" style="font-size:12px;color:var(--brand);opacity:0.7"></i>
-       <span class="bn-num" style="font-weight:600;color:var(--ink)">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</span>
-       <button class="copy-btn" style="width:22px;height:22px;padding:2px;margin:0;font-size:10px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._normalizeBdPhone('${esc(o.phone||'')}')||'${esc(o.phone||'')}',this,'Phone Copied')"><i class="ri-file-copy-line"></i></button>
-     </div>
-     <div style="display:inline-flex;align-items:center;gap:4px">
-       <i class="ri-map-pin-2-line" style="font-size:12px;color:var(--brand);opacity:0.7"></i>
-       <span style="font-weight:600;color:var(--ink)">${esc(o.location||o.city||'—')}</span>
-       <button class="copy-btn" style="width:22px;height:22px;padding:2px;margin:0;font-size:10px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.location||o.city||'')}',this,'Location Copied')"><i class="ri-file-copy-line"></i></button>
-     </div>
-     <div style="display:inline-flex;align-items:center;gap:4px">
-       <i class="ri-wallet-3-line" style="font-size:12px;color:var(--brand);opacity:0.7"></i>
-       <span style="font-weight:600;color:var(--ink)">${esc(o.payment||'COD')}</span>
-     </div>
+   <div class="oc-grid-2">
+     <div><span class="oc-k">📞</span><span class="oc-v bn-num">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</span><button class="copy-btn" style="width:20px;height:20px;padding:1px;margin:0;font-size:10px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._normalizeBdPhone('${esc(o.phone||'')}')||'${esc(o.phone||'')}',this,'Phone Copied')"><i class="ri-file-copy-line"></i></button></div>
+     <div><span class="oc-k">📍</span><span class="oc-v">${esc(o.location||o.city||'—')}</span></div>
+     <div><span class="oc-k">💳</span><span class="oc-v">${esc(o.payment||'COD')}</span></div>
+     ${o.email ? `<div><span class="oc-k">✉️</span><span class="oc-v" style="font-size:11px">${esc(o.email)}</span></div>` : ''}
    </div>
-   ${o.email ? `<div style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:11.5px;color:var(--ink-2)">
-     <i class="ri-mail-line" style="font-size:12px;color:var(--brand);opacity:0.7"></i>
-     <span>${esc(o.email)}</span>
-   </div>` : ''}
-   ${o.address ? `<div style="margin-top:6px;font-size:11.5px;color:var(--ink-2);display:flex;align-items:flex-start;gap:4px">
-     <i class="ri-home-4-line" style="font-size:12px;color:var(--brand);opacity:0.7;flex-shrink:0;margin-top:1px"></i>
-     <span style="flex:1">${esc(o.address)}</span>
-     <button class="copy-btn" style="width:22px;height:22px;padding:2px;margin:0;font-size:10px" onclick="event.stopPropagation();YARZ.ord._copy('${esc((o.address||'')+(o.location?', '+o.location:''))}',this,'Address Copied')"><i class="ri-file-copy-line"></i></button>
-   </div>` : ''}
+   ${o.address ? `<div style="margin-top:6px;font-size:11.5px;color:var(--ink-2);display:flex;align-items:flex-start;gap:4px;border-top:1px dashed var(--line);padding-top:6px"><i class="ri-home-4-line" style="font-size:12px;opacity:0.5;flex-shrink:0;margin-top:1px"></i><span style="flex:1">${esc(o.address)}</span><button class="copy-btn" style="width:20px;height:20px;padding:1px;margin:0;font-size:10px" onclick="event.stopPropagation();YARZ.ord._copy('${esc((o.address||'')+(o.location?', '+o.location:''))}',this,'Address Copied')"><i class="ri-file-copy-line"></i></button></div>` : ''}
  </div>
 
-  <!-- ✅ v2.0: Device Tracking Info — Clean Redesign -->
-  ${o.deviceId || o.ip ? `
-  <div class="oc-device-section" style="margin-top:14px; border-top:1px dashed var(--line); padding-top:14px;">
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-2)">
-      <i class="ri-shield-check-line"></i> Device & Security
-    </div>
-
-    <!-- Identity Row -->
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-      ${o.ip ? `
-      <div style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11.5px">
-        <i class="ri-global-line" style="opacity:0.5"></i>
-        <span style="color:var(--ink-2)">IP:</span>
-        <b style="font-family:monospace">${esc(o.ip)}</b>
-        <button class="copy-btn" style="margin:0;padding:2px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.ip)}',this,'IP Copied')"><i class="ri-file-copy-line" style="font-size:11px"></i></button>
-      </div>` : ''}
-      ${o.country ? `
-      <div style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11.5px">
-        <span style="font-size:13px">${o.country === 'BD' ? '🇧🇩' : '🌍'}</span>
-        <b>${esc(o.country)}</b>
-      </div>` : ''}
-      ${o.asn ? `
-      <div style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11.5px">
-        <span style="color:var(--ink-2)">ASN:</span>
-        <b>${esc(o.asn)}</b>
-      </div>` : ''}
-    </div>
-
-    <!-- Device ID -->
-    ${o.deviceId ? `
-    <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px;font-size:11.5px">
-      <i class="ri-fingerprint-line" style="opacity:0.5"></i>
-      <span style="color:var(--ink-2)">Device:</span>
-      <code style="background:var(--bg-2);padding:2px 6px;border-radius:4px;font-size:10.5px">${esc(o.deviceId)}</code>
-      <button class="copy-btn" style="margin:0;padding:2px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.deviceId)}',this,'Device ID Copied')"><i class="ri-file-copy-line" style="font-size:11px"></i></button>
-    </div>` : ''}
-
-    <!-- Device Info — parsed from JSONB -->
-    ${o.deviceInfo ? `
-    <div style="margin-bottom:10px">
-      <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${(() => {
-          try {
-            const di = typeof o.deviceInfo === 'string' ? JSON.parse(o.deviceInfo) : o.deviceInfo;
-            const chips = [];
-            if (di.brand) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-smartphone-line" style="font-size:12px;color:#3b82f6"></i><b>' + esc(di.brand) + '</b>' + (di.model ? ' ' + esc(di.model) + (di.modelCode ? ' (' + esc(di.modelCode) + ')' : '') : '') + '</span>');
-            if (di.gpu) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-cpu-line" style="font-size:12px;color:#a855f7"></i><b>' + esc(di.gpu) + '</b>' + (di.gpuVendor ? ' (' + esc(di.gpuVendor) + ')' : '') + '</span>');
-            if (di.isDesktop === true || di.isDesktop === 'true') chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-computer-line" style="font-size:12px;color:#f97316"></i><b>Desktop</b></span>');
-            if (di.isMobile === true || di.isMobile === 'true') chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-smartphone-line" style="font-size:12px;color:#22c55e"></i><b>Mobile</b></span>');
-            if (di.screenWidth) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-landscape-line" style="font-size:12px;opacity:0.5"></i>' + esc(di.screenWidth) + 'x' + esc(di.screenHeight) + (di.pixelRatio ? ' @' + esc(di.pixelRatio) + 'x' : '') + '</span>');
-            if (di.cores) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-server-line" style="font-size:12px;opacity:0.5"></i>' + esc(di.cores) + ' cores · ' + esc(di.memory) + ' GB</span>');
-            if (di.ipCity || di.ipRegion) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-map-pin-line" style="font-size:12px;opacity:0.5"></i>' + esc(di.ipCity || '') + (di.ipRegion ? ', ' + esc(di.ipRegion) : '') + '</span>');
-            if (di.isHeadless) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:3px 7px;font-size:11px;color:var(--danger)"><i class="ri-robot-line"></i><b>HEADLESS</b></span>');
-            return chips.join('');
-          } catch(e) { return '<span style="font-size:11px;color:var(--ink-2)">' + esc(String(o.deviceInfo).substring(0, 150)) + '</span>'; }
-        })()}
-      </div>
-    </div>` : ''}
-
-    <!-- Risk Analysis — parsed signals -->
-    ${(o.riskScore > 0 || o.riskSignals) ? `
-    <div style="background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.15);border-radius:8px;padding:10px 12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-        <div style="display:flex;align-items:center;gap:6px">
-          <i class="ri-shield-keyhole-line" style="color:var(--danger)"></i>
-          <span style="font-size:12px;font-weight:700;color:var(--danger)">Risk Score: ${o.riskScore}/100</span>
-        </div>
-        <button class="btn btn-red btn-xs" onclick="event.stopPropagation();YARZ.ord.blockFromOrder('${esc(o.orderId)}','${esc(o.deviceId||'')}','${esc(o.ip||'')}','${esc(o.customer||'')}',${o.riskScore||0})" title="Block"><i class="ri-forbid-line"></i> Block</button>
-      </div>
-      ${o.riskSignals ? `
-      <div style="display:flex;flex-wrap:wrap;gap:4px">
-        ${(() => {
-          try {
-            const signals = typeof o.riskSignals === 'string' ? JSON.parse(o.riskSignals) : o.riskSignals;
-            if (!Array.isArray(signals)) return '';
-            return signals.filter(s => Array.isArray(s) && s[1] > 0).map(s => {
-              const name = s[0].replace(/_/g, ' ');
-              const val = s[1];
-              const color = val >= 50 ? 'var(--danger)' : val >= 20 ? '#f97316' : '#eab308';
-              return '<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12);border-radius:4px;padding:2px 6px;font-size:10.5px;color:' + color + '"><b>' + val + '</b> ' + esc(name) + '</span>';
-            }).join('');
-          } catch(e) { return '<span style="font-size:11px;color:var(--ink-2)">' + esc(String(o.riskSignals).substring(0, 200)) + '</span>'; }
-        })()}
-      </div>` : ''}
-    </div>` : ''}
-  </div>
-  ` : ''}
+ ${o.deviceId || o.ip ? `
+ <div class="oc-sec" style="margin-top:10px">
+   <div class="oc-sec-title"><i class="ri-shield-check-line" style="color:var(--brand)"></i> Device & Security</div>
+   <div style="display:flex;flex-wrap:wrap;gap:5px">
+     ${o.ip ? `<span class="oc-chip"><i class="ri-global-line"></i><b style="font-family:monospace;font-size:10.5px">${esc(o.ip)}</b><button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.ip)}',this,'IP Copied')"><i class="ri-file-copy-line"></i></button></span>` : ''}
+     ${o.country ? `<span class="oc-chip"><span style="font-size:12px">${o.country==='BD'?'🇧🇩':'🌍'}</span><b>${esc(o.country)}</b></span>` : ''}
+     ${o.asn ? `<span class="oc-chip"><i class="ri-server-line"></i>${esc(o.asn)}</span>` : ''}
+     ${o.deviceId ? `<span class="oc-chip"><i class="ri-fingerprint-line"></i><code style="font-size:10px">${esc(o.deviceId)}</code><button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.deviceId)}',this,'Copied')"><i class="ri-file-copy-line"></i></button></span>` : ''}
+   </div>
+   ${o.deviceInfo ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px">${(()=>{
+     try{
+       const di=typeof o.deviceInfo==='string'?JSON.parse(o.deviceInfo):o.deviceInfo;
+       const c=[];
+       if(di.brand)c.push('<span class="oc-chip b"><i class="ri-smartphone-line"></i><b>'+esc(di.brand)+'</b>'+(di.model?' '+esc(di.model)+(di.modelCode?' ('+esc(di.modelCode)+')':''):'')+'</span>');
+       if(di.gpu)c.push('<span class="oc-chip p"><i class="ri-cpu-line"></i><b>'+esc(di.gpu)+'</b>'+(di.gpuVendor?' ('+esc(di.gpuVendor)+')':'')+'</span>');
+       if(di.isDesktop===true||di.isDesktop==='true')c.push('<span class="oc-chip o"><i class="ri-computer-line"></i><b>Desktop</b></span>');
+       if(di.isMobile===true||di.isMobile==='true')c.push('<span class="oc-chip g"><i class="ri-smartphone-line"></i><b>Mobile</b></span>');
+       if(di.screenWidth)c.push('<span class="oc-chip"><i class="ri-landscape-line"></i>'+esc(di.screenWidth)+'x'+esc(di.screenHeight)+(di.pixelRatio?' @'+esc(di.pixelRatio)+'x':'')+'</span>');
+       if(di.cores)c.push('<span class="oc-chip"><i class="ri-server-line"></i>'+esc(di.cores)+' cores · '+esc(di.memory)+' GB</span>');
+       if(di.ipCity||di.ipRegion)c.push('<span class="oc-chip"><i class="ri-map-pin-line"></i>'+esc(di.ipCity||'')+(di.ipRegion?', '+esc(di.ipRegion):'')+'</span>');
+       if(di.isHeadless)c.push('<span class="oc-chip r"><i class="ri-robot-line"></i><b>HEADLESS</b></span>');
+       return c.join('');
+     }catch(e){return '<span style="font-size:11px;color:var(--ink-3)">'+esc(String(o.deviceInfo).substring(0,100))+'</span>';}
+   })()}</div>` : ''}
+   ${(o.riskScore>0||o.riskSignals)?`<div class="oc-risk" style="margin-top:6px">
+     <div class="oc-risk-head"><span style="font-size:11px;font-weight:700;color:var(--danger)"><i class="ri-shield-keyhole-line"></i> Risk ${o.riskScore}/100</span><button class="btn btn-red btn-xs" onclick="event.stopPropagation();YARZ.ord.blockFromOrder('${esc(o.orderId)}','${esc(o.deviceId||'')}','${esc(o.ip||'')}','${esc(o.customer||'')}',${o.riskScore||0})"><i class="ri-forbid-line"></i> Block</button></div>
+     ${o.riskSignals?`<div style="display:flex;flex-wrap:wrap;gap:3px">${(()=>{try{const s=typeof o.riskSignals==='string'?JSON.parse(o.riskSignals):o.riskSignals;if(!Array.isArray(s))return'';return s.filter(x=>Array.isArray(x)&&x[1]>0).map(x=>{const n=x[0].replace(/_/g,' ');const v=x[1];const cl=v>=50?'var(--danger)':v>=20?'#f97316':'#eab308';return'<span class="oc-sig" style="color:'+cl+'"><b>'+v+'</b> '+esc(n)+'</span>';}).join('')}catch(e){return'';}})()}</div>`:''}
+   </div>`:''}
+ </div>` : ''}
 
  <!-- ✅ v11.3: One-click courier block copy -->
  <button class="btn btn-primary btn-xs" style="width:100%;margin:8px 0;padding:10px;font-size:12.5px"
