@@ -9823,11 +9823,11 @@ Team YARZ`;
  // Determine next action based on current status
  let actionBtn = '';
  if(['Pending',''].includes(s)){
-  actionBtn = `<button class="btn btn-blue btn-xs" onclick="YARZ.ord.updateManualStatus('${esc(o.orderId)}','Shipped')"><i class="ri-truck-line"></i> Sent</button>`;
+   actionBtn = `<button class="btn btn-blue btn-xs" onclick="YARZ.ord.updateManualStatus('${esc(o.orderId)}','Shipped')"><i class="ri-truck-line"></i> Sent</button>`;
  } else if(['Shipped','Picked Up','Ready for Delivery','Handed to Courier','Processing'].includes(s)){
-  actionBtn = `<button class="btn btn-success btn-xs" onclick="YARZ.ord.updateManualStatus('${esc(o.orderId)}','Delivered')"><i class="ri-checkbox-circle-line"></i> Complete</button>`;
+   actionBtn = `<button class="btn btn-success btn-xs" onclick="YARZ.ord.updateManualStatus('${esc(o.orderId)}','Delivered')"><i class="ri-checkbox-circle-line"></i> Complete</button>`;
  } else {
-  actionBtn = `<span class="chip chip-green"><i class="ri-check-line"></i> Done</span>`;
+   actionBtn = `<span class="chip chip-green"><i class="ri-check-line"></i> Done</span>`;
  }
 
  const parsed = parseCourierField(o.courier);
@@ -9835,28 +9835,104 @@ Team YARZ`;
  const searchQ = ($('mo-search')?.value||'').trim();
  const trackingHtml = renderTrackingBlock(o.courier, o.orderId, searchQ);
  const addTrackBtn = !hasTracking
-  ? `<button class="btn btn-amber btn-xs" onclick="YARZ.ord.editCourierId('${esc(o.orderId)}')" title="Courier Tracking ID Enter/Paste"><i class="ri-add-line"></i> Tracking ID Add</button>`
-  : '';
+   ? `<button class="btn btn-amber btn-xs" onclick="YARZ.ord.editCourierId('${esc(o.orderId)}')" title="Courier Tracking ID Enter/Paste"><i class="ri-add-line"></i> Tracking ID Add</button>`
+   : '';
 
- return `<div class="list-item" style="flex-wrap:wrap">
-  <div class="thumb"><i class="ri-shopping-bag-3-line"></i></div>
-  <div class="li-body" style="min-width:0;flex:1">
-  <div class="li-title">#${esc(o.orderId)} — ${esc(o.customer)}</div>
-  <div class="li-sub"><i class="ri-phone-line"></i> <span class="bn-num">${esc(o.phone)}</span> · <span style="cursor:pointer;color:var(--brand);font-weight:700;text-decoration:underline;font-size:13.5px;" onclick="YARZ.inv.showDetails('${esc(o.product)}')"><i class="ri-shopping-bag-line"></i> ${esc(o.product)}</span> (${esc(_ordSize(o.size))}×<span class="bn-num">${toBn(o.qty)}</span>)</div>
-  <div class="li-sub bn-num">${fmtDateTime(o.date)} · ${esc(o.payment)}</div>
-  ${trackingHtml}
-  <div class="li-actions" style="margin-top:8px;flex-wrap:wrap;gap:6px">
+ // Product image
+ const prodObj = (state.data.inventory || []).find(p => p.name === o.product);
+ const prodImg = prodObj && prodObj.img1 ? getImgSrc(prodObj.img1) : '';
+ const prodImgStyle = prodImg ? `background-image:url('${esc(prodImg)}')` : '';
+
+ // Price calculations
+ const qty = parseInt(o.qty) || 1;
+ const price = parseFloat(o.price) || 0;
+ const subtotal = price * qty;
+ const delivery = parseFloat(o.delivery) || 0;
+ const total = parseFloat(o.total) || (subtotal + delivery);
+ const timeStr = o.date ? `${fmtTimeBn(new Date(o.date))} · ${fmtDateBn(new Date(o.date))}` : '—';
+ const relTime = o.date ? relativeTime(new Date(o.date)) : '';
+
+ return `<div class="order-card" id="ord-${esc(o.orderId)}">
+ <div class="order-head" style="cursor:pointer;" onclick="const b=document.getElementById('ob-${esc(o.orderId)}'); const i=this.querySelector('.exp-icon'); if(b.style.display==='none'){b.style.display='block';i.style.transform='rotate(180deg)';}else{b.style.display='none';i.style.transform='rotate(0deg)';}">
+  <div style="min-width:0;flex:1">
+  <div class="order-id"><i class="ri-hashtag" style="font-size:12px"></i>${esc(o.orderId)} <span style="font-size:10px;background:rgba(168,85,247,0.1);color:#7c3aed;padding:1px 6px;border-radius:4px;font-weight:600;margin-left:4px">MANUAL</span></div>
+  <div class="order-name"><i class="ri-user-3-fill"></i>${esc(o.customer||'Customer')}</div>
+  <div class="order-meta">
+  <span><i class="ri-time-line"></i> <span class="bn-num">${esc(timeStr)}</span></span>
+  ${relTime ? `<span style="opacity:0.7; margin-left: 6px;">· ${esc(relTime)}</span>` : ''}
+  </div>
+  </div>
+  <div style="text-align:right;flex-shrink:0; display:flex; align-items:center; gap:16px;">
+  <div>
+  <div class="order-total bn-num">${fmtBDT(total)}<small>Total Payment</small></div>
+  <div style="margin-top:8px"><span class="chip ${sc}">${esc(s)}</span></div>
+  </div>
+  <div class="exp-icon-wrap">
+  <i class="ri-arrow-down-s-line exp-icon" style="transition:transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); font-size: 20px;"></i>
+  </div>
+  </div>
+ </div>
+
+ <div class="order-body" id="ob-${esc(o.orderId)}" style="display:none; padding-top:12px; margin-top:10px; border-top:1px dashed var(--line);">
+
+ <!-- PRODUCT CARD -->
+ <div style="background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-3);margin-bottom:6px;display:flex;align-items:center;gap:4px"><i class="ri-shopping-bag-3-line" style="font-size:11px"></i> Product</div>
+  <div style="display:flex;gap:8px;align-items:center">
+   <div style="width:40px;height:40px;border-radius:8px;background:var(--bg-2);background-image:url('${esc(prodImg)}');background-size:cover;background-position:center;flex-shrink:0;display:flex;align-items:center;justify-content:center">${prodImg?'':'<i class="ri-shopping-bag-3-line" style="opacity:0.3;font-size:16px"></i>'}</div>
+   <div style="flex:1;min-width:0">
+    <div style="font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.product||'—')}</div>
+    <div style="font-size:11px;color:var(--ink-3);margin-top:1px">${o.size?`<span style="background:var(--bg-2);padding:1px 5px;border-radius:4px">${esc(_ordSize(o.size))}</span> · `:''}Qty: <b>${toBn(qty)}</b></div>
+   </div>
+   <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--ink)">${fmtBDT(subtotal)}</div><div style="font-size:10px;color:var(--ink-3)">${fmtBDT(price)}/pc</div></div>
+  </div>
+ </div>
+
+ <!-- CUSTOMER CARD -->
+ <div style="background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-3);margin-bottom:6px;display:flex;align-items:center;gap:4px"><i class="ri-user-3-line" style="font-size:11px"></i> Customer</div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+   <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--brand,#3b82f6),#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;flex-shrink:0">${esc((o.customer||'?').charAt(0).toUpperCase())}</div>
+   <div style="min-width:0">
+    <div style="font-size:14px;font-weight:700;color:var(--ink);line-height:1.2">${esc(o.customer||'—')}</div>
+    <div style="font-size:11.5px;color:var(--ink-3);margin-top:1px;display:flex;align-items:center;gap:4px"><i class="ri-phone-line" style="font-size:10px"></i><span class="bn-num">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</span><button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._normalizeBdPhone('${esc(o.phone||'')}')||'${esc(o.phone||'')}',this,'Copied')"><i class="ri-file-copy-line"></i></button></div>
+   </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:11.5px">
+   <div style="display:inline-flex;align-items:center;gap:4px;background:${(o.location||'').includes('Inside')?'rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2)':'rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2)'};padding:3px 8px;border-radius:6px;font-weight:600;color:${(o.location||'').includes('Inside')?'#16a34a':'#ea580c'}"><i class="ri-map-pin-2-line" style="font-size:11px"></i>${esc(o.location||'—')}</div>
+   <div style="display:inline-flex;align-items:center;gap:4px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);padding:3px 8px;border-radius:6px;font-weight:600;color:#7c3aed"><i class="ri-wallet-3-line" style="font-size:11px"></i>${esc(o.payment||'COD')}</div>
+  </div>
+  ${o.address?`<div style="margin-top:7px;padding-top:7px;border-top:1px dashed var(--line);font-size:11px;color:var(--ink-3);display:flex;align-items:flex-start;gap:4px;line-height:1.4"><i class="ri-home-4-line" style="font-size:11px;flex-shrink:0;margin-top:1px"></i><span style="flex:1">${esc(o.address)}</span></div>`:''}
+ </div>
+
+ <!-- PAYMENT CARD -->
+ <div style="background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-3);margin-bottom:6px;display:flex;align-items:center;gap:4px"><i class="ri-money-dollar-circle-line" style="font-size:11px"></i> Payment</div>
+  <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-2);padding:2px 0">
+   <span>Product (${toBn(qty)} items)</span><span class="bn-num">${fmtBDT(subtotal)}</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-2);padding:2px 0">
+   <span>Delivery</span><span class="bn-num">${fmtBDT(delivery)}</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:800;color:var(--ink);padding:5px 0 2px;border-top:1px solid var(--line);margin-top:4px">
+   <span>Total</span><span class="bn-num">${fmtBDT(total)}</span>
+  </div>
+ </div>
+
+ ${o.notes?`<div style="font-size:11.5px;color:var(--ink-3);padding:4px 0 6px"><i class="ri-sticky-note-line" style="opacity:0.4"></i> ${esc(o.notes)}</div>`:''}
+
+ ${trackingHtml}
+
+ <!-- ACTION BUTTONS -->
+ <div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:8px">
   ${actionBtn}
   ${addTrackBtn}
   <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WhatsApp</button>
   <button class="btn btn-ghost btn-xs" onclick="YARZ.ord.showManualStatusMenu('${esc(o.orderId)}')"><i class="ri-more-2-line"></i></button>
   <button class="btn btn-ghost btn-xs" style="color:var(--danger)" onclick="YARZ.ord.deleteManualOrder('${esc(o.orderId)}')"><i class="ri-delete-bin-6-line"></i></button>
-  </div>
-  </div>
-  <div class="li-right">
-  <div class="price bn-num">${fmtBDT(o.total)}</div>
-  <span class="chip ${sc}">${esc(s)}</span>
-  </div>
+ </div>
+
+ </div>
  </div>`;
  }).join('') : '<div class="empty-state"><i class="ri-file-list-3-line" style="font-size:32px;opacity:0.4"></i><p style="margin-top:10px">No orders</p></div>';
 
