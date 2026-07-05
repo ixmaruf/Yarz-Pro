@@ -6527,18 +6527,32 @@ async function loadInventory(){
 }
 
 async function loadOrders(){
- try {
- const rows = await sheetReadFormatted('ORDERS!A2:P2000');
- state.data.orders = rows.filter(r=>r[1]).map(r=>({
- date: parseSheetDate(r[0]),
- orderId: safeStr(r[1]), customer: safeStr(r[2]), phone: safeStr(r[3]),
- address: safeStr(r[4]), location: safeStr(r[5]),
- product: safeStr(r[6]), size: safeStr(r[7]), qty: int(r[8]),
- price: num(r[9]), delivery: num(r[10]), total: num(r[11]),
- payment: safeStr(r[12]), status: safeStr(r[13])||'Pending',
- courier: safeStr(r[14]), notes: safeStr(r[15])
- }));
- } catch(e){ state.data.orders = []; }
+  try {
+    var db = window.supabaseClient;
+    if (!db) { state.data.orders = []; return; }
+    var r = await db.from("orders").select("*").order("created_at", { ascending: false });
+    if (r.error) throw r.error;
+    state.data.orders = (r.data || []).map(function(row) {
+      return {
+        date: row.date || row.created_at || '',
+        orderId: row.order_id || '',
+        customer: row.cust_name || '',
+        phone: row.cust_phone || '',
+        address: row.cust_addr || '',
+        location: row.deliv_dist || '',
+        product: row.product || '',
+        size: row.size || '',
+        qty: row.qty || 0,
+        price: row.price || 0,
+        delivery: row.delivery_charge || 0,
+        total: row.total || 0,
+        payment: row.payment || '',
+        status: row.status || 'Pending',
+        courier: row.courier || '',
+        notes: row.notes || ''
+      };
+    });
+  } catch(e){ state.data.orders = []; }
 }
 
 async function loadWebsiteOrders(){
