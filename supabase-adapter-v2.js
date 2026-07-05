@@ -614,9 +614,10 @@
     var _pay = p.payment || p.pay || "Cash on Delivery";
     var _total = Number(p.total) || (_price * _qty + _dlv);
     var r = await db.rpc("create_manual_order", {
-      p_order_id: _oid, p_cust_name: _cust, p_cust_phone: _ph, p_cust_addr: _addr,
-      p_deliv_dist: _loc, p_deliv_zone: p.delivZone || _loc, p_product: _prod,
-      p_size: _size, p_qty: _qty, p_price: _price, p_delivery_charge: _dlv,
+      p_order_id: _oid, p_cust_name: _cust, p_cust_phone: _ph,
+      p_product: _prod, p_size: _size, p_cust_addr: _addr,
+      p_deliv_dist: _loc, p_deliv_zone: p.delivZone || _loc,
+      p_qty: _qty, p_price: _price, p_delivery_charge: _dlv,
       p_total: _total, p_payment: _pay, p_status: p.status || "Pending",
       p_courier: p.courier || p.cour || "", p_notes: p.notes || p.nt || ""
     });
