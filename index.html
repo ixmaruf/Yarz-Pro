@@ -14319,10 +14319,10 @@ window.publishToWebsiteAction = async function() {
 
     // Auto-init on first nav to firewall
     const __origGoPageForFirewall = YARZ.goPage;
-    YARZ.goPage = async function(page) {
-      await __origGoPageForFirewall.call(this, page);
+    YARZ.goPage = function(page) {
+      __origGoPageForFirewall.call(this, page);
       if (page === 'firewall') {
-        await YARZ.firewall.refresh();
+        YARZ.firewall.refresh().catch(function(){});
         YARZ.firewall.startAutoRefresh();
       } else if (page === 'customers') {
         YARZ.cust.load();
