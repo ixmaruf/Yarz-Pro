@@ -9073,142 +9073,110 @@ Team YARZ`;
   </div>
  </div>
 
- <div class="order-body" id="ob-${esc(o.orderId)}" style="display:none; padding-top:16px; margin-top:12px; border-top:1px dashed var(--line);">
- <!-- Product Rows (clickable -> opens product details with image) -->
+ <div class="order-body" id="ob-${esc(o.orderId)}" style="display:none; padding-top:12px; margin-top:10px; border-top:1px dashed var(--line);">
+
+ <!-- PRODUCT -->
  ${ (o.products || [{ product: o.product, size: o.size, qty: o.qty, price: o.price }]).map(p => {
   const pQty = parseInt(p.qty)||1;
   const pPrice = parseFloat(p.price)||0;
   const pObj = (state.data.inventory || []).find(inv => inv.name === p.product);
   const pImg = pObj && pObj.img1 ? getImgSrc(pObj.img1) : '';
-  const pImgStyle = pImg ? `background-image:url('${esc(pImg)}')` : '';
-  return `
-  <div class="oc-product-row" onclick="YARZ.inv.showDetails('${esc(p.product||'')}')" title="Click to view product details">
-  <div class="oc-product-thumb" style="${pImgStyle}">
-  ${pImg ? '' : '<i class="ri-shopping-bag-3-line"></i>'}
-  </div>
-  <div class="oc-product-info">
-  <a class="oc-product-name" onclick="event.stopPropagation();YARZ.inv.showDetails('${esc(p.product||'')}')">${esc(p.product||'No product name')}</a>
-  <div class="oc-product-attrs">
-   ${p.size ? `<span class="attr"><i class="ri-shirt-line"></i>Size: <b>${esc(_ordSize(p.size))}</b></span>` : ''}
-   <span class="attr"><i class="ri-stack-line"></i>Quantity: <b class="bn-num">${toBn(pQty)}</b></span>
-   <span class="attr"><i class="ri-price-tag-3-line"></i>Per piece: <b class="bn-num">${fmtBDT(pPrice)}</b></span>
-  </div>
-  </div>
-  <div class="oc-view-icon" title="View Product"><i class="ri-eye-line"></i></div>
+  return `<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">
+    <div style="width:36px;height:36px;border-radius:8px;background:var(--bg-2);background-image:url('${esc(pImg)}');background-size:cover;background-position:center;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden">${pImg?'':'<i class="ri-shopping-bag-3-line" style="opacity:0.3"></i>'}</div>
+    <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.product||'—')}</div>
+      <div style="font-size:11px;color:var(--ink-3)">${p.size?'Size: '+esc(_ordSize(p.size))+' · ':''}Qty: ${toBn(pQty)}</div></div>
+    <div style="text-align:right;font-size:12px;font-weight:600;white-space:nowrap">${fmtBDT(pPrice*pQty)}</div>
   </div>`;
  }).join('') }
 
- <!-- Customer + Device + Risk — Compact Professional Layout -->
- <div class="oc-cust">
-   <div class="oc-cust-top">
-     <div class="oc-cust-name">${esc(o.customer||'—')}</div>
-     <button class="copy-btn" style="width:26px;height:26px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.customer||'')}',this,'Copied')"><i class="ri-file-copy-line"></i></button>
-   </div>
-   <div class="oc-grid-2">
-     <div><span class="oc-k">📞</span><span class="oc-v bn-num">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</span><button class="copy-btn" style="width:20px;height:20px;padding:1px;margin:0;font-size:10px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._normalizeBdPhone('${esc(o.phone||'')}')||'${esc(o.phone||'')}',this,'Phone Copied')"><i class="ri-file-copy-line"></i></button></div>
-     <div><span class="oc-k">📍</span><span class="oc-v">${esc(o.location||o.city||'—')}</span></div>
-     <div><span class="oc-k">💳</span><span class="oc-v">${esc(o.payment||'COD')}</span></div>
-     ${o.email ? `<div><span class="oc-k">✉️</span><span class="oc-v" style="font-size:11px">${esc(o.email)}</span></div>` : ''}
-   </div>
-   ${o.address ? `<div style="margin-top:6px;font-size:11.5px;color:var(--ink-2);display:flex;align-items:flex-start;gap:4px;border-top:1px dashed var(--line);padding-top:6px"><i class="ri-home-4-line" style="font-size:12px;opacity:0.5;flex-shrink:0;margin-top:1px"></i><span style="flex:1">${esc(o.address)}</span><button class="copy-btn" style="width:20px;height:20px;padding:1px;margin:0;font-size:10px" onclick="event.stopPropagation();YARZ.ord._copy('${esc((o.address||'')+(o.location?', '+o.location:''))}',this,'Address Copied')"><i class="ri-file-copy-line"></i></button></div>` : ''}
+ <!-- CUSTOMER — compact one-line per field -->
+ <div style="padding:8px 0;border-bottom:1px solid var(--line)">
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+    <span style="font-size:13px;font-weight:700;color:var(--ink)">${esc(o.customer||'—')}</span>
+    <button class="copy-btn" style="width:20px;height:20px;padding:0;font-size:10px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.customer||'')}',this,'Copied')"><i class="ri-file-copy-line"></i></button>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11.5px;color:var(--ink-2);line-height:1.8">
+    <span>📞 <b style="color:var(--ink)" class="bn-num">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</b> <button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._normalizeBdPhone('${esc(o.phone||'')}')||'${esc(o.phone||'')}',this,'Copied')"><i class="ri-file-copy-line"></i></button></span>
+    <span>📍 <b style="color:var(--ink)">${esc(o.location||o.city||'—')}</b></span>
+    <span>💳 <b style="color:var(--ink)">${esc(o.payment||'COD')}</b></span>
+    ${o.email?`<span>✉️ ${esc(o.email)}</span>`:''}
+  </div>
+  ${o.address?`<div style="margin-top:3px;font-size:11px;color:var(--ink-3);display:flex;align-items:center;gap:3px"><i class="ri-home-4-line" style="font-size:11px;opacity:0.4"></i>${esc(o.address)}<button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy('${esc((o.address||'')+(o.location?', '+o.location:''))}',this,'Copied')"><i class="ri-file-copy-line"></i></button></div>`:''}
  </div>
 
- ${o.deviceId || o.ip ? `
- <div class="oc-sec" style="margin-top:10px">
-   <div class="oc-sec-title"><i class="ri-shield-check-line" style="color:var(--brand)"></i> Device & Security</div>
-   <div style="display:flex;flex-wrap:wrap;gap:5px">
-     ${o.ip ? `<span class="oc-chip"><i class="ri-global-line"></i><b style="font-family:monospace;font-size:10.5px">${esc(o.ip)}</b><button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.ip)}',this,'IP Copied')"><i class="ri-file-copy-line"></i></button></span>` : ''}
-     ${o.country ? `<span class="oc-chip"><span style="font-size:12px">${o.country==='BD'?'🇧🇩':'🌍'}</span><b>${esc(o.country)}</b></span>` : ''}
-     ${o.asn ? `<span class="oc-chip"><i class="ri-server-line"></i>${esc(o.asn)}</span>` : ''}
-     ${o.deviceId ? `<span class="oc-chip"><i class="ri-fingerprint-line"></i><code style="font-size:10px">${esc(o.deviceId)}</code><button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.deviceId)}',this,'Copied')"><i class="ri-file-copy-line"></i></button></span>` : ''}
-   </div>
-   ${o.deviceInfo ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px">${(()=>{
-      try{
-        const di=typeof o.deviceInfo==='string'?JSON.parse(o.deviceInfo):o.deviceInfo;
-        const c=[];
-        // v2.5: Infer brand if stored as "Android" but model code has brand pattern
-        if(di.brand) {
-          var displayBrand = di.brand;
-          if(displayBrand === 'Android' && di.modelCode) {
-            var mc = di.modelCode;
-            if(/^SM-|^SC-|^GT-/i.test(mc)) displayBrand = 'Samsung';
-            else if(/^M\d{4}/i.test(mc)) displayBrand = 'Xiaomi';
-            else if(/^RMX/i.test(mc)) displayBrand = 'Realme';
-            else if(/^CPH/i.test(mc)) displayBrand = 'Oppo';
-            else if(/^V\d{4}/i.test(mc)) displayBrand = 'Vivo';
-            else if(/^IN\d{4}|^LE\d{4,5}/i.test(mc)) displayBrand = 'OnePlus';
-            else if(/^TA-|^N\d{3}[A-Z]/i.test(mc)) displayBrand = 'Nokia';
-          }
-          c.push('<span class="oc-chip b"><i class="ri-smartphone-line"></i><b>'+esc(displayBrand)+'</b>'+(di.model?' '+esc(di.model)+(di.modelCode&&di.modelCode!==di.model?' ('+esc(di.modelCode)+')':''):'')+'</span>');
-        }
-       if(di.gpu)c.push('<span class="oc-chip p"><i class="ri-cpu-line"></i><b>'+esc(di.gpu)+'</b>'+(di.gpuVendor?' ('+esc(di.gpuVendor)+')':'')+'</span>');
-       if(di.isDesktop===true||di.isDesktop==='true')c.push('<span class="oc-chip o"><i class="ri-computer-line"></i><b>Desktop</b></span>');
-       if(di.isMobile===true||di.isMobile==='true')c.push('<span class="oc-chip g"><i class="ri-smartphone-line"></i><b>Mobile</b></span>');
-       if(di.screenWidth)c.push('<span class="oc-chip"><i class="ri-landscape-line"></i>'+esc(di.screenWidth)+'x'+esc(di.screenHeight)+(di.pixelRatio?' @'+esc(di.pixelRatio)+'x':'')+'</span>');
-       if(di.cores)c.push('<span class="oc-chip"><i class="ri-server-line"></i>'+esc(di.cores)+' cores · '+esc(di.memory)+' GB</span>');
-        if(di.ipCity||di.ipRegion)c.push('<span class="oc-chip"><i class="ri-map-pin-line"></i>'+esc(di.ipCity||'')+(di.ipRegion?', '+esc(di.ipRegion):'')+'</span>');
-        if(di.inAppBrowser)c.push('<span class="oc-chip b"><i class="ri-share-forward-line"></i>'+esc(di.inAppBrowser)+' browser</span>');
-        if(di.isHeadless)c.push('<span class="oc-chip r"><i class="ri-robot-line"></i><b>HEADLESS</b></span>');
-       return c.join('');
-     }catch(e){return '<span style="font-size:11px;color:var(--ink-3)">'+esc(String(o.deviceInfo).substring(0,100))+'</span>';}
-   })()}</div>` : ''}
-   ${(o.riskScore>0||o.riskSignals)?`<div class="oc-risk" style="margin-top:6px">
-     <div class="oc-risk-head"><span style="font-size:11px;font-weight:700;color:var(--danger)"><i class="ri-shield-keyhole-line"></i> Risk ${o.riskScore}/100</span><button class="btn btn-red btn-xs" onclick="event.stopPropagation();YARZ.ord.blockFromOrder('${esc(o.orderId)}','${esc(o.deviceId||'')}','${esc(o.ip||'')}','${esc(o.customer||'')}',${o.riskScore||0})"><i class="ri-forbid-line"></i> Block</button></div>
-     ${o.riskSignals?`<div style="display:flex;flex-wrap:wrap;gap:3px">${(()=>{try{const s=typeof o.riskSignals==='string'?JSON.parse(o.riskSignals):o.riskSignals;if(!Array.isArray(s))return'';return s.filter(x=>Array.isArray(x)&&x[1]>0).map(x=>{const n=x[0].replace(/_/g,' ');const v=x[1];const cl=v>=50?'var(--danger)':v>=20?'#f97316':'#eab308';return'<span class="oc-sig" style="color:'+cl+'"><b>'+v+'</b> '+esc(n)+'</span>';}).join('')}catch(e){return'';}})()}</div>`:''}
-   </div>`:''}
- </div>` : ''}
-
- <!-- ✅ v11.3: One-click courier block copy -->
- <button class="btn btn-primary btn-xs" style="width:100%;margin:8px 0;padding:10px;font-size:12.5px"
-  onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._courierBlock('${esc(o.orderId)}'),this,'courier for Complete Copied — paste ')">
-  <i class="ri-clipboard-line"></i> courier for Complete Copy 
- </button>
-
- <!-- Price Breakdown -->
- <div class="oc-price-box">
-  <div class="oc-price-line">
-  <span class="lbl"><i class="ri-shopping-cart-2-line"></i>Product Price <span style="opacity:0.7">(<span class="bn-num">${toBn(totalQty)}</span> items item)</span></span>
-  <span class="bn-num"><b>${fmtBDT(subtotal)}</b></span>
-  </div>
-  <div class="oc-price-line">
-  <span class="lbl"><i class="ri-truck-line"></i>Delivery Charge</span>
-  <span class="bn-num"><b>${fmtBDT(delivery)}</b></span>
-  </div>
-  ${hasCoupon ? `
-  <div class="oc-price-line coupon">
-  <span class="lbl"><i class="ri-coupon-3-line"></i>Coupon Discount${couponCode ? ` <span style="opacity:0.75;font-size:11px">(${esc(couponCode)})</span>` : ''}</span>
-  <span class="bn-num"><b>${couponDiscount > 0 ? '− ' + fmtBDT(couponDiscount) : esc(couponCode)}</b></span>
-  </div>` : ''}
-  <div class="oc-price-line total">
-  <span class="lbl"><i class="ri-money-dollar-circle-line"></i>Total payable</span>
-  <span class="bn-num">${fmtBDT(total)}</span>
-  </div>
+ <!-- PRICE — compact inline -->
+ <div style="padding:6px 0;border-bottom:1px solid var(--line);font-size:12px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 16px">
+  <span>Product: <b style="color:var(--ink)">${fmtBDT(subtotal)}</b></span>
+  <span>Delivery: <b style="color:var(--ink)">${fmtBDT(delivery)}</b></span>
+  ${hasCoupon?`<span>Coupon: <b style="color:var(--success)">−${fmtBDT(couponDiscount)}</b></span>`:''}
+  <span style="font-weight:700;color:var(--ink);border-left:1px solid var(--line);padding-left:10px">Total: ${fmtBDT(total)}</span>
  </div>
 
- ${o.notes ? `
- <div class="oc-notes">
-  <i class="ri-sticky-note-line"></i><b>Note:</b> ${esc(o.notes)}
- </div>` : ''}
+ ${o.notes?`<div style="padding:5px 0;font-size:11.5px;color:var(--ink-3)"><i class="ri-sticky-note-line" style="opacity:0.4"></i> ${esc(o.notes)}</div>`:''}
 
- ${o.activity ? `
- <details class="oc-notes" style="cursor:pointer;background:rgba(99,74,142,0.04);border-color:rgba(99,74,142,0.15)">
-  <summary style="font-weight:600;color:var(--accent,#634A8E)"><i class="ri-history-line"></i> Order History ${o.updated ? `<span style="opacity:0.7;font-weight:400;font-size:11px">· Last updated: ${esc(o.updated)}</span>` : ''}</summary>
-  <div style="margin-top:6px;font-size:11.5px;color:var(--ink-2);line-height:1.6;white-space:pre-wrap;word-break:break-word">${esc(o.activity)}</div>
- </details>` : ''}
+ <!-- DEVICE & SECURITY — collapsible -->
+ ${o.deviceId||o.ip?`
+ <div style="margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden">
+  <details>
+   <summary style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;font-size:11px;font-weight:600;color:var(--ink-2);background:var(--bg-2,var(--surface-1,rgba(0,0,0,0.02)));user-select:none">
+    <i class="ri-shield-check-line" style="color:var(--brand)"></i> Device & Security
+    ${o.riskScore>0?`<span style="margin-left:auto;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:700;background:${o.riskScore>=50?'rgba(239,68,68,0.1);color:var(--danger)':o.riskScore>=20?'rgba(249,115,22,0.1);color:#f97316':'rgba(34,197,94,0.1);color:#22c55e'}">${o.riskScore}</span>`:''}
+    <i class="ri-arrow-down-s-line" style="margin-left:2px;transition:transform 0.2s"></i>
+   </summary>
+   <div style="padding:8px 10px;border-top:1px solid var(--line)">
+    <!-- Identity chips -->
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
+     ${o.ip?`<span class="oc-chip" style="font-size:10.5px"><i class="ri-global-line"></i><code style="font-family:monospace">${esc(o.ip)}</code><button class="copy-btn" style="width:16px;height:16px;padding:0;margin:0;font-size:8px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.ip)}',this,'Copied')"><i class="ri-file-copy-line"></i></button></span>`:''}
+     ${o.country?`<span class="oc-chip" style="font-size:10.5px">${o.country==='BD'?'🇧🇩':'🌍'} <b>${esc(o.country)}</b></span>`:''}
+     ${o.asn?`<span class="oc-chip" style="font-size:10.5px"><i class="ri-server-line"></i>${esc(o.asn)}</span>`:''}
+     ${o.deviceId?`<span class="oc-chip" style="font-size:10.5px"><i class="ri-fingerprint-line"></i><code style="font-size:9.5px">${esc(o.deviceId)}</code><button class="copy-btn" style="width:16px;height:16px;padding:0;margin:0;font-size:8px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.deviceId)}',this,'Copied')"><i class="ri-file-copy-line"></i></button></span>`:''}
+    </div>
+    <!-- Device info chips -->
+    ${o.deviceInfo?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${(()=>{
+     try{
+      const di=typeof o.deviceInfo==='string'?JSON.parse(o.deviceInfo):o.deviceInfo;
+      const c=[];
+      if(di.brand){
+       var db=di.brand;
+       if(db==='Android'&&di.modelCode){var mc=di.modelCode;if(/^SM-|^SC-|^GT-/i.test(mc))db='Samsung';else if(/^M\d{4}/i.test(mc))db='Xiaomi';else if(/^RMX/i.test(mc))db='Realme';else if(/^CPH/i.test(mc))db='Oppo';else if(/^V\d{4}/i.test(mc))db='Vivo';else if(/^IN\d{4}|^LE\d{4,5}/i.test(mc))db='OnePlus';else if(/^TA-|^N\d{3}[A-Z]/i.test(mc))db='Nokia';}
+       c.push('<span class="oc-chip b" style="font-size:10.5px"><i class="ri-smartphone-line"></i><b>'+esc(db)+'</b>'+(di.model?' '+esc(di.model):'')+'</span>');
+      }
+      if(di.gpu)c.push('<span class="oc-chip p" style="font-size:10.5px"><i class="ri-cpu-line"></i>'+esc(di.gpu)+'</span>');
+      if(di.isMobile==='true'||di.isMobile===true)c.push('<span class="oc-chip g" style="font-size:10.5px">📱 Mobile</span>');
+      if(di.isDesktop==='true'||di.isDesktop===true)c.push('<span class="oc-chip o" style="font-size:10.5px">🖥️ Desktop</span>');
+      if(di.screenWidth)c.push('<span class="oc-chip" style="font-size:10.5px">'+esc(di.screenWidth)+'x'+esc(di.screenHeight)+(di.pixelRatio?' @'+esc(di.pixelRatio)+'x':'')+'</span>');
+      if(di.cores)c.push('<span class="oc-chip" style="font-size:10.5px">'+esc(di.cores)+'c · '+esc(di.memory)+'GB</span>');
+      if(di.ipCity||di.ipRegion)c.push('<span class="oc-chip" style="font-size:10.5px">📍'+esc(di.ipCity||'')+(di.ipRegion?', '+esc(di.ipRegion):'')+'</span>');
+      if(di.inAppBrowser)c.push('<span class="oc-chip b" style="font-size:10.5px">📲 '+esc(di.inAppBrowser)+'</span>');
+      if(di.isHeadless)c.push('<span class="oc-chip r" style="font-size:10.5px">🤖 HEADLESS</span>');
+      return c.join('');
+     }catch(e){return '<span style="font-size:10px;color:var(--ink-3)">Parse error</span>';}
+    })()}</div>`:''}
+    <!-- Risk -->
+    ${o.riskScore>0||o.riskSignals?`<div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:6px">
+     <span style="font-size:10.5px;font-weight:600;color:${o.riskScore>=50?'var(--danger)':o.riskScore>=20?'#f97316':'var(--ink-3)'}"><i class="ri-shield-keyhole-line"></i> Risk ${o.riskScore}/100</span>
+     <button class="btn btn-red btn-xs" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();YARZ.ord.blockFromOrder('${esc(o.orderId)}','${esc(o.deviceId||'')}','${esc(o.ip||'')}','${esc(o.customer||'')}',${o.riskScore||0})"><i class="ri-forbid-line"></i> Block</button>
+    </div>
+    ${o.riskSignals?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">${(()=>{try{const s=typeof o.riskSignals==='string'?JSON.parse(o.riskSignals):o.riskSignals;if(!Array.isArray(s))return'';return s.filter(x=>Array.isArray(x)&&x[1]>0).map(x=>{const n=x[0].replace(/_/g,' ');const v=x[1];const cl=v>=50?'var(--danger)':v>=20?'#f97316':'#eab308';return'<span class="oc-sig" style="color:'+cl+'"><b>'+v+'</b> '+esc(n)+'</span>';}).join('')}catch(e){return'';}})()}</div>`:''}
+    `:''}
+   </div>
+  </details>
+ </div>`:''}
 
- ${trackingHtml}
-
- <div class="order-actions" style="flex-wrap:wrap;gap:6px">
+ <!-- ACTIONS -->
+ <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center">
   ${actionBtn}
-  ${sfBtn}
-  ${sfStatusBtn}
-  ${courierSel}
-  ${stage!=='delivered' ? addTrackBtn : ''}
-  <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WhatsApp</button>
-  <button class="btn btn-ghost btn-xs" onclick="YARZ.ord.callCustomer('${esc(o.phone||'')}')" title="Call"><i class="ri-phone-fill" style="color:#0ea5e9"></i></button>
-  ${stage!=='delivered' ? `<button class="btn btn-ghost btn-xs" onclick="YARZ.ord.showStatusMenu('${esc(o.orderId)}')" title="Change Status"><i class="ri-more-2-line"></i></button>` : ''}
-  <button class="btn btn-ghost btn-xs" style="margin-left:auto;color:var(--danger)" onclick="YARZ.ord.deleteWebOrder('${esc(o.orderId)}')" title="Delete"><i class="ri-delete-bin-6-line"></i></button>
+  ${sfBtn}${sfStatusBtn}
+  <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none;font-size:10.5px;padding:4px 8px" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WA</button>
+  <button class="btn btn-ghost btn-xs" style="font-size:10.5px;padding:4px 6px" onclick="YARZ.ord.callCustomer('${esc(o.phone||'')}')" title="Call"><i class="ri-phone-fill" style="color:#0ea5e9"></i></button>
+  ${stage!=='delivered'?addTrackBtn:''}
+  <button class="btn btn-ghost btn-xs" style="font-size:10.5px;padding:4px 6px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._courierBlock('${esc(o.orderId)}'),this,'Copied')" title="Copy courier block"><i class="ri-clipboard-line"></i></button>
+  ${stage!=='delivered'?`<button class="btn btn-ghost btn-xs" style="font-size:10.5px;padding:4px 6px;margin-left:auto" onclick="YARZ.ord.showStatusMenu('${esc(o.orderId)}')"><i class="ri-more-2-line"></i></button>`:''}
+  <button class="btn btn-ghost btn-xs" style="font-size:10.5px;padding:4px 6px;color:var(--danger)" onclick="YARZ.ord.deleteWebOrder('${esc(o.orderId)}')" title="Delete"><i class="ri-delete-bin-6-line"></i></button>
  </div>
+
+ ${o.activity?`<details style="margin-top:6px;font-size:11px"><summary style="cursor:pointer;color:var(--ink-3);font-weight:600"><i class="ri-history-line"></i> History ${o.updated?'· '+esc(o.updated):''}</summary><div style="margin-top:4px;color:var(--ink-3);line-height:1.5;white-space:pre-wrap;word-break:break-word">${esc(o.activity)}</div></details>`:''}
+ ${trackingHtml}
  </div>
  </div>`;
  },
