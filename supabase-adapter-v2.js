@@ -809,7 +809,8 @@
 
   async function fortressLookup() {
     try {
-      var db = getWriteDb(); await ensureAuth();
+      var db = getDb();
+      if (!db) return { ok: true, devices: [], threats: [] };
       var r = await db.from("blocked_devices").select("*").order("created_at", { ascending: false });
       if (r.error) throw r.error;
       return { ok: true, devices: r.data || [], threats: [] };
@@ -857,7 +858,8 @@
   // v2.6: Fetch all known device models for marketing name lookup
   async function loadDeviceModels() {
     try {
-      var db = getWriteDb(); await ensureAuth();
+      var db = getDb();
+      if (!db) return {};
       var r = await db.from("device_models").select("model_code,brand,marketing_name");
       if (r.error) throw r.error;
       var map = {};
