@@ -14177,6 +14177,7 @@ window.publishToWebsiteAction = async function() {
       _renderBlocks() {
         const root = document.getElementById('firewall-blocks');
         if (!root) return;
+        const esc = function(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
         const term = (this._search || '').toLowerCase();
         const visible = this._devices.filter(d =>
           !term || (d.deviceId || d.device_id || '').toLowerCase().indexOf(term) !== -1
