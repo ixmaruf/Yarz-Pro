@@ -9123,17 +9123,32 @@ Team YARZ`;
      ${o.deviceId ? `<span class="oc-chip"><i class="ri-fingerprint-line"></i><code style="font-size:10px">${esc(o.deviceId)}</code><button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.deviceId)}',this,'Copied')"><i class="ri-file-copy-line"></i></button></span>` : ''}
    </div>
    ${o.deviceInfo ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px">${(()=>{
-     try{
-       const di=typeof o.deviceInfo==='string'?JSON.parse(o.deviceInfo):o.deviceInfo;
-       const c=[];
-       if(di.brand)c.push('<span class="oc-chip b"><i class="ri-smartphone-line"></i><b>'+esc(di.brand)+'</b>'+(di.model?' '+esc(di.model)+(di.modelCode?' ('+esc(di.modelCode)+')':''):'')+'</span>');
+      try{
+        const di=typeof o.deviceInfo==='string'?JSON.parse(o.deviceInfo):o.deviceInfo;
+        const c=[];
+        // v2.5: Infer brand if stored as "Android" but model code has brand pattern
+        if(di.brand) {
+          var displayBrand = di.brand;
+          if(displayBrand === 'Android' && di.modelCode) {
+            var mc = di.modelCode;
+            if(/^SM-|^SC-|^GT-/i.test(mc)) displayBrand = 'Samsung';
+            else if(/^M\d{4}/i.test(mc)) displayBrand = 'Xiaomi';
+            else if(/^RMX/i.test(mc)) displayBrand = 'Realme';
+            else if(/^CPH/i.test(mc)) displayBrand = 'Oppo';
+            else if(/^V\d{4}/i.test(mc)) displayBrand = 'Vivo';
+            else if(/^IN\d{4}|^LE\d{4,5}/i.test(mc)) displayBrand = 'OnePlus';
+            else if(/^TA-|^N\d{3}[A-Z]/i.test(mc)) displayBrand = 'Nokia';
+          }
+          c.push('<span class="oc-chip b"><i class="ri-smartphone-line"></i><b>'+esc(displayBrand)+'</b>'+(di.model?' '+esc(di.model)+(di.modelCode&&di.modelCode!==di.model?' ('+esc(di.modelCode)+')':''):'')+'</span>');
+        }
        if(di.gpu)c.push('<span class="oc-chip p"><i class="ri-cpu-line"></i><b>'+esc(di.gpu)+'</b>'+(di.gpuVendor?' ('+esc(di.gpuVendor)+')':'')+'</span>');
        if(di.isDesktop===true||di.isDesktop==='true')c.push('<span class="oc-chip o"><i class="ri-computer-line"></i><b>Desktop</b></span>');
        if(di.isMobile===true||di.isMobile==='true')c.push('<span class="oc-chip g"><i class="ri-smartphone-line"></i><b>Mobile</b></span>');
        if(di.screenWidth)c.push('<span class="oc-chip"><i class="ri-landscape-line"></i>'+esc(di.screenWidth)+'x'+esc(di.screenHeight)+(di.pixelRatio?' @'+esc(di.pixelRatio)+'x':'')+'</span>');
        if(di.cores)c.push('<span class="oc-chip"><i class="ri-server-line"></i>'+esc(di.cores)+' cores · '+esc(di.memory)+' GB</span>');
-       if(di.ipCity||di.ipRegion)c.push('<span class="oc-chip"><i class="ri-map-pin-line"></i>'+esc(di.ipCity||'')+(di.ipRegion?', '+esc(di.ipRegion):'')+'</span>');
-       if(di.isHeadless)c.push('<span class="oc-chip r"><i class="ri-robot-line"></i><b>HEADLESS</b></span>');
+        if(di.ipCity||di.ipRegion)c.push('<span class="oc-chip"><i class="ri-map-pin-line"></i>'+esc(di.ipCity||'')+(di.ipRegion?', '+esc(di.ipRegion):'')+'</span>');
+        if(di.inAppBrowser)c.push('<span class="oc-chip b"><i class="ri-share-forward-line"></i>'+esc(di.inAppBrowser)+' browser</span>');
+        if(di.isHeadless)c.push('<span class="oc-chip r"><i class="ri-robot-line"></i><b>HEADLESS</b></span>');
        return c.join('');
      }catch(e){return '<span style="font-size:11px;color:var(--ink-3)">'+esc(String(o.deviceInfo).substring(0,100))+'</span>';}
    })()}</div>` : ''}
