@@ -9132,9 +9132,7 @@ Team YARZ`;
     ${o.deviceInfo?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${(()=>{
      try{const di=typeof o.deviceInfo==='string'?JSON.parse(o.deviceInfo):o.deviceInfo;const c=[];
      if(di.brand){var db=di.brand;if(db==='Android'&&di.modelCode){var mc=di.modelCode;if(/^SM-|^SC-|^GT-/i.test(mc))db='Samsung';else if(/^M\d{4}/i.test(mc))db='Xiaomi';else if(/^RMX/i.test(mc))db='Realme';else if(/^CPH/i.test(mc))db='Oppo';else if(/^V\d{4}/i.test(mc))db='Vivo';else if(/^IN\d{4}|^LE\d{4,5}/i.test(mc))db='OnePlus';}
-      var mn = (state.data.deviceModels && di.modelCode && state.data.deviceModels[di.modelCode]) ? state.data.deviceModels[di.modelCode] : '';
-      var modelDisplay = mn || di.model || '';
-      c.push('<span class="oc-chip b" style="font-size:10px"><i class="ri-smartphone-line"></i><b>'+esc(db)+'</b>'+(modelDisplay?' '+esc(modelDisplay):'')+'</span>');}
+      c.push('<span class="oc-chip b" style="font-size:10px"><i class="ri-smartphone-line"></i><b>'+esc(db)+'</b>'+(di.modelCode?' '+esc(di.modelCode):'')+'</span>');}
      if(di.gpu)c.push('<span class="oc-chip p" style="font-size:10px"><i class="ri-cpu-line"></i>'+esc(di.gpu)+'</span>');
      if(di.isMobile==='true'||di.isMobile===true)c.push('<span class="oc-chip g" style="font-size:10px">📱</span>');
      if(di.isDesktop==='true'||di.isDesktop===true)c.push('<span class="oc-chip o" style="font-size:10px">🖥️</span>');
