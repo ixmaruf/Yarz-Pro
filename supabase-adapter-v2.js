@@ -807,7 +807,14 @@
     return ok({ msg: "Inventory cleared" });
   }
 
-  async function fortressLookup()  { return passthroughOrRpc("fortress_lookup"); }
+  async function fortressLookup() {
+    try {
+      var db = getWriteDb(); await ensureAuth();
+      var r = await db.from("blocked_devices").select("*").order("created_at", { ascending: false });
+      if (r.error) throw r.error;
+      return { ok: true, devices: r.data || [], threats: [] };
+    } catch(e) { return { ok: true, devices: [], threats: [] }; }
+  }
   async function fortressBlock(p) {
     var db = getWriteDb(); await ensureAuth();
     var deviceId = p.device_id || p.deviceId || "";
