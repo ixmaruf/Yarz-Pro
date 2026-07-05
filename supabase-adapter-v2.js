@@ -271,7 +271,8 @@
       row.courier || "", row.updated_at || "", row.activity || "", row.device_id || "",
       row.ip || "", row.country || "", row.asn || "", row.risk_score || 0,
       row.risk_signals || "", row.flagged ? "Yes" : "No", row.flag_reason || "",
-      row.flagged_at || "", row.flagged_by || ""
+      row.flagged_at || "", row.flagged_by || "",
+      row.device_info || null
     ];
   }
 

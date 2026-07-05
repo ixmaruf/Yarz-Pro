@@ -6637,12 +6637,15 @@ async function loadWebsiteOrders(){
   email: email,
   city:  city,
   source: safeStr(r[18]),
-  // ✅ v17.6: Device info columns (T=19, U=20, V=21, W=22, X=23, Y=24)
-  deviceId: safeStr(r[19]),
-  ip: safeStr(r[20]),
-  deviceInfo: safeStr(r[22]),
-  riskScore: parseInt(r[23]) || 0,
-  riskSignals: safeStr(r[24])
+   // ✅ v17.6: Device info columns (T=19, U=20, V=21, W=22, X=23, Y=24)
+   deviceId: safeStr(r[19]),
+   ip: safeStr(r[20]),
+   country: safeStr(r[21]),
+   asn: safeStr(r[22]),
+   riskScore: parseInt(r[23]) || 0,
+   riskSignals: safeStr(r[24]),
+   // v29: device_info JSONB is at index 29
+   deviceInfo: r[29] || null
  };
  });
  } catch(e){ state.data.websiteOrders = []; }
