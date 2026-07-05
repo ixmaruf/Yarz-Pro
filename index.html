@@ -9072,39 +9072,38 @@ Team YARZ`;
   </div>`;
  }).join('') }
 
- <!-- Customer Info Grid (v11.3 — copyable cells with copy buttons) -->
- <div class="oc-info-grid">
-  <div class="oc-info-cell full">
-  <i class="ri-user-3-line"></i>
-  <div style="min-width:0;flex:1">
-  <div class="lbl">Customer Name</div>
-  <div class="val">${esc(o.customer||'—')}</div>
-  </div>
-  <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.customer||'')}',this,'no/not Copied')" title="Copy "><i class="ri-file-copy-line"></i></button>
-  </div>
-  <div class="oc-info-cell">
-  <i class="ri-phone-line"></i>
-  <div style="min-width:0;flex:1">
-  <div class="lbl">Phone Number</div>
-  <div class="val bn-num">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</div>
-  </div>
-  <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._normalizeBdPhone('${esc(o.phone||'')}')||'${esc(o.phone||'')}',this,'Phone Copied')" title="Copy "><i class="ri-file-copy-line"></i></button>
-  </div>
-  <div class="oc-info-cell">
-  <i class="ri-map-pin-2-line"></i>
-  <div style="min-width:0;flex:1">
-  <div class="lbl">District / Location</div>
-  <div class="val">${esc(o.location||o.city||'—')}</div>
-  </div>
-  <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.location||o.city||'')}',this,'low Copied')" title="Copy "><i class="ri-file-copy-line"></i></button>
-  </div>
-  <div class="oc-info-cell">
-  <i class="ri-wallet-3-line"></i>
-  <div style="min-width:0;flex:1">
-  <div class="lbl">Payment Method</div>
-  <div class="val">${esc(o.payment||'COD')}</div>
-  </div>
-  </div>
+ <!-- Customer Info — Compact Receipt Style -->
+ <div class="oc-customer-section" style="margin:10px 0;padding:10px 12px;background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px">
+   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+     <div style="font-size:14px;font-weight:700;color:var(--ink)">${esc(o.customer||'—')}</div>
+     <button class="copy-btn" style="width:26px;height:26px;padding:4px 6px;font-size:11px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.customer||'')}',this,'Copied')" title="Copy name"><i class="ri-file-copy-line"></i></button>
+   </div>
+   <div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--ink-2)">
+     <div style="display:inline-flex;align-items:center;gap:4px">
+       <i class="ri-phone-line" style="font-size:12px;color:var(--brand);opacity:0.7"></i>
+       <span class="bn-num" style="font-weight:600;color:var(--ink)">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</span>
+       <button class="copy-btn" style="width:22px;height:22px;padding:2px;margin:0;font-size:10px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._normalizeBdPhone('${esc(o.phone||'')}')||'${esc(o.phone||'')}',this,'Phone Copied')"><i class="ri-file-copy-line"></i></button>
+     </div>
+     <div style="display:inline-flex;align-items:center;gap:4px">
+       <i class="ri-map-pin-2-line" style="font-size:12px;color:var(--brand);opacity:0.7"></i>
+       <span style="font-weight:600;color:var(--ink)">${esc(o.location||o.city||'—')}</span>
+       <button class="copy-btn" style="width:22px;height:22px;padding:2px;margin:0;font-size:10px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.location||o.city||'')}',this,'Location Copied')"><i class="ri-file-copy-line"></i></button>
+     </div>
+     <div style="display:inline-flex;align-items:center;gap:4px">
+       <i class="ri-wallet-3-line" style="font-size:12px;color:var(--brand);opacity:0.7"></i>
+       <span style="font-weight:600;color:var(--ink)">${esc(o.payment||'COD')}</span>
+     </div>
+   </div>
+   ${o.email ? `<div style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;font-size:11.5px;color:var(--ink-2)">
+     <i class="ri-mail-line" style="font-size:12px;color:var(--brand);opacity:0.7"></i>
+     <span>${esc(o.email)}</span>
+   </div>` : ''}
+   ${o.address ? `<div style="margin-top:6px;font-size:11.5px;color:var(--ink-2);display:flex;align-items:flex-start;gap:4px">
+     <i class="ri-home-4-line" style="font-size:12px;color:var(--brand);opacity:0.7;flex-shrink:0;margin-top:1px"></i>
+     <span style="flex:1">${esc(o.address)}</span>
+     <button class="copy-btn" style="width:22px;height:22px;padding:2px;margin:0;font-size:10px" onclick="event.stopPropagation();YARZ.ord._copy('${esc((o.address||'')+(o.location?', '+o.location:''))}',this,'Address Copied')"><i class="ri-file-copy-line"></i></button>
+   </div>` : ''}
+ </div>
 
   <!-- ✅ v2.0: Device Tracking Info — Clean Redesign -->
   ${o.deviceId || o.ip ? `
@@ -9193,26 +9192,6 @@ Team YARZ`;
     </div>` : ''}
   </div>
   ` : ''}
-
-  ${o.email ? `
-  <div class="oc-info-cell">
-  <i class="ri-mail-line"></i>
-  <div style="min-width:0;flex:1">
-  <div class="lbl">Email</div>
-  <div class="val" style="font-size:11.5px;word-break:break-all">${esc(o.email)}</div>
-  </div>
-  <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.email||'')}',this,'Email Copied')" title="Copy "><i class="ri-file-copy-line"></i></button>
-  </div>` : ''}
-  ${o.address ? `
-  <div class="oc-info-cell full">
-  <i class="ri-home-4-line"></i>
-  <div style="min-width:0;flex:1">
-  <div class="lbl">Full Address</div>
-  <div class="val" style="font-size:12.5px;line-height:1.5">${esc(o.address)}</div>
-  </div>
-  <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy('${esc((o.address||'')+(o.location?', '+o.location:''))}',this,'Address Copied')" title="Copy "><i class="ri-file-copy-line"></i></button>
-  </div>` : ''}
- </div>
 
  <!-- ✅ v11.3: One-click courier block copy -->
  <button class="btn btn-primary btn-xs" style="width:100%;margin:8px 0;padding:10px;font-size:12.5px"
