@@ -834,6 +834,16 @@
     if (r.error) throw new Error(r.error.message);
     return ok({ success: true });
   }
+
+  // Load all active blocked devices
+  async function loadBlockedDevices() {
+    try {
+      var db = getWriteDb(); await ensureAuth();
+      var r = await db.from("blocked_devices").select("id, device_id, status, block_reason, blocked_by, created_at").order("created_at", { ascending: false });
+      if (r.error) throw r.error;
+      return r.data || [];
+    } catch(e) { return []; }
+  }
   async function fortressClearAll(){ return passthroughOrRpc("fortress_clear_all"); }
   async function fortressLogEvent(p){ return passthroughOrRpc("fortress_log_event", p); }
 
@@ -975,6 +985,7 @@
         case "__fortress_lookup": return await fortressLookup();
         case "__fortress_get_fingerprints": return await fortressGetFingerprints(payload || {});
         case "load_device_models": return await loadDeviceModels();
+        case "load_blocked_devices": return await loadBlockedDevices();
         case "__fortress_block": return await fortressBlock(payload || {});
         case "__fortress_unblock": return await fortressUnblock(payload || {});
         case "__fortress_clear_all": return await fortressClearAll();
