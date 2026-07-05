@@ -14047,6 +14047,7 @@ window.publishToWebsiteAction = async function() {
         return '<span style="background:var(--success);color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">LOW ' + score + '</span>';
       },
       _renderFingerprints() {
+        var esc = function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
         const root = document.getElementById('firewall-fingerprints');
         if (!root) return;
         const term = (this._fpSearch || '').toLowerCase();
@@ -14130,6 +14131,7 @@ window.publishToWebsiteAction = async function() {
         }).join('');
       },
       _renderThreats() {
+        var esc = function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
         const root = document.getElementById('firewall-threats');
         if (!root) return;
         if (!this._threats.length) {
@@ -14168,7 +14170,7 @@ window.publishToWebsiteAction = async function() {
         }).join('');
       },
       _renderBlocks() {
-        var esc = this._esc;
+        var esc = function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
         const root = document.getElementById('firewall-blocks');
         if (!root) return;
         const term = (this._search || '').toLowerCase();
