@@ -9106,46 +9106,90 @@ Team YARZ`;
   </div>
   </div>
 
-  <!-- ✅ v17.6: Device Tracking Info (Firewall Integration) -->
+  <!-- ✅ v2.0: Device Tracking Info — Clean Redesign -->
   ${o.deviceId || o.ip ? `
-  <div class="oc-info-grid" style="margin-top:12px; border-top:1px dashed var(--line); padding-top:12px;">
-    ${o.ip ? `
-    <div class="oc-info-cell">
-      <i class="ri-global-line"></i>
-      <div style="min-width:0;flex:1">
-        <div class="lbl">IP Address</div>
-        <div class="val" style="font-family:monospace;font-size:11.5px">${esc(o.ip)}</div>
-      </div>
-      <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.ip)}',this,'IP Copied')" title="Copy"><i class="ri-file-copy-line"></i></button>
-    </div>` : ''}
+  <div class="oc-device-section" style="margin-top:14px; border-top:1px dashed var(--line); padding-top:14px;">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-2)">
+      <i class="ri-shield-check-line"></i> Device & Security
+    </div>
+
+    <!-- Identity Row -->
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+      ${o.ip ? `
+      <div style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11.5px">
+        <i class="ri-global-line" style="opacity:0.5"></i>
+        <span style="color:var(--ink-2)">IP:</span>
+        <b style="font-family:monospace">${esc(o.ip)}</b>
+        <button class="copy-btn" style="margin:0;padding:2px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.ip)}',this,'IP Copied')"><i class="ri-file-copy-line" style="font-size:11px"></i></button>
+      </div>` : ''}
+      ${o.country ? `
+      <div style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11.5px">
+        <span style="font-size:13px">${o.country === 'BD' ? '🇧🇩' : '🌍'}</span>
+        <b>${esc(o.country)}</b>
+      </div>` : ''}
+      ${o.asn ? `
+      <div style="display:inline-flex;align-items:center;gap:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:11.5px">
+        <span style="color:var(--ink-2)">ASN:</span>
+        <b>${esc(o.asn)}</b>
+      </div>` : ''}
+    </div>
+
+    <!-- Device ID -->
     ${o.deviceId ? `
-    <div class="oc-info-cell">
-      <i class="ri-fingerprint-line"></i>
-      <div style="min-width:0;flex:1">
-        <div class="lbl">Device ID</div>
-        <div class="val" style="font-family:monospace;font-size:11.5px">${esc(o.deviceId)}</div>
-      </div>
-      <button class="copy-btn" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.deviceId)}',this,'Device ID Copied')" title="Copy"><i class="ri-file-copy-line"></i></button>
+    <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px;font-size:11.5px">
+      <i class="ri-fingerprint-line" style="opacity:0.5"></i>
+      <span style="color:var(--ink-2)">Device:</span>
+      <code style="background:var(--bg-2);padding:2px 6px;border-radius:4px;font-size:10.5px">${esc(o.deviceId)}</code>
+      <button class="copy-btn" style="margin:0;padding:2px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.deviceId)}',this,'Device ID Copied')"><i class="ri-file-copy-line" style="font-size:11px"></i></button>
     </div>` : ''}
+
+    <!-- Device Info — parsed from JSONB -->
     ${o.deviceInfo ? `
-    <div class="oc-info-cell full">
-      <i class="ri-macbook-line"></i>
-      <div style="min-width:0;flex:1">
-        <div class="lbl">Device Info</div>
-        <div class="val" style="font-size:11.5px;line-height:1.4">${esc(o.deviceInfo)}</div>
+    <div style="margin-bottom:10px">
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${(() => {
+          try {
+            const di = typeof o.deviceInfo === 'string' ? JSON.parse(o.deviceInfo) : o.deviceInfo;
+            const chips = [];
+            if (di.brand) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-smartphone-line" style="font-size:12px;color:#3b82f6"></i><b>' + esc(di.brand) + '</b>' + (di.model ? ' ' + esc(di.model) + (di.modelCode ? ' (' + esc(di.modelCode) + ')' : '') : '') + '</span>');
+            if (di.gpu) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-cpu-line" style="font-size:12px;color:#a855f7"></i><b>' + esc(di.gpu) + '</b>' + (di.gpuVendor ? ' (' + esc(di.gpuVendor) + ')' : '') + '</span>');
+            if (di.isDesktop === true || di.isDesktop === 'true') chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-computer-line" style="font-size:12px;color:#f97316"></i><b>Desktop</b></span>');
+            if (di.isMobile === true || di.isMobile === 'true') chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-smartphone-line" style="font-size:12px;color:#22c55e"></i><b>Mobile</b></span>');
+            if (di.screenWidth) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-landscape-line" style="font-size:12px;opacity:0.5"></i>' + esc(di.screenWidth) + 'x' + esc(di.screenHeight) + (di.pixelRatio ? ' @' + esc(di.pixelRatio) + 'x' : '') + '</span>');
+            if (di.cores) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-server-line" style="font-size:12px;opacity:0.5"></i>' + esc(di.cores) + ' cores · ' + esc(di.memory) + ' GB</span>');
+            if (di.ipCity || di.ipRegion) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:var(--bg-2);border:1px solid var(--line);border-radius:6px;padding:3px 7px;font-size:11px"><i class="ri-map-pin-line" style="font-size:12px;opacity:0.5"></i>' + esc(di.ipCity || '') + (di.ipRegion ? ', ' + esc(di.ipRegion) : '') + '</span>');
+            if (di.isHeadless) chips.push('<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:3px 7px;font-size:11px;color:var(--danger)"><i class="ri-robot-line"></i><b>HEADLESS</b></span>');
+            return chips.join('');
+          } catch(e) { return '<span style="font-size:11px;color:var(--ink-2)">' + esc(String(o.deviceInfo).substring(0, 150)) + '</span>'; }
+        })()}
       </div>
     </div>` : ''}
-    ${o.riskScore > 0 || o.riskSignals ? `
-    <div class="oc-info-cell full" style="background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2)">
-      <i class="ri-shield-keyhole-line" style="color:var(--danger)"></i>
-      <div style="min-width:0;flex:1">
-        <div class="lbl" style="color:var(--danger)">Risk Analysis</div>
-        <div class="val">
-          <div style="font-weight:600;font-size:12px;color:var(--danger)">Risk Score: ${o.riskScore}/100</div>
-          ${o.riskSignals ? `<div style="font-size:11px;color:var(--ink-2);margin-top:2px">${esc(o.riskSignals)}</div>` : ''}
+
+    <!-- Risk Analysis — parsed signals -->
+    ${(o.riskScore > 0 || o.riskSignals) ? `
+    <div style="background:rgba(239,68,68,0.04);border:1px solid rgba(239,68,68,0.15);border-radius:8px;padding:10px 12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <i class="ri-shield-keyhole-line" style="color:var(--danger)"></i>
+          <span style="font-size:12px;font-weight:700;color:var(--danger)">Risk Score: ${o.riskScore}/100</span>
         </div>
+        <button class="btn btn-red btn-xs" onclick="event.stopPropagation();YARZ.ord.blockFromOrder('${esc(o.orderId)}','${esc(o.deviceId||'')}','${esc(o.ip||'')}','${esc(o.customer||'')}',${o.riskScore||0})" title="Block"><i class="ri-forbid-line"></i> Block</button>
       </div>
-       <button class="btn btn-red btn-xs" style="margin-left:auto" onclick="event.stopPropagation();YARZ.ord.blockFromOrder('${esc(o.orderId)}','${esc(o.deviceId||'')}','${esc(o.ip||'')}','${esc(o.customer||'')}',${o.riskScore||0})" title="Block this customer"><i class="ri-forbid-line"></i> Block</button>
+      ${o.riskSignals ? `
+      <div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${(() => {
+          try {
+            const signals = typeof o.riskSignals === 'string' ? JSON.parse(o.riskSignals) : o.riskSignals;
+            if (!Array.isArray(signals)) return '';
+            return signals.filter(s => Array.isArray(s) && s[1] > 0).map(s => {
+              const name = s[0].replace(/_/g, ' ');
+              const val = s[1];
+              const color = val >= 50 ? 'var(--danger)' : val >= 20 ? '#f97316' : '#eab308';
+              return '<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12);border-radius:4px;padding:2px 6px;font-size:10.5px;color:' + color + '"><b>' + val + '</b> ' + esc(name) + '</span>';
+            }).join('');
+          } catch(e) { return '<span style="font-size:11px;color:var(--ink-2)">' + esc(String(o.riskSignals).substring(0, 200)) + '</span>'; }
+        })()}
+      </div>` : ''}
     </div>` : ''}
   </div>
   ` : ''}
