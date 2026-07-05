@@ -9075,107 +9075,111 @@ Team YARZ`;
 
  <div class="order-body" id="ob-${esc(o.orderId)}" style="display:none; padding-top:12px; margin-top:10px; border-top:1px dashed var(--line);">
 
- <!-- PRODUCT -->
- ${ (o.products || [{ product: o.product, size: o.size, qty: o.qty, price: o.price }]).map(p => {
-  const pQty = parseInt(p.qty)||1;
-  const pPrice = parseFloat(p.price)||0;
-  const pObj = (state.data.inventory || []).find(inv => inv.name === p.product);
-  const pImg = pObj && pObj.img1 ? getImgSrc(pObj.img1) : '';
-  return `<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">
-    <div style="width:36px;height:36px;border-radius:8px;background:var(--bg-2);background-image:url('${esc(pImg)}');background-size:cover;background-position:center;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden">${pImg?'':'<i class="ri-shopping-bag-3-line" style="opacity:0.3"></i>'}</div>
-    <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.product||'—')}</div>
-      <div style="font-size:11px;color:var(--ink-3)">${p.size?'Size: '+esc(_ordSize(p.size))+' · ':''}Qty: ${toBn(pQty)}</div></div>
-    <div style="text-align:right;font-size:12px;font-weight:600;white-space:nowrap">${fmtBDT(pPrice*pQty)}</div>
-  </div>`;
- }).join('') }
-
- <!-- CUSTOMER — compact one-line per field -->
- <div style="padding:8px 0;border-bottom:1px solid var(--line)">
-  <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-    <span style="font-size:13px;font-weight:700;color:var(--ink)">${esc(o.customer||'—')}</span>
-    <button class="copy-btn" style="width:20px;height:20px;padding:0;font-size:10px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.customer||'')}',this,'Copied')"><i class="ri-file-copy-line"></i></button>
-  </div>
-  <div style="display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11.5px;color:var(--ink-2);line-height:1.8">
-    <span>📞 <b style="color:var(--ink)" class="bn-num">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</b> <button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._normalizeBdPhone('${esc(o.phone||'')}')||'${esc(o.phone||'')}',this,'Copied')"><i class="ri-file-copy-line"></i></button></span>
-    <span>📍 <b style="color:var(--ink)">${esc(o.location||o.city||'—')}</b></span>
-    <span>💳 <b style="color:var(--ink)">${esc(o.payment||'COD')}</b></span>
-    ${o.email?`<span>✉️ ${esc(o.email)}</span>`:''}
-  </div>
-  ${o.address?`<div style="margin-top:3px;font-size:11px;color:var(--ink-3);display:flex;align-items:center;gap:3px"><i class="ri-home-4-line" style="font-size:11px;opacity:0.4"></i>${esc(o.address)}<button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy('${esc((o.address||'')+(o.location?', '+o.location:''))}',this,'Copied')"><i class="ri-file-copy-line"></i></button></div>`:''}
+ <!-- PRODUCT CARD -->
+ <div style="background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-3);margin-bottom:6px;display:flex;align-items:center;gap:4px"><i class="ri-shopping-bag-3-line" style="font-size:11px"></i> Product</div>
+  ${(o.products || [{ product: o.product, size: o.size, qty: o.qty, price: o.price }]).map(p => {
+   const pQty = parseInt(p.qty)||1;
+   const pPrice = parseFloat(p.price)||0;
+   const pObj = (state.data.inventory || []).find(inv => inv.name === p.product);
+   const pImg = pObj && pObj.img1 ? getImgSrc(pObj.img1) : '';
+   return `<div style="display:flex;gap:8px;align-items:center;${(o.products||[]).length>1?'border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:6px':''}">
+    <div style="width:40px;height:40px;border-radius:8px;background:var(--bg-2);background-image:url('${esc(pImg)}');background-size:cover;background-position:center;flex-shrink:0;display:flex;align-items:center;justify-content:center">${pImg?'':'<i class="ri-shopping-bag-3-line" style="opacity:0.3;font-size:16px"></i>'}</div>
+    <div style="flex:1;min-width:0">
+     <div style="font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.product||'—')}</div>
+     <div style="font-size:11px;color:var(--ink-3);margin-top:1px">${p.size?`<span style="background:var(--bg-2);padding:1px 5px;border-radius:4px">${esc(_ordSize(p.size))}</span> · `:''}Qty: <b>${toBn(pQty)}</b></div>
+    </div>
+    <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--ink)">${fmtBDT(pPrice*pQty)}</div><div style="font-size:10px;color:var(--ink-3)">${fmtBDT(pPrice)}/pc</div></div>
+   </div>`;
+  }).join('')}
  </div>
 
- <!-- PRICE — compact inline -->
- <div style="padding:6px 0;border-bottom:1px solid var(--line);font-size:12px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:4px 16px">
-  <span>Product: <b style="color:var(--ink)">${fmtBDT(subtotal)}</b></span>
-  <span>Delivery: <b style="color:var(--ink)">${fmtBDT(delivery)}</b></span>
-  ${hasCoupon?`<span>Coupon: <b style="color:var(--success)">−${fmtBDT(couponDiscount)}</b></span>`:''}
-  <span style="font-weight:700;color:var(--ink);border-left:1px solid var(--line);padding-left:10px">Total: ${fmtBDT(total)}</span>
+ <!-- CUSTOMER CARD -->
+ <div style="background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-3);margin-bottom:6px;display:flex;align-items:center;gap:4px"><i class="ri-user-3-line" style="font-size:11px"></i> Customer</div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+   <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--brand,#3b82f6),#6366f1);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0">${esc((o.customer||'?').charAt(0).toUpperCase())}</div>
+   <div style="min-width:0">
+    <div style="font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.customer||'—')}</div>
+    <div style="font-size:11px;color:var(--ink-3);display:flex;align-items:center;gap:3px">
+     <i class="ri-phone-line" style="font-size:10px"></i>
+     <span class="bn-num">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</span>
+     <button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._normalizeBdPhone('${esc(o.phone||'')}')||'${esc(o.phone||'')}',this,'Copied')"><i class="ri-file-copy-line"></i></button>
+    </div>
+   </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:11.5px;padding-top:5px;border-top:1px dashed var(--line)">
+   <div style="color:var(--ink-3)"><i class="ri-map-pin-2-line" style="font-size:11px"></i> <b style="color:var(--ink)">${esc(o.location||o.city||'—')}</b></div>
+   <div style="color:var(--ink-3)"><i class="ri-wallet-3-line" style="font-size:11px"></i> <b style="color:var(--ink)">${esc(o.payment||'COD')}</b></div>
+   ${o.email?`<div style="color:var(--ink-3);grid-column:span 2"><i class="ri-mail-line" style="font-size:11px"></i> ${esc(o.email)}</div>`:''}
+   ${o.address?`<div style="color:var(--ink-3);grid-column:span 2;display:flex;align-items:flex-start;gap:3px"><i class="ri-home-4-line" style="font-size:11px;flex-shrink:0;margin-top:2px"></i><span>${esc(o.address)}</span><button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px;flex-shrink:0" onclick="event.stopPropagation();YARZ.ord._copy('${esc((o.address||'')+(o.location?', '+o.location:''))}',this,'Copied')"><i class="ri-file-copy-line"></i></button></div>`:''}
+  </div>
  </div>
 
- ${o.notes?`<div style="padding:5px 0;font-size:11.5px;color:var(--ink-3)"><i class="ri-sticky-note-line" style="opacity:0.4"></i> ${esc(o.notes)}</div>`:''}
+ <!-- PRICE CARD -->
+ <div style="background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px">
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-3);margin-bottom:6px;display:flex;align-items:center;gap:4px"><i class="ri-money-dollar-circle-line" style="font-size:11px"></i> Payment</div>
+  <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-2);padding:2px 0">
+   <span>Product (${toBn(totalQty)} items)</span><span class="bn-num">${fmtBDT(subtotal)}</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-2);padding:2px 0">
+   <span>Delivery</span><span class="bn-num">${fmtBDT(delivery)}</span>
+  </div>
+  ${hasCoupon?`<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--success);padding:2px 0"><span>Coupon ${couponCode?'('+esc(couponCode)+')':''}</span><span class="bn-num">−${fmtBDT(couponDiscount)}</span></div>`:''}
+  <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:800;color:var(--ink);padding:5px 0 2px;border-top:1px solid var(--line);margin-top:4px">
+   <span>Total</span><span class="bn-num">${fmtBDT(total)}</span>
+  </div>
+ </div>
 
- <!-- DEVICE & SECURITY — collapsible -->
+ ${o.notes?`<div style="font-size:11.5px;color:var(--ink-3);padding:4px 0 6px"><i class="ri-sticky-note-line" style="opacity:0.4"></i> ${esc(o.notes)}</div>`:''}
+
+ <!-- DEVICE — collapsible -->
  ${o.deviceId||o.ip?`
- <div style="margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden">
+ <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:8px">
   <details>
-   <summary style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;font-size:11px;font-weight:600;color:var(--ink-2);background:var(--bg-2,var(--surface-1,rgba(0,0,0,0.02)));user-select:none">
+   <summary style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;font-size:11px;font-weight:600;color:var(--ink-2);background:var(--surface-1,rgba(0,0,0,0.02));user-select:none">
     <i class="ri-shield-check-line" style="color:var(--brand)"></i> Device & Security
-    ${o.riskScore>0?`<span style="margin-left:auto;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:700;background:${o.riskScore>=50?'rgba(239,68,68,0.1);color:var(--danger)':o.riskScore>=20?'rgba(249,115,22,0.1);color:#f97316':'rgba(34,197,94,0.1);color:#22c55e'}">${o.riskScore}</span>`:''}
-    <i class="ri-arrow-down-s-line" style="margin-left:2px;transition:transform 0.2s"></i>
+    ${o.riskScore>0?`<span style="margin-left:auto;font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700;background:${o.riskScore>=50?'rgba(239,68,68,0.1);color:var(--danger)':o.riskScore>=20?'rgba(249,115,22,0.1);color:#f97316':'rgba(34,197,94,0.1);color:#22c55e'}">${o.riskScore}</span>`:''}
+    <i class="ri-arrow-down-s-line" style="transition:transform 0.2s"></i>
    </summary>
    <div style="padding:8px 10px;border-top:1px solid var(--line)">
-    <!-- Identity chips -->
     <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
-     ${o.ip?`<span class="oc-chip" style="font-size:10.5px"><i class="ri-global-line"></i><code style="font-family:monospace">${esc(o.ip)}</code><button class="copy-btn" style="width:16px;height:16px;padding:0;margin:0;font-size:8px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.ip)}',this,'Copied')"><i class="ri-file-copy-line"></i></button></span>`:''}
-     ${o.country?`<span class="oc-chip" style="font-size:10.5px">${o.country==='BD'?'🇧🇩':'🌍'} <b>${esc(o.country)}</b></span>`:''}
-     ${o.asn?`<span class="oc-chip" style="font-size:10.5px"><i class="ri-server-line"></i>${esc(o.asn)}</span>`:''}
-     ${o.deviceId?`<span class="oc-chip" style="font-size:10.5px"><i class="ri-fingerprint-line"></i><code style="font-size:9.5px">${esc(o.deviceId)}</code><button class="copy-btn" style="width:16px;height:16px;padding:0;margin:0;font-size:8px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.deviceId)}',this,'Copied')"><i class="ri-file-copy-line"></i></button></span>`:''}
+     ${o.ip?`<span class="oc-chip" style="font-size:10px"><i class="ri-global-line"></i><code style="font-family:monospace">${esc(o.ip)}</code><button class="copy-btn" style="width:16px;height:16px;padding:0;margin:0;font-size:8px" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.ip)}',this,'Copied')"><i class="ri-file-copy-line"></i></button></span>`:''}
+     ${o.country?`<span class="oc-chip" style="font-size:10px">${o.country==='BD'?'🇧🇩':'🌍'} <b>${esc(o.country)}</b></span>`:''}
+     ${o.deviceId?`<span class="oc-chip" style="font-size:10px"><i class="ri-fingerprint-line"></i><code style="font-size:9px">${esc(o.deviceId)}</code></span>`:''}
     </div>
-    <!-- Device info chips -->
     ${o.deviceInfo?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${(()=>{
-     try{
-      const di=typeof o.deviceInfo==='string'?JSON.parse(o.deviceInfo):o.deviceInfo;
-      const c=[];
-      if(di.brand){
-       var db=di.brand;
-       if(db==='Android'&&di.modelCode){var mc=di.modelCode;if(/^SM-|^SC-|^GT-/i.test(mc))db='Samsung';else if(/^M\d{4}/i.test(mc))db='Xiaomi';else if(/^RMX/i.test(mc))db='Realme';else if(/^CPH/i.test(mc))db='Oppo';else if(/^V\d{4}/i.test(mc))db='Vivo';else if(/^IN\d{4}|^LE\d{4,5}/i.test(mc))db='OnePlus';else if(/^TA-|^N\d{3}[A-Z]/i.test(mc))db='Nokia';}
-       c.push('<span class="oc-chip b" style="font-size:10.5px"><i class="ri-smartphone-line"></i><b>'+esc(db)+'</b>'+(di.model?' '+esc(di.model):'')+'</span>');
-      }
-      if(di.gpu)c.push('<span class="oc-chip p" style="font-size:10.5px"><i class="ri-cpu-line"></i>'+esc(di.gpu)+'</span>');
-      if(di.isMobile==='true'||di.isMobile===true)c.push('<span class="oc-chip g" style="font-size:10.5px">📱 Mobile</span>');
-      if(di.isDesktop==='true'||di.isDesktop===true)c.push('<span class="oc-chip o" style="font-size:10.5px">🖥️ Desktop</span>');
-      if(di.screenWidth)c.push('<span class="oc-chip" style="font-size:10.5px">'+esc(di.screenWidth)+'x'+esc(di.screenHeight)+(di.pixelRatio?' @'+esc(di.pixelRatio)+'x':'')+'</span>');
-      if(di.cores)c.push('<span class="oc-chip" style="font-size:10.5px">'+esc(di.cores)+'c · '+esc(di.memory)+'GB</span>');
-      if(di.ipCity||di.ipRegion)c.push('<span class="oc-chip" style="font-size:10.5px">📍'+esc(di.ipCity||'')+(di.ipRegion?', '+esc(di.ipRegion):'')+'</span>');
-      if(di.inAppBrowser)c.push('<span class="oc-chip b" style="font-size:10.5px">📲 '+esc(di.inAppBrowser)+'</span>');
-      if(di.isHeadless)c.push('<span class="oc-chip r" style="font-size:10.5px">🤖 HEADLESS</span>');
-      return c.join('');
-     }catch(e){return '<span style="font-size:10px;color:var(--ink-3)">Parse error</span>';}
+     try{const di=typeof o.deviceInfo==='string'?JSON.parse(o.deviceInfo):o.deviceInfo;const c=[];
+     if(di.brand){var db=di.brand;if(db==='Android'&&di.modelCode){var mc=di.modelCode;if(/^SM-|^SC-|^GT-/i.test(mc))db='Samsung';else if(/^M\d{4}/i.test(mc))db='Xiaomi';else if(/^RMX/i.test(mc))db='Realme';else if(/^CPH/i.test(mc))db='Oppo';else if(/^V\d{4}/i.test(mc))db='Vivo';else if(/^IN\d{4}|^LE\d{4,5}/i.test(mc))db='OnePlus';}c.push('<span class="oc-chip b" style="font-size:10px"><i class="ri-smartphone-line"></i><b>'+esc(db)+'</b>'+(di.model?' '+esc(di.model):'')+'</span>');}
+     if(di.gpu)c.push('<span class="oc-chip p" style="font-size:10px"><i class="ri-cpu-line"></i>'+esc(di.gpu)+'</span>');
+     if(di.isMobile==='true'||di.isMobile===true)c.push('<span class="oc-chip g" style="font-size:10px">📱</span>');
+     if(di.isDesktop==='true'||di.isDesktop===true)c.push('<span class="oc-chip o" style="font-size:10px">🖥️</span>');
+     if(di.screenWidth)c.push('<span class="oc-chip" style="font-size:10px">'+esc(di.screenWidth)+'x'+esc(di.screenHeight)+'</span>');
+     if(di.cores)c.push('<span class="oc-chip" style="font-size:10px">'+esc(di.cores)+'c·'+esc(di.memory)+'GB</span>');
+     if(di.ipCity)c.push('<span class="oc-chip" style="font-size:10px">📍'+esc(di.ipCity)+'</span>');
+     if(di.inAppBrowser)c.push('<span class="oc-chip b" style="font-size:10px">📲'+esc(di.inAppBrowser)+'</span>');
+     return c.join('');}catch(e){return'';}
     })()}</div>`:''}
-    <!-- Risk -->
-    ${o.riskScore>0||o.riskSignals?`<div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:6px">
-     <span style="font-size:10.5px;font-weight:600;color:${o.riskScore>=50?'var(--danger)':o.riskScore>=20?'#f97316':'var(--ink-3)'}"><i class="ri-shield-keyhole-line"></i> Risk ${o.riskScore}/100</span>
+    ${o.riskScore>0?`<div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:5px">
+     <span style="font-size:10.5px;color:${o.riskScore>=50?'var(--danger)':'var(--ink-3)'}"><i class="ri-shield-keyhole-line"></i> Risk ${o.riskScore}/100</span>
      <button class="btn btn-red btn-xs" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();YARZ.ord.blockFromOrder('${esc(o.orderId)}','${esc(o.deviceId||'')}','${esc(o.ip||'')}','${esc(o.customer||'')}',${o.riskScore||0})"><i class="ri-forbid-line"></i> Block</button>
-    </div>
-    ${o.riskSignals?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">${(()=>{try{const s=typeof o.riskSignals==='string'?JSON.parse(o.riskSignals):o.riskSignals;if(!Array.isArray(s))return'';return s.filter(x=>Array.isArray(x)&&x[1]>0).map(x=>{const n=x[0].replace(/_/g,' ');const v=x[1];const cl=v>=50?'var(--danger)':v>=20?'#f97316':'#eab308';return'<span class="oc-sig" style="color:'+cl+'"><b>'+v+'</b> '+esc(n)+'</span>';}).join('')}catch(e){return'';}})()}</div>`:''}
-    `:''}
+    </div>${o.riskSignals?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">${(()=>{try{const s=typeof o.riskSignals==='string'?JSON.parse(o.riskSignals):o.riskSignals;if(!Array.isArray(s))return'';return s.filter(x=>Array.isArray(x)&&x[1]>0).map(x=>{const n=x[0].replace(/_/g,' ');const v=x[1];const cl=v>=50?'var(--danger)':v>=20?'#f97316':'#eab308';return'<span class="oc-sig" style="color:'+cl+'"><b>'+v+'</b> '+esc(n)+'</span>';}).join('')}catch(e){return'';}})()}</div>`:''}`:''}
    </div>
   </details>
  </div>`:''}
 
- <!-- ACTIONS -->
- <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;align-items:center">
-  ${actionBtn}
-  ${sfBtn}${sfStatusBtn}
+ <!-- ACTIONS — single row -->
+ <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:4px 0">
+  ${actionBtn}${sfBtn}${sfStatusBtn}
   <button class="btn btn-xs" style="background:#25D366;color:#fff;border:none;font-size:10.5px;padding:4px 8px" onclick="YARZ.ord.sendWhatsApp('${esc(o.orderId)}')"><i class="ri-whatsapp-fill"></i> WA</button>
   <button class="btn btn-ghost btn-xs" style="font-size:10.5px;padding:4px 6px" onclick="YARZ.ord.callCustomer('${esc(o.phone||'')}')" title="Call"><i class="ri-phone-fill" style="color:#0ea5e9"></i></button>
   ${stage!=='delivered'?addTrackBtn:''}
-  <button class="btn btn-ghost btn-xs" style="font-size:10.5px;padding:4px 6px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._courierBlock('${esc(o.orderId)}'),this,'Copied')" title="Copy courier block"><i class="ri-clipboard-line"></i></button>
+  <button class="btn btn-ghost btn-xs" style="font-size:10.5px;padding:4px 6px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._courierBlock('${esc(o.orderId)}'),this,'Copied')" title="Copy"><i class="ri-clipboard-line"></i></button>
   ${stage!=='delivered'?`<button class="btn btn-ghost btn-xs" style="font-size:10.5px;padding:4px 6px;margin-left:auto" onclick="YARZ.ord.showStatusMenu('${esc(o.orderId)}')"><i class="ri-more-2-line"></i></button>`:''}
-  <button class="btn btn-ghost btn-xs" style="font-size:10.5px;padding:4px 6px;color:var(--danger)" onclick="YARZ.ord.deleteWebOrder('${esc(o.orderId)}')" title="Delete"><i class="ri-delete-bin-6-line"></i></button>
+  <button class="btn btn-ghost btn-xs" style="font-size:10.5px;padding:4px 6px;color:var(--danger)" onclick="YARZ.ord.deleteWebOrder('${esc(o.orderId)}')"><i class="ri-delete-bin-6-line"></i></button>
  </div>
 
- ${o.activity?`<details style="margin-top:6px;font-size:11px"><summary style="cursor:pointer;color:var(--ink-3);font-weight:600"><i class="ri-history-line"></i> History ${o.updated?'· '+esc(o.updated):''}</summary><div style="margin-top:4px;color:var(--ink-3);line-height:1.5;white-space:pre-wrap;word-break:break-word">${esc(o.activity)}</div></details>`:''}
+ ${o.activity?`<details style="font-size:11px;margin-top:4px"><summary style="cursor:pointer;color:var(--ink-3);font-weight:600"><i class="ri-history-line"></i> History ${o.updated?'· '+esc(o.updated):''}</summary><div style="margin-top:4px;color:var(--ink-3);line-height:1.5;white-space:pre-wrap;word-break:break-word">${esc(o.activity)}</div></details>`:''}
  ${trackingHtml}
  </div>
  </div>`;
