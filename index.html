@@ -2948,7 +2948,7 @@ table tbody tr:hover{ background:var(--surface-2); }
 </script>
 
 <!-- Admin Panel script (now uses supabase-adapter-v2.js with full RPC support) -->
-<script src="supabase-adapter-v2.js?v=2026-07-05-fix1"></script>
+<script src="supabase-adapter-v2.js?v=2026-07-06-v2"></script>
 
   <!-- Flatpickr (Premium Custom Calendar Picker) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -14004,10 +14004,12 @@ window.publishToWebsiteAction = async function() {
       _autoTimer: null,
       async refresh() {
         try {
-          const [lookupRes, fpRes] = await Promise.all([
+          const results = await Promise.allSettled([
             appsPost('__fortress_lookup', {}),
             appsPost('__fortress_get_fingerprints', { limit: 200 })
           ]);
+          const lookupRes = results[0].status === 'fulfilled' ? results[0].value : null;
+          const fpRes = results[1].status === 'fulfilled' ? results[1].value : null;
           if (lookupRes && lookupRes.ok) {
             this._threats = lookupRes.threats || [];
             this._devices = lookupRes.devices || [];
