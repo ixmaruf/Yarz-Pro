@@ -10522,11 +10522,13 @@ YARZ.rep = {
  const ad = state.data.adTracker;
  const ex = state.data.expenses;
  const ord = [...state.data.orders, ...state.data.websiteOrders];
- const keyOf = d => {
- if(!d) return null;
- const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0');
- return kind==='month' ? `${y}-${m}` : String(y);
- };
+  const keyOf = d => {
+  if(!d) return null;
+  try { var dt = d instanceof Date ? d : new Date(d); } catch(e) { return null; }
+  if (isNaN(dt.getTime())) return null;
+  const y = dt.getFullYear(); const m = String(dt.getMonth()+1).padStart(2,'0');
+  return kind==='month' ? `${y}-${m}` : String(y);
+  };
  const bump = (k, kind2, v)=>{
  if(!k) return;
  out[k] = out[k] || { rev:0, cost:0, ad:0, exp:0, orders:0, returns:0 };
