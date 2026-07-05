@@ -869,7 +869,8 @@
   }
 
   async function fortressGetFingerprints(p) {
-    var db = getWriteDb(); await ensureAuth();
+    var db = getDb();
+    if (!db) return ok({ fingerprints: [] });
     var limit = (p && p.limit) || 200;
     var r = await db.from("device_fingerprints").select("*").order("last_seen_at", { ascending: false }).limit(limit);
     if (r.error) throw new Error(r.error.message);
@@ -877,7 +878,8 @@
   }
 
   async function passthroughOrRpc(fn, args) {
-    var db = getWriteDb(); await ensureAuth();
+    var db = getDb();
+    if (!db) return null;
     try {
       var r = await db.rpc(fn, args || {});
       if (!r.error) return ok(r.data);
