@@ -870,11 +870,11 @@
 
   async function fortressGetFingerprints(p) {
     var db = getDb();
-    if (!db) return ok({ fingerprints: [] });
+    if (!db) return { ok: true, fingerprints: [] };
     var limit = (p && p.limit) || 200;
     var r = await db.from("device_fingerprints").select("*").order("last_seen_at", { ascending: false }).limit(limit);
-    if (r.error) throw new Error(r.error.message);
-    return ok({ fingerprints: r.data || [] });
+    if (r.error) return { ok: false, fingerprints: [], error: r.error.message };
+    return { ok: true, fingerprints: r.data || [] };
   }
 
   async function passthroughOrRpc(fn, args) {
