@@ -5120,83 +5120,73 @@ table tbody tr:hover{ background:var(--surface-2); }
 
  <!-- FIREWALL / PROTECTION -->
  <div class="page" data-page="firewall">
-  <!-- Stats Row -->
-  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:14px">
-   <div class="card" style="padding:12px; display:flex; align-items:center; gap:10px">
-    <div style="font-size:20px; padding:6px; background:rgba(0,96,223,0.1); border-radius:8px; color:var(--info)"><i class="ri-fingerprint-line"></i></div>
-    <div><div style="font-size:10px; color:var(--ink-3); font-weight:600; text-transform:uppercase">Total Visitors</div><div id="fw-stat-total" style="font-size:18px; font-weight:700">0</div></div>
+  <!-- Stats Row — compact -->
+  <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px">
+   <div style="padding:10px;background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;text-align:center">
+    <div style="font-size:10px;color:var(--ink-3);font-weight:600;text-transform:uppercase">Visitors</div>
+    <div id="fw-stat-total" style="font-size:20px;font-weight:800;color:var(--info)">0</div>
    </div>
-   <div class="card" style="padding:12px; display:flex; align-items:center; gap:10px">
-    <div style="font-size:20px; padding:6px; background:rgba(230,0,35,0.1); border-radius:8px; color:var(--danger)"><i class="ri-forbid-2-line"></i></div>
-    <div><div style="font-size:10px; color:var(--ink-3); font-weight:600; text-transform:uppercase">Blocked</div><div id="fw-stat-blocked" style="font-size:18px; font-weight:700">0</div></div>
+   <div style="padding:10px;background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;text-align:center">
+    <div style="font-size:10px;color:var(--ink-3);font-weight:600;text-transform:uppercase">Blocked</div>
+    <div id="fw-stat-blocked" style="font-size:20px;font-weight:800;color:var(--danger)">0</div>
    </div>
-   <div class="card" style="padding:12px; display:flex; align-items:center; gap:10px">
-    <div style="font-size:20px; padding:6px; background:rgba(217,119,6,0.1); border-radius:8px; color:var(--warn)"><i class="ri-alarm-warning-line"></i></div>
-    <div><div style="font-size:10px; color:var(--ink-3); font-weight:600; text-transform:uppercase">Threats Today</div><div id="fw-stat-threats" style="font-size:18px; font-weight:700">0</div></div>
+   <div style="padding:10px;background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;text-align:center">
+    <div style="font-size:10px;color:var(--ink-3);font-weight:600;text-transform:uppercase">Threats Today</div>
+    <div id="fw-stat-threats" style="font-size:20px;font-weight:800;color:var(--warn)">0</div>
    </div>
-   <div class="card" style="padding:12px; display:flex; align-items:center; gap:10px">
-    <div style="font-size:20px; padding:6px; background:rgba(124,58,237,0.1); border-radius:8px; color:var(--purple)"><i class="ri-vpn-passthrough-line"></i></div>
-    <div><div style="font-size:10px; color:var(--ink-3); font-weight:600; text-transform:uppercase">VPN Users</div><div id="fw-stat-vpn" style="font-size:18px; font-weight:700">0</div></div>
-   </div>
-  </div>
-
-  <!-- Header Bar -->
-  <div class="card" style="padding:14px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px">
-   <div style="font-size:14px; font-weight:700; color:var(--ink)"><i class="ri-shield-keyhole-line" style="color:var(--danger)"></i> Security & Protection (Fortress v2.0)</div>
-   <div style="display:flex; gap:6px">
-    <button class="btn btn-sm" style="background:var(--info); color:#fff" onclick="YARZ.firewall.refresh()"><i class="ri-refresh-line"></i> Refresh</button>
-    <button class="btn btn-red btn-sm" onclick="YARZ.firewall.confirmClearAll()"><i class="ri-delete-bin-line"></i> Clear Blocklist</button>
+   <div style="padding:10px;background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;text-align:center">
+    <div style="font-size:10px;color:var(--ink-3);font-weight:600;text-transform:uppercase">VPN Users</div>
+    <div id="fw-stat-vpn" style="font-size:20px;font-weight:800;color:#7c3aed">0</div>
    </div>
   </div>
 
-  <!-- ✅ v18.8: Manual Block Section -->
-  <div class="card" style="padding:18px; margin-bottom:14px; border:2px dashed rgba(230,0,35,0.3); background:rgba(230,0,35,0.02)">
-   <div style="font-size:14px; font-weight:700; color:var(--danger); margin-bottom:12px"><i class="ri-forbid-line"></i> Manually Block a Device</div>
-   <div style="font-size:12px; color:var(--ink-2); margin-bottom:12px">Enter a Device ID, Composite Hash, IP Address, or Visitor ID to permanently block. The customer will see a fake success page and never receive their order.</div>
-   <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end">
-    <div style="flex:1; min-width:250px">
-     <label style="font-size:11px; font-weight:600; color:var(--ink-3); display:block; margin-bottom:4px">Device ID / IP / Composite Hash / Visitor ID</label>
-     <input id="manual-block-input" class="input" placeholder="e.g. a1b2c3d4... or 192.168.1.1" style="font-size:13px; font-family:monospace">
-    </div>
-    <div style="min-width:160px">
-     <label style="font-size:11px; font-weight:600; color:var(--ink-3); display:block; margin-bottom:4px">Reason</label>
-     <input id="manual-block-reason" class="input" placeholder="e.g. Fake order" style="font-size:13px">
-    </div>
-    <button class="btn btn-red" onclick="YARZ.firewall.blockManually()" style="height:38px; white-space:nowrap">
-     <i class="ri-forbid-line"></i> Block Now
-    </button>
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:6px">
+   <div style="font-size:14px;font-weight:700;color:var(--ink)"><i class="ri-shield-keyhole-line" style="color:var(--danger)"></i> Security & Protection</div>
+   <div style="display:flex;gap:6px">
+    <button class="btn btn-sm" onclick="YARZ.firewall.refresh()"><i class="ri-refresh-line"></i> Refresh</button>
+    <button class="btn btn-red btn-sm" onclick="YARZ.firewall.confirmClearAll()"><i class="ri-delete-bin-line"></i> Clear All</button>
    </div>
   </div>
 
-  <!-- Device Fingerprints Section -->
-  <div class="card" style="padding:18px; margin-bottom:14px">
-   <div class="section-title" style="margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px">
-    <h2><i class="ri-fingerprint-line" style="color:var(--info)"></i> Device Fingerprints (Last 7 Days)</h2>
-    <div class="search-wrap" style="width:250px">
-     <i class="ri-search-line sicon"></i>
-     <input id="firewall-fp-search" class="input" placeholder="Search by device, IP, country..." oninput="YARZ.firewall.filterFingerprints()">
-    </div>
+  <!-- Manual Block -->
+  <details style="background:rgba(230,0,35,0.03);border:1px solid rgba(230,0,35,0.2);border-radius:10px;margin-bottom:12px">
+   <summary style="padding:10px 14px;cursor:pointer;font-size:12px;font-weight:700;color:var(--danger);display:flex;align-items:center;gap:6px">
+    <i class="ri-forbid-line"></i> Manually Block a Device
+   </summary>
+   <div style="padding:0 14px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+    <input id="manual-block-input" class="input" placeholder="Device ID / IP / Hash" style="flex:1;min-width:200px;font-size:12px;font-family:monospace">
+    <input id="manual-block-reason" class="input" placeholder="Reason" style="width:160px;font-size:12px">
+    <button class="btn btn-red btn-sm" onclick="YARZ.firewall.blockManually()"><i class="ri-forbid-line"></i> Block</button>
    </div>
-   <div id="firewall-fingerprints" class="list" style="display:flex; flex-direction:column; gap:10px"></div>
-  </div>
+  </details>
 
-  <!-- Live Threat Logs -->
-  <div class="card" style="padding:18px; margin-bottom:14px">
-   <div class="section-title" style="margin-bottom:12px"><h2><i class="ri-radar-line" style="color:var(--warn)"></i> Live Threat Logs</h2></div>
-   <div id="firewall-threats" class="list" style="display:flex; flex-direction:column; gap:10px"></div>
-  </div>
+  <!-- Blocklist — Collapsible -->
+  <details open style="background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;margin-bottom:12px">
+   <summary style="padding:10px 14px;cursor:pointer;font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;justify-content:space-between" onclick="setTimeout(function(){YARZ.firewall._renderBlocks()},100)">
+    <span><i class="ri-forbid-2-line" style="color:var(--danger)"></i> Blocked Devices (<span id="fw-block-count">0</span>)</span>
+    <input id="firewall-search" class="input" placeholder="Search..." oninput="YARZ.firewall.filter()" style="width:180px;font-size:11px;padding:4px 8px" onclick="event.stopPropagation()">
+   </summary>
+   <div id="firewall-blocks" style="padding:0 14px 14px"></div>
+  </details>
 
-  <!-- Blocklist -->
-  <div class="card" style="padding:18px">
-   <div class="section-title" style="margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px">
-    <h2><i class="ri-forbid-2-line" style="color:var(--danger)"></i> Blocklist (Permanent)</h2>
-    <div class="search-wrap" style="width:250px">
-     <i class="ri-search-line sicon"></i>
-     <input id="firewall-search" class="input" placeholder="Search blocked devices..." oninput="YARZ.firewall.filter()">
-    </div>
-   </div>
-   <div id="firewall-blocks" class="list" style="display:flex; flex-direction:column; gap:10px"></div>
-  </div>
+  <!-- Fingerprints — Collapsible -->
+  <details style="background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;margin-bottom:12px">
+   <summary style="padding:10px 14px;cursor:pointer;font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;justify-content:space-between" onclick="setTimeout(function(){YARZ.firewall._renderFingerprints()},100)">
+    <span><i class="ri-fingerprint-line" style="color:var(--info)"></i> Device Fingerprints (<span id="fw-fp-count">0</span>)</span>
+    <input id="firewall-fp-search" class="input" placeholder="Search..." oninput="YARZ.firewall.filterFingerprints()" style="width:180px;font-size:11px;padding:4px 8px" onclick="event.stopPropagation()">
+   </summary>
+   <div id="firewall-fingerprints" style="padding:0 14px 14px"></div>
+  </details>
+
+  <!-- Threat Logs — Collapsible -->
+  <details style="background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;margin-bottom:12px">
+   <summary style="padding:10px 14px;cursor:pointer;font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px" onclick="setTimeout(function(){YARZ.firewall._renderThreats()},100)">
+    <i class="ri-radar-line" style="color:var(--warn)"></i> Threat Logs (<span id="fw-threat-count">0</span>)
+   </summary>
+   <div id="firewall-threats" style="padding:0 14px 14px"></div>
+  </details>
+ </div>
  </div>
  
 <!-- NEW NATIVE TABS -->
@@ -14028,9 +14018,12 @@ window.publishToWebsiteAction = async function() {
         const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         set('fw-stat-total', this._fingerprints.length);
         set('fw-stat-blocked', this._devices.length);
+        set('fw-block-count', this._devices.length);
+        set('fw-fp-count', this._fingerprints.length);
         const today = new Date().toISOString().slice(0, 10);
         const threatsToday = this._threats.filter(t => (t.ts || '').slice(0, 10) === today).length;
         set('fw-stat-threats', threatsToday);
+        set('fw-threat-count', this._threats.length);
         const vpnCount = this._fingerprints.filter(f => f.vpn_proxy || f.isVpn).length;
         set('fw-stat-vpn', vpnCount);
       },
@@ -14175,39 +14168,40 @@ window.publishToWebsiteAction = async function() {
         }).join('');
       },
       _renderBlocks() {
+        var esc = this._esc;
         const root = document.getElementById('firewall-blocks');
         if (!root) return;
-        const esc = function(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
         const term = (this._search || '').toLowerCase();
         const visible = this._devices.filter(d =>
-          !term || (d.deviceId || d.device_id || '').toLowerCase().indexOf(term) !== -1
-            || (d.blockedAt || d.blocked_at || '').toLowerCase().indexOf(term) !== -1
+          !term || (d.device_id || '').toLowerCase().indexOf(term) !== -1
+            || (d.block_reason || '').toLowerCase().indexOf(term) !== -1
+            || (d.ips_seen || '').indexOf(term) !== -1
         );
         if (!visible.length) {
-          root.innerHTML = '<div style="padding:18px;text-align:center;color:var(--ink-3);font-size:13px">' +
-            (term ? 'No blocked devices match "' + esc(term) + '".' : '✅ No blocked devices.') + '</div>';
+          root.innerHTML = '<div style="padding:14px;text-align:center;color:var(--ink-3);font-size:12px">' +
+            (term ? 'No matches for "' + esc(term) + '"' : '✅ No blocked devices') + '</div>';
           return;
         }
         root.innerHTML = visible.map(d => {
-          const deviceId = d.deviceId || d.device_id || '';
-          return `
-          <div class="card" style="padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-left:4px solid var(--danger)">
-            <div style="font-size:22px">🚫</div>
-            <div style="flex:1;min-width:240px">
-              <div style="font-size:13px;font-weight:600">📱 <code style="font-size:11.5px">${esc(deviceId)}</code></div>
-              <div style="font-size:11.5px;color:var(--ink-3);margin-top:3px">
-                🕒 Blocked: ${esc(d.blockedAt || d.blocked_at || '?')}
-                · By: <b>${esc(d.blockedBy || d.blocked_by || 'admin')}</b>
-                ${d.expiresAt || d.expires_at ? '· Expires: ' + esc(d.expiresAt || d.expires_at) : '· <b>Permanent</b>'}
-                ${d.orderAttempts || d.order_attempts ? '· ' + (d.orderAttempts || d.order_attempts) + ' attempts' : ''}
-              </div>
-              ${d.blockReason || d.block_reason ? '<div style="font-size:11px;color:var(--ink-3);margin-top:3px">📋 ' + esc(d.blockReason || d.block_reason) + '</div>' : ''}
-              ${d.adminNotes || d.admin_notes ? '<div style="font-size:11px;color:var(--info);margin-top:2px">💬 ' + esc(d.adminNotes || d.admin_notes) + '</div>' : ''}
-            </div>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-green btn-xs" onclick="YARZ.firewall.unblock('${esc(deviceId)}')" title="Remove from blocklist"><i class="ri-lock-unlock-line"></i> Unblock</button>
-            </div>
-          </div>`;
+          var id = d.device_id || '';
+          var shortId = id.length > 20 ? id.substring(0, 20) + '…' : id;
+          var reason = d.block_reason || '';
+          var by = d.blocked_by || 'admin';
+          var date = d.created_at ? new Date(d.created_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '';
+          var ip = d.ips_seen || '';
+          return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px">' +
+            '<span style="color:var(--danger);font-size:14px">🚫</span>' +
+            '<div style="flex:1;min-width:0">' +
+              '<div style="font-weight:600;color:var(--ink);word-break:break-all"><code style="font-size:11px">' + esc(shortId) + '</code></div>' +
+              '<div style="font-size:10.5px;color:var(--ink-3);display:flex;gap:8px;flex-wrap:wrap">' +
+                (reason ? '<span>📋 ' + esc(reason) + '</span>' : '') +
+                '<span>👤 ' + esc(by) + '</span>' +
+                (date ? '<span>📅 ' + esc(date) + '</span>' : '') +
+                (ip ? '<span>🌐 ' + esc(ip) + '</span>' : '') +
+              '</div>' +
+            '</div>' +
+            '<button class="btn btn-green btn-xs" style="white-space:nowrap;font-size:11px;padding:3px 8px" onclick="YARZ.firewall.unblock(\'' + esc(id) + '\')"><i class="ri-lock-unlock-line"></i> Unblock</button>' +
+          '</div>';
         }).join('');
       },
       filter() {
