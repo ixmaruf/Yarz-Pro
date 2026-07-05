@@ -806,8 +806,32 @@
   }
 
   async function fortressLookup()  { return passthroughOrRpc("fortress_lookup"); }
-  async function fortressBlock(p)  { return passthroughOrRpc("fortress_block", p); }
-  async function fortressUnblock(p){ return passthroughOrRpc("fortress_unblock", p); }
+  async function fortressBlock(p) {
+    var db = getWriteDb(); await ensureAuth();
+    var deviceId = p.device_id || p.deviceId || "";
+    var reason = p.reason || p.block_reason || "manual";
+    var blockedBy = p.blocked_by || p.blockedBy || "admin";
+    if (!deviceId) throw new Error("device_id required");
+    var r = await db.from("blocked_devices").upsert({
+      device_id: deviceId,
+      block_reason: reason,
+      blocked_by: blockedBy,
+      block_type: "hard",
+      status: "active",
+      phones_seen: p.phones_seen || "",
+      ips_seen: p.ips_seen || ""
+    }, { onConflict: "device_id" }).select();
+    if (r.error) throw new Error(r.error.message);
+    return ok({ success: true, data: r.data });
+  }
+  async function fortressUnblock(p){
+    var db = getWriteDb(); await ensureAuth();
+    var deviceId = p.device_id || p.deviceId || "";
+    if (!deviceId) throw new Error("device_id required");
+    var r = await db.from("blocked_devices").update({ status: "inactive", updated_at: new Date().toISOString() }).eq("device_id", deviceId);
+    if (r.error) throw new Error(r.error.message);
+    return ok({ success: true });
+  }
   async function fortressClearAll(){ return passthroughOrRpc("fortress_clear_all"); }
   async function fortressLogEvent(p){ return passthroughOrRpc("fortress_log_event", p); }
 
