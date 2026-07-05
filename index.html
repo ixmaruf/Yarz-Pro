@@ -9719,7 +9719,7 @@ Team YARZ`;
         </div>
         <div style="display:flex;gap:8px;justify-content:flex-end">
           <button class="btn btn-ghost" onclick="YARZ.closeModal()">Cancel</button>
-          <button class="btn btn-red" onclick="YARZ.ord._confirmBlockFromOrder('${esc(identifier)}','${esc(customerName||'')}',document.getElementById('block-reason-input').value)">
+          <button class="btn btn-red" onclick="YARZ.ord._confirmBlockFromOrder('${esc(identifier)}','${esc(ip||'')}','${esc(customerName||'')}',document.getElementById('block-reason-input').value)">
             <i class="ri-forbid-line"></i> Block Permanently
           </button>
         </div>
@@ -9729,12 +9729,13 @@ Team YARZ`;
     $('modal-overlay').classList.add('show');
   },
 
-  async _confirmBlockFromOrder(deviceId, customerName, reason) {
+  async _confirmBlockFromOrder(deviceId, ip, customerName, reason) {
     YARZ.closeModal();
     showLoader('Blocking customer...');
     try {
       const res = await appsPost('__fortress_block', {
         deviceId: deviceId,
+        ip: ip || '',
         blockedBy: 'admin',
         reason: reason || 'fake_order_from_orders_tab',
         blockType: 'hard',
