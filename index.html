@@ -11349,7 +11349,7 @@ YARZ.webControl = {
  return `
  <div class="wc-delivery-row" style="display:grid;grid-template-columns:1fr 1.4fr 110px 44px;gap:10px;align-items:end;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;">
   <div class="field" style="margin:0"><label style="font-size:11px">Location ID</label><input class="input wc-delivery-id" value="${id}" placeholder="dhaka"></div>
-  <div class="field" style="margin:0"><label style="font-size:11px">Location Name</label><input class="input wc-delivery-name" value="${esc(loc.name || '')}" placeholder="e.g. Sonargaon / Dhaka / Outside Dhaka"></div>
+  <div class="field" style="margin:0"><label style="font-size:11px">Location Name</label><input class="input wc-delivery-name" value="${esc(loc.name || '')}" placeholder="e.g. Sonargaon / Narayanganj / Outside"></div>
   <div class="field" style="margin:0"><label style="font-size:11px">Fee ()</label><input type="number" min="0" class="input wc-delivery-charge" value="${esc(loc.charge || 0)}" placeholder="60"></div>
   <button type="button" class="btn btn-ghost btn-sm" onclick="this.closest('.wc-delivery-row').remove()" title="Remove" style="height:38px;color:var(--danger);"><i class="ri-delete-bin-line"></i></button>
  </div>`;
@@ -13413,8 +13413,8 @@ const modalBuilders = {
  const oid = `YARZ-${dateStr}-${rnd}`;
  // Fix: z1/z2 must be defined inside this scope
  const _s = state.data.settings || {};
- const z1 = _s['Zone 1 Name'] || 'Inside Dhaka';
- const z2 = _s['Zone 2 Name'] || 'Outside Dhaka';
+const z1 = _s['Zone 1 Name'] || 'Inside Narayanganj';
+  const z2 = _s['Zone 2 Name'] || 'Outside Narayanganj';
  return `
  <div class="modal-header">
   <h3><i class="fas fa-bag-shopping"></i> New Order</h3>
@@ -14066,7 +14066,7 @@ Encourage customers to place orders quickly! If enabled, the product page will s
 To prevent customers from making fake orders intentionally (e.g. 100-200 pcs), you can limit the quantity. For example, if set to "5", a customer cannot add more than 5 pieces to their cart.<br><br>
 
 <b>5. Delivery May (Expected Delivery):</b><br>
-After selecting a product, customers often wonder about delivery times. If the product page states "Expected Delivery: Inside Dhaka 2 Days, Outside 3 Days", it answers their questions and increases the conversion rate.`
+After selecting a product, customers often wonder about delivery times. If the product page states "Expected Delivery: Inside Narayanganj 2 Days, Outside 3 Days", it answers their questions and increases the conversion rate.`
  },
  'checkout': {
   icon: 'ri-shopping-cart-2-line', color: 'var(--accent)', title: 'Cart & Checkout - Guidelines',
