@@ -28,6 +28,7 @@
     if (window.supabaseClient) return window.supabaseClient;
     return null;
   }
+  window.getDb = getDb;
   function getServiceKey() {
     try {
       var el = document.getElementById('set-supabase-service');
