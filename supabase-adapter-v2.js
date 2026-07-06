@@ -810,7 +810,7 @@
     try {
       var db = getDb();
       if (!db) return { ok: true, devices: [], threats: [] };
-      var r = await db.from("blocked_devices").select("*").order("created_at", { ascending: false });
+      var r = await db.from("blocked_devices").select("*").eq("status", "active").order("created_at", { ascending: false });
       if (r.error) throw r.error;
       return { ok: true, devices: r.data || [], threats: [] };
     } catch(e) { return { ok: true, devices: [], threats: [] }; }
@@ -846,7 +846,7 @@
   async function loadBlockedDevices() {
     try {
       var db = getWriteDb(); await ensureAuth();
-      var r = await db.from("blocked_devices").select("id, device_id, status, block_reason, blocked_by, created_at").order("created_at", { ascending: false });
+      var r = await db.from("blocked_devices").select("id, device_id, status, block_reason, blocked_by, created_at").eq("status", "active").order("created_at", { ascending: false });
       if (r.error) throw r.error;
       return r.data || [];
     } catch(e) { return []; }
