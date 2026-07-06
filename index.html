@@ -3322,8 +3322,8 @@ table tbody tr:hover{ background:var(--surface-2); }
   <div class="grid grid-3" id="today-summary"></div>
   </div>
 
-  <!-- ✅ v15.28: Website Visitor Analytics — live data from Cloudflare KV
-   Tracks unique visitors per day via cookie deduplication. Updates
+  <!-- ✅ v15.28: Website Visitor Analytics — live data from Supabase
+   Tracks unique visitors (by IP per day) and total visits. Updates
    every 30s; admin sees near-real-time counts. -->
   <div class="section">
   <div class="section-title">
@@ -3335,19 +3335,39 @@ table tbody tr:hover{ background:var(--surface-2); }
    <div class="stat-icon green"><i class="ri-eye-2-line"></i></div>
    <div class="stat-label">Today's Visitors</div>
    <div class="stat-value" id="vis-today">—</div>
-   <div class="stat-sub">Today</div>
+   <div class="stat-sub">Unique IPs today</div>
   </div>
   <div class="stat-card">
    <div class="stat-icon blue"><i class="ri-history-line"></i></div>
    <div class="stat-label">Yesterday</div>
    <div class="stat-value" id="vis-yesterday">—</div>
-   <div class="stat-sub">Yesterday</div>
+   <div class="stat-sub">Unique IPs yesterday</div>
   </div>
   <div class="stat-card">
    <div class="stat-icon purple"><i class="ri-team-line"></i></div>
-   <div class="stat-label">Total</div>
+   <div class="stat-label">Total Unique</div>
    <div class="stat-value" id="vis-total">—</div>
-   <div class="stat-sub">All time</div>
+   <div class="stat-sub">All time unique visitors</div>
+  </div>
+  </div>
+  <div class="grid grid-3" style="margin-top:12px">
+  <div class="stat-card">
+   <div class="stat-icon orange"><i class="ri-fire-line"></i></div>
+   <div class="stat-label">Today's Visits</div>
+   <div class="stat-value" id="vis-today-v">—</div>
+   <div class="stat-sub">Total hits today</div>
+  </div>
+  <div class="stat-card">
+   <div class="stat-icon cyan"><i class="ri-repeat-line"></i></div>
+   <div class="stat-label">Yesterday Visits</div>
+   <div class="stat-value" id="vis-yesterday-v">—</div>
+   <div class="stat-sub">Total hits yesterday</div>
+  </div>
+  <div class="stat-card">
+   <div class="stat-icon pink"><i class="ri-bar-chart-2-line"></i></div>
+   <div class="stat-label">Total Visits</div>
+   <div class="stat-value" id="vis-total-v">—</div>
+   <div class="stat-sub">All time total hits</div>
   </div>
   </div>
   </div>
@@ -7748,54 +7768,71 @@ YARZ.home = {
  try { this.loadVisitorStats(); } catch(e) {}
  },
 
- // ─── Website Visitor Analytics (Cloudflare KV) ────────────────────
- // Endpoint: GET https://yarz.marufhasan80009.workers.dev/__analytics
- // Returns: { success, today, yesterday, total, last7, pending }
+ // ─── Website Visitor Analytics (direct Supabase query) ─────────────
+ // Queries website_visitors table directly — never hits the Worker,
+ // so admin panel visits are never counted as website traffic.
  // Auto-refresh: every 30s while admin is on Home page (visibility-aware).
  _vis: { timer: null, lastFetch: 0 },
  async loadVisitorStats(){
   const upd = $('visitor-updated');
- try {
- // 6-second timeout so a slow Worker never freezes the dashboard.
- const ctrl = new AbortController();
- const tid = setTimeout(() => { try { ctrl.abort(); } catch(e){} }, 6000);
+  try {
+  const db = getDb();
+  if (!db) throw new Error('Supabase not initialized');
 
-  const resp = await fetch(WORKER + '/__analytics', { signal: ctrl.signal, cache: 'no-store' });
- clearTimeout(tid);
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
- if (!resp.ok) throw new Error('HTTP ' + resp.status);
- const j = await resp.json();
- if (!j || !j.success) throw new Error(j && j.error || 'Bad payload');
+  // Fetch all visitor rows (small table, fast)
+  const { data: rows, error } = await db.from('website_visitors').select('visit_date, visit_count, visitor_ip');
+  if (error) throw error;
 
- const today = Number(j.today || 0);
- const yest = Number(j.yesterday || 0);
- const total = Number(j.total || 0);
- $('vis-today').textContent  = toBn(today);
- $('vis-yesterday').textContent = toBn(yest);
- $('vis-total').textContent  = toBn(total);
+  const data = Array.isArray(rows) ? rows : [];
 
- const now = new Date();
- const hh = String(now.getHours()).padStart(2,'0');
- const mm = String(now.getMinutes()).padStart(2,'0');
- const ss = String(now.getSeconds()).padStart(2,'0');
- if (upd) upd.textContent = 'Update: ' + hh + ':' + mm + ':' + ss;
- this._vis.lastFetch = Date.now();
- } catch (e) {
- // Distinguish KV-not-configured from network/timeout errors.
- const msg = String(e && e.message || e);
- if (upd) {
-  if (msg.indexOf('500') !== -1 || msg.indexOf('KV not') !== -1) {
-  upd.textContent = '⚠️ KV namespace Not configured';
-  } else if (msg.indexOf('aborted') !== -1) {
-  upd.textContent = '⏱️ Timeout — Will retry later';
-  } else {
-  upd.textContent = '⚠️ load happens — ' + msg.slice(0, 40);
+  // Today
+  const todayRows = data.filter(r => r.visit_date === today);
+  const todayVisits = todayRows.reduce((s, r) => s + (r.visit_count || 0), 0);
+  const todayUnique = todayRows.length;
+
+  // Yesterday
+  const yestRows = data.filter(r => r.visit_date === yesterday);
+  const yestVisits = yestRows.reduce((s, r) => s + (r.visit_count || 0), 0);
+  const yestUnique = yestRows.length;
+
+  // Total
+  const totalVisits = data.reduce((s, r) => s + (r.visit_count || 0), 0);
+  const uniqueIps = new Set(data.map(r => r.visitor_ip).filter(Boolean));
+
+  // Unique visitors (deduplicated by IP)
+  $('vis-today').textContent  = toBn(todayUnique);
+  $('vis-yesterday').textContent = toBn(yestUnique);
+  $('vis-total').textContent  = toBn(uniqueIps.size);
+  // Total visits (every hit counts)
+  $('vis-today-v').textContent  = toBn(todayVisits);
+  $('vis-yesterday-v').textContent = toBn(yestVisits);
+  $('vis-total-v').textContent  = toBn(totalVisits);
+
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  if (upd) upd.textContent = 'Update: ' + hh + ':' + mm + ':' + ss;
+  this._vis.lastFetch = Date.now();
+  } catch (e) {
+  const msg = String(e && e.message || e);
+  if (upd) {
+   if (msg.indexOf('aborted') !== -1) {
+   upd.textContent = '⏱️ Timeout — Will retry later';
+   } else {
+   upd.textContent = '⚠️ ' + msg.slice(0, 50);
+   }
   }
- }
- $('vis-today').textContent  = $('vis-today').textContent  === '—' ? '—' : $('vis-today').textContent;
- $('vis-yesterday').textContent = $('vis-yesterday').textContent === '—' ? '—' : $('vis-yesterday').textContent;
- $('vis-total').textContent  = $('vis-total').textContent  === '—' ? '—' : $('vis-total').textContent;
- }
+  $('vis-today').textContent  = $('vis-today').textContent  === '—' ? '—' : $('vis-today').textContent;
+  $('vis-yesterday').textContent = $('vis-yesterday').textContent === '—' ? '—' : $('vis-yesterday').textContent;
+  $('vis-total').textContent  = $('vis-total').textContent  === '—' ? '—' : $('vis-total').textContent;
+  $('vis-today-v').textContent  = $('vis-today-v').textContent  === '—' ? '—' : $('vis-today-v').textContent;
+  $('vis-yesterday-v').textContent = $('vis-yesterday-v').textContent === '—' ? '—' : $('vis-yesterday-v').textContent;
+  $('vis-total-v').textContent  = $('vis-total-v').textContent  === '—' ? '—' : $('vis-total-v').textContent;
+  }
 
  // Schedule next refresh — only while Home is visible & tab active.
  if (this._vis.timer) clearTimeout(this._vis.timer);
@@ -14290,7 +14327,7 @@ window.publishToWebsiteAction = async function() {
         return '<span style="background:var(--success);color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">LOW ' + score + '</span>';
       },
       _renderFingerprints() {
-        var esc = function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+        var esc = function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
         const root = document.getElementById('firewall-fingerprints');
         if (!root) return;
         const term = (this._fpSearch || '').toLowerCase();
@@ -14488,7 +14525,7 @@ window.publishToWebsiteAction = async function() {
         }).join('');
       },
       _renderBlocks() {
-        var esc = function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);});
+        var esc = function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
         const root = document.getElementById('firewall-blocks');
         if (!root) return;
         const term = (this._search || '').toLowerCase();
