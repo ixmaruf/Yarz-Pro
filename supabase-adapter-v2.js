@@ -674,6 +674,21 @@
       if (p.delOutside !== undefined && p.delOutside !== null && p.delOutside !== "") {
         await db.from("delivery_charges").update({ charge: Number(p.delOutside) || 0 }).eq("id", "outside_narayanganj");
       }
+      // ✅ SYNC: Also update settings table (Zone 1/2 Charge + Delivery Locations)
+      // The website reads delivery charges from settings, not from delivery_charges table.
+      if (p.delInside !== undefined && p.delInside !== null && p.delInside !== "") {
+        await db.from("settings").update({ value: String(Number(p.delInside) || 0) }).eq("key", "Zone 1 Charge");
+      }
+      if (p.delOutside !== undefined && p.delOutside !== null && p.delOutside !== "") {
+        await db.from("settings").update({ value: String(Number(p.delOutside) || 0) }).eq("key", "Zone 2 Charge");
+      }
+      if ((p.delInside !== undefined && p.delInside !== null && p.delInside !== "") || (p.delOutside !== undefined && p.delOutside !== null && p.delOutside !== "")) {
+        // Read current delivery_charges table to build Delivery Locations JSON
+        var dcRows = await db.from("delivery_charges").select("id,name,charge,active").order("sort_order");
+        if (dcRows.data && dcRows.data.length > 0) {
+          await db.from("settings").update({ value: JSON.stringify(dcRows.data) }).eq("key", "Delivery Locations");
+        }
+      }
       
       for (var i = 0; i < p.names.length; i++) {
         products.push(Object.assign({ product: p.names[i] }, shared));
