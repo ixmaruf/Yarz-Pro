@@ -14172,7 +14172,7 @@ window.publishToWebsiteAction = async function() {
  const ctrl = new AbortController();
  const tid = setTimeout(() => ctrl.abort(), 10000);
  const purgeBody = JSON.stringify({ actions: ['products', 'store_info', 'categories', 'delivery_charges'] });
- const purgeHeaders = { 'X-Purge-Key': 'yarz_xK9mP2nL8vR4qH7', 'Content-Type': 'application/json' };
+ const purgeHeaders = { 'x-purge-secret': 'yarz_xK9mP2nL8vR4qH7', 'Content-Type': 'application/json' };
 
  // Fire both purge URLs in parallel — first one to succeed wins.
  // Custom domain comes first because that's where customers actually
