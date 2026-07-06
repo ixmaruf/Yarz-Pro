@@ -1236,6 +1236,142 @@ body.light .load-overlay p{color:var(--ink)}
 }
 .oc-notes i{color:#d97706;margin-right:4px}
 
+/* ============================================================
+ PROTECTION SECTION — Premium Device Cards
+============================================================ */
+.prot-card{
+ background:var(--surface);
+ border:1px solid var(--line);
+ border-radius:14px;
+ margin-bottom:12px;
+ overflow:hidden;
+ transition:all .25s cubic-bezier(0.25, 0.8, 0.25, 1);
+ box-shadow:var(--shadow-sm);
+}
+.prot-card:hover{
+ box-shadow:var(--shadow);
+ transform:translateY(-1px);
+}
+.prot-card-header{
+ display:flex;align-items:center;justify-content:space-between;
+ padding:14px 16px 10px;
+ border-bottom:1px solid var(--line);
+ gap:10px;
+}
+.prot-card-device{
+ display:flex;align-items:center;gap:10px;flex:1;min-width:0;
+}
+.prot-card-icon{
+ width:42px;height:42px;border-radius:12px;
+ display:flex;align-items:center;justify-content:center;
+ font-size:20px;flex-shrink:0;
+}
+.prot-card-icon.danger{background:rgba(232,98,92,0.1);color:var(--danger)}
+.prot-card-icon.warn{background:rgba(232,165,71,0.1);color:var(--warn)}
+.prot-card-icon.safe{background:rgba(31,169,139,0.1);color:var(--success)}
+.prot-card-icon.info{background:rgba(91,141,239,0.1);color:var(--info)}
+.prot-card-icon.purple{background:rgba(139,127,217,0.1);color:#8B7FD9}
+.prot-card-name{
+ font-size:14px;font-weight:700;color:var(--ink);
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ line-height:1.2;
+}
+.prot-card-sub{
+ font-size:11px;color:var(--ink-3);font-weight:500;
+ margin-top:2px;
+}
+.prot-card-badges{display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0}
+.prot-badge{
+ display:inline-flex;align-items:center;gap:3px;
+ padding:3px 8px;border-radius:6px;
+ font-size:10px;font-weight:700;
+ letter-spacing:0.02em;
+ white-space:nowrap;
+}
+.prot-badge.risk-high{background:rgba(232,98,92,0.12);color:var(--danger)}
+.prot-badge.risk-med{background:rgba(232,165,71,0.12);color:var(--warn)}
+.prot-badge.risk-low{background:rgba(31,169,139,0.12);color:var(--success)}
+.prot-badge.vpn{background:rgba(139,127,217,0.12);color:#8B7FD9}
+.prot-badge.blocked{background:rgba(232,98,92,0.15);color:var(--danger)}
+.prot-badge.threat{background:rgba(232,165,71,0.12);color:var(--warn)}
+.prot-badge.orders{background:rgba(91,141,239,0.12);color:var(--info)}
+.prot-card-body{padding:12px 16px}
+.prot-grid{
+ display:grid;
+ grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+ gap:8px;
+}
+.prot-info-item{
+ display:flex;align-items:flex-start;gap:8px;
+ padding:8px 10px;
+ background:var(--surface-1,rgba(0,0,0,0.02));
+ border:1px solid var(--line);
+ border-radius:10px;
+ min-width:0;
+}
+.prot-info-item i{
+ font-size:14px;color:var(--brand);flex-shrink:0;margin-top:1px;
+ width:18px;text-align:center;
+}
+.prot-info-label{
+ font-size:10px;color:var(--ink-3);font-weight:600;
+ text-transform:uppercase;letter-spacing:0.05em;
+ margin-bottom:2px;
+}
+.prot-info-value{
+ font-size:12.5px;color:var(--ink);font-weight:600;
+ word-break:break-word;line-height:1.35;
+}
+.prot-info-value code{
+ font-size:11px;font-family:'JetBrains Mono',monospace;
+ background:var(--chip-bg);
+ padding:1px 5px;border-radius:4px;
+ border:1px solid var(--line);
+}
+.prot-section{
+ margin-top:10px;
+ padding-top:10px;
+ border-top:1px solid var(--line);
+}
+.prot-section-title{
+ font-size:10px;font-weight:700;text-transform:uppercase;
+ letter-spacing:0.08em;color:var(--ink-3);
+ margin-bottom:6px;
+ display:flex;align-items:center;gap:5px;
+}
+.prot-section-title i{font-size:11px}
+.prot-tags{
+ display:flex;flex-wrap:wrap;gap:4px;
+}
+.prot-tag{
+ display:inline-flex;align-items:center;gap:3px;
+ padding:3px 8px;border-radius:6px;
+ font-size:10.5px;font-weight:600;
+ background:var(--chip-bg);
+ border:1px solid var(--line);
+ color:var(--ink-2);
+}
+.prot-tag i{font-size:11px;opacity:0.6}
+.prot-card-footer{
+ display:flex;align-items:center;justify-content:space-between;
+ padding:10px 16px;
+ border-top:1px solid var(--line);
+ background:var(--surface-1,rgba(0,0,0,0.01));
+ gap:8px;flex-wrap:wrap;
+}
+.prot-card-footer .meta{
+ font-size:10.5px;color:var(--ink-4);font-weight:500;
+ display:flex;align-items:center;gap:4px;
+}
+.prot-card-footer .meta i{font-size:12px}
+@media (max-width:600px){
+ .prot-grid{grid-template-columns:1fr}
+ .prot-card-header{padding:12px 12px 8px}
+ .prot-card-body{padding:10px 12px}
+ .prot-card-footer{padding:8px 12px}
+ .prot-card-name{font-size:13px}
+}
+
 @media (max-width:480px){
  .oc-info-grid{grid-template-columns:1fr}
  .oc-product-thumb{width:48px;height:48px}
@@ -14100,6 +14236,20 @@ window.publishToWebsiteAction = async function() {
           if (fpRes && fpRes.ok) {
             this._fingerprints = fpRes.fingerprints || [];
           }
+          // ✅ Cross-reference blocked devices with fingerprint data
+          if (this._devices && this._fingerprints) {
+            const fpMap = {};
+            this._fingerprints.forEach(f => {
+              if (f.visitor_id) fpMap[f.visitor_id] = f;
+              if (f.composite_hash) fpMap[f.composite_hash] = f;
+              if (f.fingerprintjs_id) fpMap[f.fingerprintjs_id] = f;
+              if (f.device_id) fpMap[f.device_id] = f;
+            });
+            this._devices = this._devices.map(d => ({
+              ...d,
+              _fp: fpMap[d.device_id] || null
+            }));
+          }
           this._updateStats();
           this.render();
           this._updateBadge();
@@ -14140,7 +14290,7 @@ window.publishToWebsiteAction = async function() {
         return '<span style="background:var(--success);color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">LOW ' + score + '</span>';
       },
       _renderFingerprints() {
-        var esc = function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+        var esc = function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
         const root = document.getElementById('firewall-fingerprints');
         if (!root) return;
         const term = (this._fpSearch || '').toLowerCase();
@@ -14149,78 +14299,153 @@ window.publishToWebsiteAction = async function() {
           list = list.filter(f =>
             (f.device_name||'').toLowerCase().includes(term) ||
             (f.ip_address||'').toLowerCase().includes(term) ||
-            (f.country||'').toLowerCase().includes(term) ||
-            (f.city||'').toLowerCase().includes(term) ||
-            (f.isp||'').toLowerCase().includes(term) ||
+            (f.ip_country||'').toLowerCase().includes(term) ||
+            (f.ip_city||'').toLowerCase().includes(term) ||
+            (f.ip_isp||'').toLowerCase().includes(term) ||
             (f.visitor_id||'').toLowerCase().includes(term) ||
-            (f.device_id||'').toLowerCase().includes(term) ||
-            (f.composite_hash||'').toLowerCase().includes(term)
+            (f.composite_hash||'').toLowerCase().includes(term) ||
+            (f.device_model||'').toLowerCase().includes(term)
           );
         }
         if (!list.length) {
           root.innerHTML = '<div style="padding:18px;text-align:center;color:var(--ink-3);font-size:13px">' +
-            (term ? 'No fingerprints match "' + esc(term) + '".' : 'No device fingerprints recorded yet.') + '</div>';
+            (term ? 'No fingerprints match "' + esc(term) + '".' : '<div style="font-size:28px;margin-bottom:8px">🔍</div>No device fingerprints recorded yet.') + '</div>';
           return;
         }
         const sorted = list.slice().sort((a, b) => (b.risk_score||0) - (a.risk_score||0));
         root.innerHTML = sorted.slice(0, 50).map(f => {
           const risk = f.risk_score || 0;
-          const borderColor = risk >= 70 ? 'var(--danger)' : risk >= 40 ? 'var(--warn)' : 'var(--success)';
           const isBlocked = f.is_blocked;
           const deviceLabel = f.device_name || f.device_os || 'Unknown Device';
-          const locationParts = [f.city, f.region, f.country].filter(Boolean);
-          const locationStr = locationParts.join(', ') || 'Unknown';
-          const threatCount = (f.threat_count || 0);
+          const deviceModel = f.device_model || '';
+          const locationParts = [f.ip_city, f.ip_region, f.ip_country].filter(Boolean);
+          const locationStr = locationParts.join(', ') || '';
           const orderCount = (f.order_count || 0);
           const phonesUsed = f.phones_used || [];
           const addressesUsed = f.addresses_used || [];
           const riskSignals = f.risk_signals || {};
           const triggeredSignals = Object.entries(riskSignals).filter(([k, v]) => v === true || v === 1).map(([k]) => k.replace(/_/g, ' '));
-          const lastSeen = f.last_seen_at || f.last_seen || f.updated_at || f.created_at || '';
-          const createdAt = f.created_at || '';
-          return `
-            <div class="card" style="padding:14px;border-left:4px solid ${borderColor};${isBlocked ? 'background:rgba(230,0,35,0.04);' : ''}">
-              <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
-                <div style="flex:1;min-width:280px">
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-                    <span style="font-size:16px">${isBlocked ? '🚫' : risk >= 70 ? '🔴' : risk >= 40 ? '🟡' : '🟢'}</span>
-                    <span style="font-size:13px;font-weight:700;color:var(--ink)">${esc(deviceLabel)}</span>
-                    ${this._riskBadge(risk)}
-                    ${isBlocked ? '<span style="background:var(--danger);color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">BLOCKED</span>' : ''}
-                    ${f.vpn_proxy || f.isVpn ? '<span style="background:var(--purple);color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">VPN</span>' : ''}
-                    ${threatCount > 0 ? '<span style="background:var(--warn);color:#fff;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700">' + threatCount + ' THREATS</span>' : ''}
-                  </div>
-                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:6px;font-size:11px;color:var(--ink-2)">
-                    <div><b>IP:</b> <code style="font-size:10.5px">${esc(f.ip_address || 'N/A')}</code> ${f.ip_country ? '(' + esc(f.ip_country) + ')' : ''}</div>
-                    <div><b>Location:</b> ${esc(locationStr)}</div>
-                    <div><b>ISP:</b> ${esc(f.isp || 'N/A')}</div>
-                    <div><b>Screen:</b> ${esc(f.screen || 'N/A')}</div>
-                    <div><b>OS:</b> ${esc(f.device_os || 'N/A')} ${f.os_version || ''}</div>
-                    <div><b>Browser:</b> ${esc(f.browser_name || 'N/A')} ${f.browser_version || ''}</div>
-                    <div><b>Cores:</b> ${f.hardware_concurrency || '?'} · <b>RAM:</b> ${f.device_memory ? f.device_memory + 'GB' : '?'}</div>
-                    <div><b>Timezone:</b> ${esc(f.timezone || 'N/A')} · <b>Lang:</b> ${esc(f.language || 'N/A')}</div>
-                    <div><b>Visitor ID:</b> <code style="font-size:10px">${esc((f.visitor_id || '').slice(0, 20))}${(f.visitor_id||'').length > 20 ? '…' : ''}</code></div>
-                    <div><b>Device ID:</b> <code style="font-size:10px">${esc((f.device_id || '').slice(0, 20))}${(f.device_id||'').length > 20 ? '…' : ''}</code></div>
-                    <div><b>Canvas Hash:</b> <code style="font-size:10px">${esc((f.canvas_hash || '').slice(0, 16))}…</code></div>
-                    <div><b>WebGL:</b> <code style="font-size:10px">${esc((f.webgl_renderer || '').slice(0, 30))}…</code></div>
-                  </div>
-                  ${phonesUsed.length ? '<div style="font-size:10.5px;color:var(--ink-3);margin-top:4px">☎ Phones: ' + phonesUsed.map(p => '<code style="font-size:10px">' + esc(p) + '</code>').join(', ') + '</div>' : ''}
-                  ${addressesUsed.length ? '<div style="font-size:10.5px;color:var(--ink-3);margin-top:2px">📍 Addresses: ' + addressesUsed.slice(0, 2).map(a => esc(a)).join('; ') + (addressesUsed.length > 2 ? ' +' + (addressesUsed.length - 2) + ' more' : '') + '</div>' : ''}
-                  ${triggeredSignals.length ? '<div style="font-size:10px;color:var(--warn);margin-top:4px">⚡ Signals: ' + triggeredSignals.map(s => '<span style="background:rgba(217,119,6,0.1);padding:1px 4px;border-radius:3px;margin-right:3px">' + esc(s) + '</span>').join('') + '</div>' : ''}
-                  <div style="font-size:10px;color:var(--ink-3);margin-top:4px">
-                    🕒 First seen: ${esc(createdAt.slice(0, 16).replace('T', ' '))} · Last seen: ${esc(lastSeen.slice(0, 16).replace('T', ' '))}
-                    ${orderCount > 0 ? ' · 📦 ' + orderCount + ' orders' : ''}
-                    ${f.fingerprintjs_confidence ? ' · FJS conf: ' + Math.round(f.fingerprintjs_confidence * 100) + '%' : ''}
-                  </div>
-                </div>
-                <div style="display:flex;gap:6px;flex-shrink:0">
-                  ${isBlocked
-                    ? '<button class="btn btn-green btn-xs" onclick="YARZ.firewall.unblock(\'' + esc(f.device_id || f.visitor_id) + '\')" title="Unblock"><i class="ri-lock-unlock-line"></i> Unblock</button>'
-                    : '<button class="btn btn-red btn-xs" onclick="YARZ.firewall.blockFromFp(\'' + esc(f.device_id || f.visitor_id) + '\')" title="Block this device"><i class="ri-forbid-line"></i> Block</button>'
-                  }
-                </div>
-              </div>
-            </div>`;
+          const lastSeen = f.last_seen_at || f.updated_at || f.created_at || '';
+          const createdAt = f.first_seen_at || f.created_at || '';
+          const visits = f.visit_count || 0;
+
+          const riskClass = risk >= 70 ? 'risk-high' : risk >= 40 ? 'risk-med' : 'risk-low';
+          const riskIcon = risk >= 70 ? '🔴' : risk >= 40 ? '🟡' : '🟢';
+          const iconBg = risk >= 70 ? 'danger' : risk >= 40 ? 'warn' : isBlocked ? 'danger' : 'safe';
+
+          let html = '<div class="prot-card"' + (isBlocked ? ' style="border-color:var(--danger);background:rgba(232,98,92,0.02)"' : '') + '>';
+          // Header
+          html += '<div class="prot-card-header">';
+          html += '<div class="prot-card-device">';
+          html += '<div class="prot-card-icon ' + iconBg + '">' + (isBlocked ? '🚫' : riskIcon) + '</div>';
+          html += '<div style="flex:1;min-width:0">';
+          html += '<div class="prot-card-name">' + esc(deviceLabel) + (deviceModel ? ' <span style="color:var(--ink-3);font-weight:500">(' + esc(deviceModel) + ')</span>' : '') + '</div>';
+          html += '<div class="prot-card-sub">' + esc((f.visitor_id||'').substring(0, 24)) + ((f.visitor_id||'').length > 24 ? '…' : '') + '</div>';
+          html += '</div>';
+          html += '</div>';
+          html += '<div class="prot-card-badges">';
+          if (risk > 0) html += '<span class="prot-badge ' + riskClass + '">' + riskIcon + ' ' + risk + '</span>';
+          if (f.is_vpn || f.isVpn) html += '<span class="prot-badge vpn"><i class="ri-shield-line"></i> VPN</span>';
+          if (isBlocked) html += '<span class="prot-badge blocked"><i class="ri-forbid-line"></i> BLOCKED</span>';
+          if (orderCount > 0) html += '<span class="prot-badge orders"><i class="ri-shopping-bag-line"></i> ' + orderCount + '</span>';
+          if (visits > 1) html += '<span class="prot-badge" style="background:var(--chip-bg);color:var(--ink-2)"><i class="ri-eye-fill"></i> ' + visits + ' visits</span>';
+          html += '</div>';
+          html += '</div>';
+
+          // Body
+          html += '<div class="prot-card-body">';
+
+          // Primary info grid
+          html += '<div class="prot-grid">';
+          if (locationStr) {
+            html += '<div class="prot-info-item"><i class="ri-map-pin-2-fill"></i><div><div class="prot-info-label">Location</div><div class="prot-info-value">' + esc(locationStr) + '</div></div></div>';
+          }
+          if (f.ip_address) {
+            html += '<div class="prot-info-item"><i class="ri-global-fill"></i><div><div class="prot-info-label">IP Address</div><div class="prot-info-value"><code>' + esc(f.ip_address) + '</code>' + (f.ip_isp ? '<div style="font-size:10px;color:var(--ink-3);margin-top:2px">' + esc(f.ip_isp) + '</div>' : '') + '</div></div></div>';
+          }
+          if (f.device_os) {
+            html += '<div class="prot-info-item"><i class="ri-smartphone-fill"></i><div><div class="prot-info-label">OS</div><div class="prot-info-value">' + esc(f.device_os) + '</div></div></div>';
+          }
+          if (f.device_screen || f.screen_resolution) {
+            html += '<div class="prot-info-item"><i class="ri-rectangle-fill"></i><div><div class="prot-info-label">Screen</div><div class="prot-info-value">' + esc(f.device_screen || f.screen_resolution || '') + (f.pixel_ratio ? ' @ ' + f.pixel_ratio + 'x' : '') + '</div></div></div>';
+          }
+          if (f.device_memory || f.hardware_concurrency) {
+            html += '<div class="prot-info-item"><i class="ri-cpu-fill"></i><div><div class="prot-info-label">Hardware</div><div class="prot-info-value">' + (f.device_memory ? 'RAM ' + f.device_memory + 'GB' : '') + (f.hardware_concurrency ? ' · ' + f.hardware_concurrency + ' cores' : '') + '</div></div></div>';
+          }
+          if (f.device_browser) {
+            html += '<div class="prot-info-item"><i class="ri-earth-fill"></i><div><div class="prot-info-label">Browser</div><div class="prot-info-value">' + esc(f.device_browser) + '</div></div></div>';
+          }
+          if (f.timezone) {
+            html += '<div class="prot-info-item"><i class="ri-time-fill"></i><div><div class="prot-info-label">Timezone</div><div class="prot-info-value">' + esc(f.timezone) + (f.timezone_offset != null ? ' (UTC' + (f.timezone_offset > 0 ? '+' : '') + f.timezone_offset / 60 + ')' : '') + '</div></div></div>';
+          }
+          if (f.languages) {
+            html += '<div class="prot-info-item"><i class="ri-translate-2"></i><div><div class="prot-info-label">Language</div><div class="prot-info-value">' + esc(f.languages) + '</div></div></div>';
+          }
+          html += '</div>';
+
+          // Phones & Addresses
+          if (phonesUsed.length || addressesUsed.length) {
+            html += '<div class="prot-section">';
+            html += '<div class="prot-section-title"><i class="ri-contacts-book-2-fill"></i> Contact Info</div>';
+            html += '<div class="prot-grid">';
+            if (phonesUsed.length) {
+              html += '<div class="prot-info-item"><i class="ri-phone-fill"></i><div><div class="prot-info-label">Phones Used</div><div class="prot-info-value">' + phonesUsed.map(function(p){return '<code>' + esc(p) + '</code>';}).join(' ') + '</div></div></div>';
+            }
+            if (addressesUsed.length) {
+              html += '<div class="prot-info-item" style="grid-column:1/-1"><i class="ri-map-pin-fill"></i><div><div class="prot-info-label">Addresses Used</div><div class="prot-info-value">' + addressesUsed.slice(0,3).map(function(a){return esc(a);}).join('<br>') + (addressesUsed.length > 3 ? '<div style="font-size:10px;color:var(--ink-3);margin-top:2px">+' + (addressesUsed.length - 3) + ' more</div>' : '') + '</div></div></div>';
+            }
+            html += '</div>';
+            html += '</div>';
+          }
+
+          // Technical fingerprint hashes
+          html += '<div class="prot-section">';
+          html += '<div class="prot-section-title"><i class="ri-fingerprint-fill"></i> Fingerprint Data</div>';
+          html += '<div class="prot-grid">';
+          if (f.visitor_id) {
+            html += '<div class="prot-info-item" style="grid-column:1/-1"><i class="ri-key-fill"></i><div><div class="prot-info-label">Visitor ID</div><div class="prot-info-value"><code style="font-size:10px;word-break:break-all">' + esc(f.visitor_id) + '</code></div></div></div>';
+          }
+          if (f.canvas_hash) {
+            html += '<div class="prot-info-item"><i class="ri-paint-fill"></i><div><div class="prot-info-label">Canvas Hash</div><div class="prot-info-value"><code style="font-size:10px">' + esc(f.canvas_hash) + '</code></div></div></div>';
+          }
+          if (f.webgl_renderer) {
+            html += '<div class="prot-info-item"><i class="ri-gamepad-fill"></i><div><div class="prot-info-label">WebGL</div><div class="prot-info-value"><code style="font-size:10px">' + esc(f.webgl_renderer) + '</code></div></div></div>';
+          }
+          if (f.composite_hash) {
+            html += '<div class="prot-info-item"><i class="ri-hash"></i><div><div class="prot-info-label">Composite Hash</div><div class="prot-info-value"><code style="font-size:10px">' + esc(f.composite_hash) + '</code></div></div></div>';
+          }
+          html += '</div></div>';
+
+          // Risk signals
+          if (triggeredSignals.length) {
+            html += '<div class="prot-section">';
+            html += '<div class="prot-section-title"><i class="ri-alert-fill"></i> Risk Signals</div>';
+            html += '<div class="prot-tags">';
+            triggeredSignals.forEach(function(s) { html += '<span class="prot-tag"><i class="ri-flashlight-fill"></i> ' + esc(s) + '</span>'; });
+            html += '</div></div>';
+          }
+
+          html += '</div>'; // end body
+
+          // Footer
+          html += '<div class="prot-card-footer">';
+          html += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+          html += '<span class="meta"><i class="ri-calendar-fill"></i> First: ' + esc(createdAt.slice(0,10)) + '</span>';
+          html += '<span class="meta"><i class="ri-time-fill"></i> Last: ' + esc(lastSeen.slice(0,10)) + '</span>';
+          if (orderCount > 0) html += '<span class="meta"><i class="ri-shopping-bag-fill"></i> ' + orderCount + ' orders</span>';
+          if (f.fingerprintjs_confidence) html += '<span class="meta"><i class="ri-percent-fill"></i> FJS: ' + Math.round(f.fingerprintjs_confidence * 100) + '%</span>';
+          html += '</div>';
+          html += '<div style="display:flex;gap:6px">';
+          if (isBlocked) {
+            html += '<button class="btn btn-green btn-xs" onclick="YARZ.firewall.unblock(\'' + esc(f.visitor_id || f.device_id || '') + '\')" title="Unblock"><i class="ri-lock-unlock-line"></i> Unblock</button>';
+          } else {
+            html += '<button class="btn btn-red btn-xs" onclick="YARZ.firewall.blockFromFp(\'' + esc(f.visitor_id || f.device_id || '') + '\')" title="Block this device"><i class="ri-forbid-line"></i> Block</button>';
+          }
+          html += '</div>';
+          html += '</div>';
+
+          html += '</div>'; // end prot-card
+          return html;
         }).join('');
       },
       _renderThreats() {
@@ -14263,7 +14488,7 @@ window.publishToWebsiteAction = async function() {
         }).join('');
       },
       _renderBlocks() {
-        var esc = function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+        var esc = function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);});
         const root = document.getElementById('firewall-blocks');
         if (!root) return;
         const term = (this._search || '').toLowerCase();
@@ -14271,32 +14496,130 @@ window.publishToWebsiteAction = async function() {
           !term || (d.device_id || '').toLowerCase().indexOf(term) !== -1
             || (d.block_reason || '').toLowerCase().indexOf(term) !== -1
             || (d.ips_seen || '').indexOf(term) !== -1
+            || ((d._fp||{}).device_name||'').toLowerCase().indexOf(term) !== -1
+            || ((d._fp||{}).ip_city||'').toLowerCase().indexOf(term) !== -1
+            || ((d._fp||{}).ip_country||'').toLowerCase().indexOf(term) !== -1
+            || ((d._fp||{}).phones_used||'').toLowerCase().indexOf(term) !== -1
         );
         if (!visible.length) {
-          root.innerHTML = '<div style="padding:14px;text-align:center;color:var(--ink-3);font-size:12px">' +
-            (term ? 'No matches for "' + esc(term) + '"' : '✅ No blocked devices') + '</div>';
+          root.innerHTML = '<div style="padding:18px;text-align:center;color:var(--ink-3);font-size:13px">' +
+            (term ? 'No matches for "' + esc(term) + '"' : '<div style="font-size:28px;margin-bottom:8px">🛡️</div>No blocked devices') + '</div>';
           return;
         }
         root.innerHTML = visible.map(d => {
-          var id = d.device_id || '';
-          var shortId = id.length > 20 ? id.substring(0, 20) + '…' : id;
-          var reason = d.block_reason || '';
-          var by = d.blocked_by || 'admin';
-          var date = d.created_at ? new Date(d.created_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '';
-          var ip = d.ips_seen || '';
-          return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px">' +
-            '<span style="color:var(--danger);font-size:14px">🚫</span>' +
-            '<div style="flex:1;min-width:0">' +
-              '<div style="font-weight:600;color:var(--ink);word-break:break-all"><code style="font-size:11px">' + esc(shortId) + '</code></div>' +
-              '<div style="font-size:10.5px;color:var(--ink-3);display:flex;gap:8px;flex-wrap:wrap">' +
-                (reason ? '<span>📋 ' + esc(reason) + '</span>' : '') +
-                '<span>👤 ' + esc(by) + '</span>' +
-                (date ? '<span>📅 ' + esc(date) + '</span>' : '') +
-                (ip ? '<span>🌐 ' + esc(ip) + '</span>' : '') +
-              '</div>' +
-            '</div>' +
-            '<button class="btn btn-green btn-xs" style="white-space:nowrap;font-size:11px;padding:3px 8px" onclick="YARZ.firewall.unblock(\'' + esc(id) + '\')"><i class="ri-lock-unlock-line"></i> Unblock</button>' +
-          '</div>';
+          const id = d.device_id || '';
+          const fp = d._fp || {};
+          const reason = d.block_reason || '';
+          const by = d.blocked_by || 'admin';
+          const date = d.created_at ? new Date(d.created_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '';
+          const risk = d.risk_score || fp.risk_score || 0;
+          const deviceName = fp.device_name || fp.device_os || id.substring(0, 16);
+          const deviceModel = fp.device_model || '';
+          const ip = fp.ip_address || d.ips_seen || '';
+          const city = fp.ip_city || '';
+          const country = fp.ip_country || '';
+          const locationStr = [city, fp.ip_region, country].filter(Boolean).join(', ');
+          const isp = fp.ip_isp || '';
+          const os = fp.device_os || '';
+          const screen = fp.device_screen || fp.screen_resolution || '';
+          const ram = fp.device_memory || '';
+          const cores = fp.hardware_concurrency || '';
+          const browser = fp.device_browser || '';
+          const isVpn = fp.is_vpn || fp.isVpn;
+          const phones = fp.phones_used || (d.phones_seen ? d.phones_seen.split(',').filter(Boolean) : []);
+          const addresses = fp.addresses_used || [];
+          const orderCount = fp.order_count || 0;
+          const signals = fp.risk_signals || {};
+          const triggered = Object.entries(signals).filter(([k,v]) => v === true || v === 1).map(([k]) => k.replace(/_/g,' '));
+          const lastSeen = fp.last_seen_at || d.last_seen || '';
+          const firstSeen = fp.first_seen_at || d.created_at || '';
+
+          const riskClass = risk >= 70 ? 'risk-high' : risk >= 40 ? 'risk-med' : 'risk-low';
+          const riskIcon = risk >= 70 ? '🔴' : risk >= 40 ? '🟡' : '🟢';
+          const iconBg = risk >= 70 ? 'danger' : risk >= 40 ? 'warn' : 'safe';
+
+          let html = '<div class="prot-card">';
+          // Header
+          html += '<div class="prot-card-header">';
+          html += '<div class="prot-card-device">';
+          html += '<div class="prot-card-icon ' + iconBg + '">🚫</div>';
+          html += '<div style="flex:1;min-width:0">';
+          html += '<div class="prot-card-name">' + esc(deviceName) + (deviceModel ? ' <span style="color:var(--ink-3);font-weight:500">(' + esc(deviceModel) + ')</span>' : '') + '</div>';
+          html += '<div class="prot-card-sub">' + esc(id.substring(0, 24)) + (id.length > 24 ? '…' : '') + '</div>';
+          html += '</div>';
+          html += '</div>';
+          html += '<div class="prot-card-badges">';
+          if (risk > 0) html += '<span class="prot-badge ' + riskClass + '">' + riskIcon + ' ' + risk + '</span>';
+          if (isVpn) html += '<span class="prot-badge vpn"><i class="ri-shield-line"></i> VPN</span>';
+          html += '<span class="prot-badge blocked"><i class="ri-forbid-line"></i> BLOCKED</span>';
+          if (orderCount > 0) html += '<span class="prot-badge orders"><i class="ri-shopping-bag-line"></i> ' + orderCount + '</span>';
+          html += '</div>';
+          html += '</div>';
+
+          // Body
+          html += '<div class="prot-card-body">';
+
+          // Primary info grid
+          html += '<div class="prot-grid">';
+          if (locationStr) {
+            html += '<div class="prot-info-item"><i class="ri-map-pin-2-fill"></i><div><div class="prot-info-label">Location</div><div class="prot-info-value">' + esc(locationStr) + '</div></div></div>';
+          }
+          if (ip) {
+            html += '<div class="prot-info-item"><i class="ri-global-fill"></i><div><div class="prot-info-label">IP Address</div><div class="prot-info-value"><code>' + esc(ip) + '</code>' + (isp ? '<div style="font-size:10px;color:var(--ink-3);margin-top:2px">' + esc(isp) + '</div>' : '') + '</div></div></div>';
+          }
+          if (os) {
+            html += '<div class="prot-info-item"><i class="ri-smartphone-fill"></i><div><div class="prot-info-label">OS</div><div class="prot-info-value">' + esc(os) + '</div></div></div>';
+          }
+          if (screen) {
+            html += '<div class="prot-info-item"><i class="ri-rectangle-fill"></i><div><div class="prot-info-label">Screen</div><div class="prot-info-value">' + esc(screen) + (fp.pixel_ratio ? ' @ ' + fp.pixel_ratio + 'x' : '') + '</div></div></div>';
+          }
+          if (ram) {
+            html += '<div class="prot-info-item"><i class="ri-cpu-fill"></i><div><div class="prot-info-label">Hardware</div><div class="prot-info-value">RAM ' + esc(String(ram)) + 'GB' + (cores ? ' · ' + cores + ' cores' : '') + '</div></div></div>';
+          }
+          if (browser) {
+            html += '<div class="prot-info-item"><i class="ri-global-fill"></i><div><div class="prot-info-label">Browser</div><div class="prot-info-value">' + esc(browser) + '</div></div></div>';
+          }
+          html += '</div>';
+
+          // Phones & Addresses
+          if (phones.length || addresses.length) {
+            html += '<div class="prot-section">';
+            html += '<div class="prot-section-title"><i class="ri-contacts-book-2-fill"></i> Contact Info</div>';
+            html += '<div class="prot-grid">';
+            if (phones.length) {
+              html += '<div class="prot-info-item"><i class="ri-phone-fill"></i><div><div class="prot-info-label">Phones Used</div><div class="prot-info-value">' + phones.map(function(p){return '<code>' + esc(p.trim()) + '</code>';}).join(' ') + '</div></div></div>';
+            }
+            if (addresses.length) {
+              html += '<div class="prot-info-item" style="grid-column:1/-1"><i class="ri-map-pin-fill"></i><div><div class="prot-info-label">Addresses Used</div><div class="prot-info-value">' + addresses.map(function(a){return esc(a);}).join('<br>') + '</div></div></div>';
+            }
+            html += '</div>';
+            html += '</div>';
+          }
+
+          // Risk signals
+          if (triggered.length) {
+            html += '<div class="prot-section">';
+            html += '<div class="prot-section-title"><i class="ri-alert-fill"></i> Risk Signals</div>';
+            html += '<div class="prot-tags">';
+            triggered.forEach(function(s) { html += '<span class="prot-tag"><i class="ri-flashlight-fill"></i> ' + esc(s) + '</span>'; });
+            html += '</div></div>';
+          }
+
+          html += '</div>'; // end body
+
+          // Footer
+          html += '<div class="prot-card-footer">';
+          html += '<div style="display:flex;flex-wrap:wrap;gap:8px">';
+          if (reason) html += '<span class="meta"><i class="ri-file-list-3-fill"></i> ' + esc(reason) + '</span>';
+          html += '<span class="meta"><i class="ri-user-fill"></i> ' + esc(by) + '</span>';
+          if (date) html += '<span class="meta"><i class="ri-calendar-fill"></i> ' + esc(date) + '</span>';
+          if (lastSeen) html += '<span class="meta"><i class="ri-time-fill"></i> Last: ' + esc(lastSeen.slice(0,10)) + '</span>';
+          html += '</div>';
+          html += '<button class="btn btn-green btn-xs" style="white-space:nowrap" onclick="YARZ.firewall.unblock(\'' + esc(id) + '\')"><i class="ri-lock-unlock-line"></i> Unblock</button>';
+          html += '</div>';
+
+          html += '</div>'; // end prot-card
+          return html;
         }).join('');
       },
       filter() {
