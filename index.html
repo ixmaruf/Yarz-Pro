@@ -7776,7 +7776,7 @@ YARZ.home = {
  async loadVisitorStats(){
   const upd = $('visitor-updated');
   try {
-  const db = getDb();
+  const db = (typeof getDb === 'function') ? getDb() : window.supabaseClient;
   if (!db) throw new Error('Supabase not initialized');
 
   const today = new Date().toISOString().split('T')[0];
