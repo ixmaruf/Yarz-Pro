@@ -294,6 +294,8 @@ body.dark .sidebar{
  background:var(--danger);border:2px solid var(--surface);
 }
 
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
 /* Cards grid */
 .grid{display:grid;gap:12px}
 .grid-6{grid-template-columns:repeat(6,minmax(0,1fr))}
@@ -339,6 +341,42 @@ body.dark .sidebar{
  color:var(--ink);
 }
 .stat-sub{font-size:11px;color:var(--ink-3);margin-top:6px;font-weight:500}
+/* Alert banner */
+.alert-banner{padding:14px 18px;border-radius:var(--radius);display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:13px;font-weight:600;border:1px solid;backdrop-filter:blur(12px)}
+.alert-banner.warn{background:rgba(245,158,11,0.08);border-color:rgba(245,158,11,0.2);color:#D97706}
+.alert-banner.danger{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.2);color:#DC2626}
+.alert-banner.info{background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.2);color:#2563EB}
+.alert-banner.success{background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.2);color:#059669}
+.alert-banner i{font-size:18px;flex-shrink:0}
+.alert-banner .alert-close{margin-left:auto;cursor:pointer;opacity:0.6;font-size:16px;background:none;border:none;color:inherit}
+.alert-banner .alert-close:hover{opacity:1}
+/* Global search */
+.gs-wrap{position:relative;width:100%;max-width:420px}
+.gs-input{width:100%;padding:10px 14px 10px 38px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:13px;outline:none;transition:border .2s}
+.gs-input:focus{border-color:var(--accent)}
+.gs-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:15px}
+.gs-results{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-top:4px;max-height:320px;overflow-y:auto;box-shadow:var(--shadow-lg);z-index:999;display:none}
+.gs-results.show{display:block}
+.gs-item{padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:13px;border-bottom:1px solid var(--border);transition:background .15s}
+.gs-item:last-child{border-bottom:none}
+.gs-item:hover{background:var(--surface-2)}
+.gs-item .gs-type{font-size:10px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:4px;flex-shrink:0}
+.gs-item .gs-type.prod{background:rgba(59,130,246,0.1);color:#3B82F6}
+.gs-item .gs-type.ord{background:rgba(168,85,247,0.1);color:#A855F7}
+.gs-item .gs-type.tx{background:rgba(16,185,129,0.1);color:#10B981}
+.gs-item .gs-type.exp{background:rgba(239,68,68,0.1);color:#EF4444}
+/* Chart container */
+.chart-wrap{position:relative;width:100%;height:220px;margin-top:8px}
+.chart-wrap canvas{width:100%!important;height:100%!important}
+/* Cash flow card */
+.cashflow-bar{display:flex;gap:4px;height:8px;border-radius:4px;overflow:hidden;margin-top:8px}
+.cashflow-bar .cf-in{background:var(--success);border-radius:4px 0 0 4px}
+.cashflow-bar .cf-out{background:var(--danger);border-radius:0 4px 4px 0}
+/* Print styles */
+@media print{.sidebar,.topbar,.icon-btn,.btn,.notif-panel,.modal-overlay{display:none!important}body{background:#fff!important}.page{display:block!important}.page:not(.active){display:none!important}}
+/* Responsive grid-6 */
+@media(max-width:1200px){.grid-6{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:768px){.grid-6{grid-template-columns:repeat(2,1fr)}.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr}.gs-wrap{max-width:100%}}
 
 /* Section header */
 .section{margin-top:28px}
@@ -3088,7 +3126,7 @@ table tbody tr:hover{ background:var(--surface-2); }
 </script>
 
 <!-- Admin Panel script (now uses supabase-adapter-v2.js with full RPC support) -->
-<script src="supabase-adapter-v2.js?v=2026-07-07-v5"></script>
+<script src="supabase-adapter-v2.js?v=2026-07-07-v6"></script>
 
   <!-- Flatpickr (Premium Custom Calendar Picker) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -3298,6 +3336,7 @@ table tbody tr:hover{ background:var(--surface-2); }
   <i class="ri-upload-cloud-2-line"></i> Publish to Website
  </button>
  <button class="icon-btn" onclick="YARZ.loadAll(true)" title="Refresh"><i class="ri-refresh-line"></i></button>
+ <div id="auto-refresh-indicator" style="font-size:10px;color:var(--ink-3);display:flex;align-items:center;gap:4px;cursor:default" title="Auto-refresh active"><i class="ri-refresh-line" style="animation:none" id="refresh-spin"></i><span id="refresh-timer">60s</span></div>
  <button class="icon-btn" id="notif-btn" onclick="YARZ.toggleNotif()" title="Notifications"><i class="ri-notification-3-line"></i></button>
  <button class="icon-btn" onclick="YARZ.toggleTheme()" title="Theme"><i class="ri-moon-line" id="theme-icon"></i></button>
  <div class="user-chip" onclick="YARZ.goPage('settings')" title="Settings">
@@ -3319,6 +3358,16 @@ table tbody tr:hover{ background:var(--surface-2); }
  <div id="pages">
  <!-- HOME -->
  <div class="page active" data-page="home">
+  <!-- Global Search -->
+  <div class="gs-wrap" style="margin-bottom:14px">
+  <i class="ri-search-line gs-icon"></i>
+  <input type="text" class="gs-input" id="global-search" placeholder="Search products, orders, transactions..." autocomplete="off" oninput="YARZ.search.onInput(this.value)" onfocus="YARZ.search.onInput(this.value)" onblur="setTimeout(()=>YARZ.search.hide(),200)">
+  <div class="gs-results" id="gs-results"></div>
+  </div>
+
+  <!-- Dynamic Alerts -->
+  <div id="dashboard-alerts"></div>
+
   <div class="grid grid-6" id="home-stats"></div>
 
   <div class="section">
@@ -3334,6 +3383,18 @@ table tbody tr:hover{ background:var(--surface-2); }
    <div class="section">
    <div class="section-title"><h2><i class="ri-calendar-line" style="color:var(--accent-2)"></i> Monthly Trend</h2></div>
    <div id="monthly-trend"></div>
+   </div>
+
+   <!-- Revenue & Profit Chart -->
+   <div class="section">
+   <div class="section-title"><h2><i class="ri-bar-chart-grouped-line" style="color:var(--info)"></i> Revenue & Profit Trend</h2></div>
+   <div class="chart-wrap"><canvas id="dashboard-chart"></canvas></div>
+   </div>
+
+   <!-- Cash Flow Widget -->
+   <div class="section">
+   <div class="section-title"><h2><i class="ri-bank-line" style="color:var(--accent-2)"></i> Cash Flow Overview</h2></div>
+   <div id="cashflow-widget"></div>
    </div>
 
    <!-- ✅ v15.28: Website Visitor Analytics — live data from Supabase
@@ -3412,10 +3473,16 @@ table tbody tr:hover{ background:var(--surface-2); }
   </div>
   </div>
 
-  <div class="section">
-  <div class="section-title"><h2><i class="ri-trophy-line" style="color:var(--warn)"></i> Top Selling Products</h2></div>
-  <div class="grid grid-3" id="top-sellers"></div>
-  </div>
+   <!-- Stock Valuation -->
+   <div class="section">
+   <div class="section-title"><h2><i class="ri-archive-line" style="color:var(--teal)"></i> Inventory Snapshot</h2></div>
+   <div id="stock-valuation"></div>
+   </div>
+
+   <div class="section">
+   <div class="section-title"><h2><i class="ri-trophy-line" style="color:var(--warn)"></i> Top Selling Products</h2></div>
+   <div class="grid grid-3" id="top-sellers"></div>
+   </div>
  </div>
 
  <!-- INVENTORY -->
@@ -3550,9 +3617,22 @@ table tbody tr:hover{ background:var(--surface-2); }
   <div id="finance-ads"></div>
   </div>
 
-  <!-- Recent Transactions -->
-  <div class="section">
-  <div class="section-title"><h2><i class="ri-exchange-line" style="color:var(--accent)"></i> Recent Transactions</h2></div>
+   <!-- Finance Actions Bar -->
+   <div class="card" style="padding:14px;margin-bottom:14px">
+   <div class="flex-gap" style="flex-wrap:wrap;gap:8px;align-items:center">
+   <span style="font-size:12px;font-weight:600;color:var(--ink-3)">FILTER:</span>
+   <button class="btn btn-sm btn-ghost" onclick="YARZ.financeFilter.set('all')" style="font-size:12px">All Time</button>
+   <button class="btn btn-sm btn-ghost" onclick="YARZ.financeFilter.set('this_month')" style="font-size:12px">This Month</button>
+   <button class="btn btn-sm btn-ghost" onclick="YARZ.financeFilter.set('last_month')" style="font-size:12px">Last Month</button>
+   <button class="btn btn-sm btn-ghost" onclick="YARZ.financeFilter.set('this_year')" style="font-size:12px">This Year</button>
+   <div style="margin-left:auto"></div>
+   <button class="btn btn-sm btn-blue" onclick="YARZ.exportPnl.print()" style="font-size:12px"><i class="ri-printer-line"></i> Print P&L</button>
+   </div>
+   </div>
+
+   <!-- Recent Transactions -->
+   <div class="section">
+   <div class="section-title"><h2><i class="ri-exchange-line" style="color:var(--accent)"></i> Recent Transactions</h2></div>
   <div id="finance-recent"></div>
   </div>
  </div>
@@ -7866,6 +7946,40 @@ YARZ.home = {
 </tbody></table>
 ` : '<div class="empty-state">No data yet</div>';
 
+ // Stock Valuation
+ const active = inv.filter(p=>p.status!=='Archived');
+ const totalStockUnits = active.reduce((s,p)=>s+(Number(p.stock)||0),0);
+ const totalStockValue = active.reduce((s,p)=>s+(Number(p.stock)||0)*(Number(p.cost)||0),0);
+ const totalRetailValue = active.reduce((s,p)=>s+(Number(p.stock)||0)*(Number(p.sale)||0),0);
+ const lowStockCount = active.filter(p=>(p.stock||0)<=2).length;
+
+ const svEl = $('stock-valuation');
+ if(svEl){
+   svEl.innerHTML = `
+   <div style="display:flex;gap:16px;flex-wrap:wrap">
+     <div style="flex:1;min-width:140px;padding:16px;background:var(--surface-2);border-radius:var(--radius)">
+       <div style="font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase">Total Units</div>
+       <div style="font-size:22px;font-weight:800;margin-top:4px">${toBn(totalStockUnits)}</div>
+       <div style="font-size:11px;color:var(--ink-3)">${toBn(active.length)} products</div>
+     </div>
+     <div style="flex:1;min-width:140px;padding:16px;background:var(--surface-2);border-radius:var(--radius)">
+       <div style="font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase">Stock Value (Cost)</div>
+       <div style="font-size:22px;font-weight:800;margin-top:4px">${fmtBDT(totalStockValue)}</div>
+       <div style="font-size:11px;color:var(--ink-3)">Investment at risk</div>
+     </div>
+     <div style="flex:1;min-width:140px;padding:16px;background:var(--surface-2);border-radius:var(--radius)">
+       <div style="font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase">Retail Value</div>
+       <div style="font-size:22px;font-weight:800;margin-top:4px">${fmtBDT(totalRetailValue)}</div>
+       <div style="font-size:11px;color:var(--ink-3)">Potential revenue</div>
+     </div>
+     <div style="flex:1;min-width:140px;padding:16px;background:${lowStockCount>0?'rgba(239,68,68,0.08)':'var(--surface-2)'};border-radius:var(--radius)">
+       <div style="font-size:11px;font-weight:700;color:${lowStockCount>0?'var(--danger)':'var(--ink-3)'};text-transform:uppercase">Low Stock Items</div>
+       <div style="font-size:22px;font-weight:800;margin-top:4px;color:${lowStockCount>0?'var(--danger)':'inherit'}">${toBn(lowStockCount)}</div>
+       <div style="font-size:11px;color:var(--ink-3)">≤2 units remaining</div>
+     </div>
+   </div>`;
+ }
+
  // Top sellers
  const sorted = [...inv].filter(p=>p.totalSold>0).sort((a,b)=>b.totalSold-a.totalSold).slice(0,3);
  $('top-sellers').innerHTML = sorted.length ? sorted.map(p=>`
@@ -7884,8 +7998,148 @@ YARZ.home = {
 
  // ✅ v15.28: Fire visitor stats fetch in background — non-blocking.
  // Errors are silenced so the home page never breaks if KV is missing.
- try { this.loadVisitorStats(); } catch(e) {}
+  try { this.loadVisitorStats(); } catch(e) {}
+
+  // ✅ New dynamic features
+  try { YARZ.home.renderAlerts(); } catch(e) {}
+  try { YARZ.home.renderChart(months, monthlyData); } catch(e) {}
+  try { YARZ.home.renderCashFlow(); } catch(e) {}
+  try { YARZ.home.renderStockValuation(); } catch(e) {}
  },
+
+  // ─── Dashboard Alerts ───────────────
+  renderAlerts(){
+    const alerts = [];
+    const inv = state.data.inventory || [];
+    const orders = state.data.orders || [];
+    const tx = state.data.transactions || [];
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    // Low stock alerts
+    inv.filter(p=>(p.stock||0)<=2 && p.status!=='Archived').forEach(p=>{
+      alerts.push({type:'danger',icon:'ri-alarm-warning-line',msg:`Low stock: <strong>${esc(p.name)}</strong> — only ${toBn(p.stock)} left`});
+    });
+
+    // Pending website orders
+    const pendingOrders = orders.filter(o=>o.status==='pending'||o.status==='Processing');
+    if(pendingOrders.length>0){
+      alerts.push({type:'warn',icon:'ri-time-line',msg:`${toBn(pendingOrders.length)} pending order${pendingOrders.length>1?'s':''} awaiting processing`});
+    }
+
+    // Net loss warning
+    const thisMonthStart = new Date(); thisMonthStart.setDate(1); thisMonthStart.setHours(0,0,0,0);
+    const tmTx = tx.filter(t=>t.date && t.date>=thisMonthStart);
+    const tmAd = (state.data.adTracker||[]).filter(t=>t.date && t.date>=thisMonthStart);
+    const tmExp = (state.data.expenses||[]).filter(t=>t.date && t.date>=thisMonthStart);
+    const tmRev = tmTx.reduce((s,t)=>s+(Number(t.revenue)||0),0);
+    const tmCost = tmTx.reduce((s,t)=>s+(Number(t.cost)||0),0);
+    const tmSpend = tmAd.reduce((s,t)=>s+(Number(t.amount)||0),0) + tmExp.reduce((s,t)=>s+(Number(t.amount)||0),0);
+    const tmNet = tmRev - tmCost - tmSpend;
+    if(tmNet < 0){
+      alerts.push({type:'danger',icon:'ri-error-warning-line',msg:`This month net loss: <strong>${fmtBDT(tmNet)}</strong> — expenses exceed revenue`});
+    } else if(tmRev > 0 && tmNet > 0){
+      alerts.push({type:'success',icon:'ri-check-double-line',msg:`Great! This month profit: <strong>${fmtBDT(tmNet)}</strong> with ${((tmNet/tmRev)*100).toFixed(0)}% net margin`});
+    }
+
+    const el = $('dashboard-alerts');
+    if(!el) return;
+    if(alerts.length===0){ el.innerHTML=''; return; }
+    el.innerHTML = alerts.map((a,i)=>`
+      <div class="alert-banner ${a.type}">
+        <i class="${a.icon}"></i>
+        <span>${a.msg}</span>
+        <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+      </div>
+    `).join('');
+  },
+
+  // ─── Revenue & Profit Chart ───────────────
+  _chart: null,
+  renderChart(months, monthlyData){
+    const canvas = $('dashboard-chart');
+    if(!canvas || !months || !months.length) return;
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const labels = months.map(m=>{const[,mo]=m.split('-');return monthNames[parseInt(mo)-1]});
+    const revenues = months.map(m=>monthlyData[m]?.rev||0);
+    const costs = months.map(m=>monthlyData[m]?.cost||0);
+    const profits = months.map(m=>{const d=monthlyData[m];return(d?.rev||0)-(d?.cost||0)-(d?.ad||0)-(d?.exp||0)});
+
+    if(this._chart) this._chart.destroy();
+    this._chart = new Chart(canvas.getContext('2d'),{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[
+          {label:'Revenue',data:revenues,backgroundColor:'rgba(59,130,246,0.7)',borderRadius:6,barPercentage:0.7},
+          {label:'Cost',data:costs,backgroundColor:'rgba(245,158,11,0.7)',borderRadius:6,barPercentage:0.7},
+          {label:'Net Profit',data:profits,backgroundColor:profits.map(p=>p>=0?'rgba(16,185,129,0.7)':'rgba(239,68,68,0.7)'),borderRadius:6,barPercentage:0.7}
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:16,font:{size:11}}}},
+        scales:{y:{beginAtZero:true,grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:10},callback:v=>v>=1000?(v/1000)+'k':v}},x:{grid:{display:false},ticks:{font:{size:10}}}}
+      }
+    });
+  },
+
+  // ─── Cash Flow Widget ───────────────
+  renderCashFlow(){
+    const el = $('cashflow-widget');
+    if(!el) return;
+    const tx = state.data.transactions || [];
+    const ad = state.data.adTracker || [];
+    const exp = state.data.expenses || [];
+    const thisMonthStart = new Date(); thisMonthStart.setDate(1); thisMonthStart.setHours(0,0,0,0);
+
+    const moneyIn = tx.filter(t=>t.date&&t.date>=thisMonthStart&&(Number(t.revenue)||0)>0).reduce((s,t)=>s+Number(t.revenue),0);
+    const moneyOut = tx.filter(t=>t.date&&t.date>=thisMonthStart).reduce((s,t)=>s+Number(t.cost)||0,0)
+      + ad.filter(t=>t.date&&t.date>=thisMonthStart).reduce((s,t)=>s+Number(t.amount)||0,0)
+      + exp.filter(t=>t.date&&t.date>=thisMonthStart).reduce((s,t)=>s+Number(t.amount)||0,0);
+    const total = Math.max(moneyIn, moneyOut, 1);
+    const inPct = (moneyIn/total*100).toFixed(0);
+    const outPct = (moneyOut/total*100).toFixed(0);
+
+    el.innerHTML = `
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:12px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.05em">Money In (This Month)</div>
+        <div style="font-size:24px;font-weight:800;color:var(--success);margin-top:4px">${fmtBDT(moneyIn)}</div>
+        <div style="font-size:11px;color:var(--ink-3);margin-top:2px">${toBn(tx.filter(t=>t.date&&t.date>=thisMonthStart&&(Number(t.revenue)||0)>0).length)} transactions</div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:12px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.05em">Money Out (This Month)</div>
+        <div style="font-size:24px;font-weight:800;color:var(--danger);margin-top:4px">${fmtBDT(moneyOut)}</div>
+        <div style="font-size:11px;color:var(--ink-3);margin-top:2px">Cost + Ads + Expenses</div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:12px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.05em">Net Flow</div>
+        <div style="font-size:24px;font-weight:800;color:${(moneyIn-moneyOut)>=0?'var(--success)':'var(--danger)'};margin-top:4px">${fmtBDT(moneyIn-moneyOut)}</div>
+        <div style="font-size:11px;color:var(--ink-3);margin-top:2px">${(moneyIn-moneyOut)>=0?'Positive':'Negative'} cash flow</div>
+      </div>
+    </div>
+    <div class="cashflow-bar" style="margin-top:14px">
+      <div class="cf-in" style="flex:${inPct}"></div>
+      <div class="cf-out" style="flex:${outPct}"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--ink-3)">
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--success);margin-right:4px"></span>In: ${fmtBDT(moneyIn)}</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--danger);margin-right:4px"></span>Out: ${fmtBDT(moneyOut)}</span>
+    </div>`;
+  },
+
+  // ─── Stock Valuation ───────────────
+  renderStockValuation(){
+    const inv = state.data.inventory || [];
+    const active = inv.filter(p=>p.status!=='Archived');
+    const totalStock = active.reduce((s,p)=>s+(Number(p.stock)||0),0);
+    const totalValue = active.reduce((s,p)=>s+(Number(p.stock)||0)*(Number(p.cost)||0),0);
+    const totalRetailValue = active.reduce((s,p)=>s+(Number(p.stock)||0)*(Number(p.sale)||0),0);
+    const totalSold = active.reduce((s,p)=>s+(Number(p.totalSold)||0),0);
+
+    // Render inside a container that we'll place in today-summary or top-sellers area
+    // We'll add it as a separate section via the HTML
+  },
 
  // ─── Website Visitor Analytics (direct Supabase query) ─────────────
  // Queries website_visitors table directly — never hits the Worker,
@@ -10438,9 +10692,10 @@ Team YARZ`;
 ============================================================ */
 YARZ.finance = {
  render(){
- const allTx = state.data.transactions;
- const allAd = state.data.adTracker;
- const allExp = state.data.expenses;
+ const ff = YARZ.financeFilter || {_range:'all'};
+ const allTx = state.data.transactions.filter(t=>ff._range==='all'||ff.inRange(t.date));
+ const allAd = state.data.adTracker.filter(t=>ff._range==='all'||ff.inRange(t.date));
+ const allExp = state.data.expenses.filter(t=>ff._range==='all'||ff.inRange(t.date));
  const histAd = state.data.monthlySummaries.reduce((s,m)=>s+Number(m.total_ad_spend || 0),0);
  const histExp = state.data.monthlySummaries.reduce((s,m)=>s+Number(m.total_expenses || 0),0);
  const totalAd = allAd.reduce((s,a)=>s+a.amount,0) + histAd;
@@ -16131,6 +16386,125 @@ setTimeout(() => {
       };
     }
   }catch(e){ console.warn('[AI Agent] goPage patch failed', e); }
+
+/* ============================================================
+ ============ GLOBAL SEARCH MODULE ============
+============================================================ */
+YARZ.search = {
+  onInput(q){
+    const el = $('gs-results');
+    if(!el) return;
+    q = (q||'').trim().toLowerCase();
+    if(q.length < 2){ el.classList.remove('show'); return; }
+
+    const results = [];
+    const inv = state.data.inventory || [];
+    const tx = state.data.transactions || [];
+    const orders = state.data.orders || [];
+    const exp = state.data.expenses || [];
+
+    // Search products
+    inv.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.category||'').toLowerCase().includes(q)).slice(0,5).forEach(p=>{
+      results.push({type:'prod',label:p.name,sub:`${p.category||''} • Stock: ${p.stock} • ${fmtBDT(p.sale)}`,action:`YARZ.inv.showDetails('${esc(p.name)}')`});
+    });
+
+    // Search transactions
+    tx.filter(t=>(t.product||'').toLowerCase().includes(q)).slice(0,5).forEach(t=>{
+      results.push({type:'tx',label:`${t.product} (${t.type})`,sub:`${fmtDateBn(t.date)} • ${fmtBDT(t.revenue)}`,action:`YARZ.goPage('finance')`});
+    });
+
+    // Search orders
+    orders.filter(o=>(o.name||'').toLowerCase().includes(q)||(o.phone||'').includes(q)||(o.id||'').toLowerCase().includes(q)).slice(0,5).forEach(o=>{
+      results.push({type:'ord',label:o.name||o.id,sub:`${o.phone||''} • ${fmtBDT(o.total||0)} • ${o.status||''}`,action:`YARZ.goPage('orders')`});
+    });
+
+    // Search expenses
+    exp.filter(e=>(e.description||e.category||'').toLowerCase().includes(q)).slice(0,3).forEach(e=>{
+      results.push({type:'exp',label:e.category||'Expense',sub:`${fmtDateBn(e.date)} • ${fmtBDT(e.amount)}`,action:`YARZ.goPage('finance')`});
+    });
+
+    if(results.length === 0){
+      el.innerHTML = '<div class="gs-item" style="opacity:0.5;cursor:default">No results found</div>';
+    } else {
+      el.innerHTML = results.map(r=>`
+        <div class="gs-item" onmousedown="${r.action}">
+          <span class="gs-type ${r.type}">${r.type}</span>
+          <div><div style="font-weight:600">${esc(r.label)}</div><div style="font-size:11px;color:var(--ink-3)">${r.sub}</div></div>
+        </div>
+      `).join('');
+    }
+    el.classList.add('show');
+  },
+  hide(){ const el=$('gs-results'); if(el) el.classList.remove('show'); }
+};
+
+/* ============================================================
+ ============ AUTO-REFRESH MODULE ============
+============================================================ */
+YARZ.autoRefresh = {
+  _interval: null,
+  _countdown: 60,
+  start(){
+    this.stop();
+    this._countdown = 60;
+    this._interval = setInterval(()=>{
+      this._countdown--;
+      const timer = $('refresh-timer');
+      if(timer) timer.textContent = this._countdown+'s';
+      if(this._countdown <= 0){
+        this._countdown = 60;
+        YARZ.loadAll(true);
+        const spin = $('refresh-spin');
+        if(spin){ spin.style.animation='spin 1s linear 1'; setTimeout(()=>spin.style.animation='none',1000); }
+      }
+    }, 1000);
+  },
+  stop(){ if(this._interval){ clearInterval(this._interval); this._interval=null; } }
+};
+
+// Start auto-refresh on load
+setTimeout(()=>YARZ.autoRefresh.start(), 3000);
+
+/* ============================================================
+ ============ FINANCE DATE FILTER MODULE ============
+============================================================ */
+YARZ.financeFilter = {
+  _range: 'all',
+  _from: null,
+  _to: null,
+  set(range){
+    this._range = range;
+    const now = new Date();
+    if(range === 'this_month'){
+      this._from = new Date(now.getFullYear(), now.getMonth(), 1);
+      this._to = new Date(now.getFullYear(), now.getMonth()+1, 0, 23, 59, 59);
+    } else if(range === 'last_month'){
+      this._from = new Date(now.getFullYear(), now.getMonth()-1, 1);
+      this._to = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    } else if(range === 'this_year'){
+      this._from = new Date(now.getFullYear(), 0, 1);
+      this._to = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+    } else {
+      this._from = null;
+      this._to = null;
+    }
+    YARZ.finance.render();
+  },
+  inRange(d){
+    if(!this._from || !this._to) return true;
+    const dt = new Date(d);
+    return dt >= this._from && dt <= this._to;
+  }
+};
+
+/* ============================================================
+ ============ PRINT/EXPORT MODULE ============
+============================================================ */
+YARZ.exportPnl = {
+  print(){
+    window.print();
+  }
+};
 
   YARZ.aiAgent = {
     _state: state,
