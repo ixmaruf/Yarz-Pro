@@ -15442,7 +15442,7 @@ YARZ.marketing = {
     const reach = prompt("Reach/Impressions (e.g. 1000):", "0");
     const clicks = prompt("Clicks (e.g. 50):", "0");
     
-    showLoader('Saving campaign...');
+    toast('Saving campaign...', 'info');
     await __supaInsert('ad_tracker', {
       product: prod,
       spend: Number(spend) || 0,
@@ -15450,7 +15450,6 @@ YARZ.marketing = {
       clicks: Number(clicks) || 0,
       date: new Date().toISOString()
     });
-    hideLoader();
     toast('Campaign logged', 'success');
     this.load();
   },
