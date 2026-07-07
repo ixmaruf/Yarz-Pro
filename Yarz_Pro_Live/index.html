@@ -3126,7 +3126,7 @@ table tbody tr:hover{ background:var(--surface-2); }
 </script>
 
 <!-- Admin Panel script (now uses supabase-adapter-v2.js with full RPC support) -->
-<script src="supabase-adapter-v2.js?v=2026-07-07-v5"></script>
+<script src="supabase-adapter-v2.js?v=2026-07-07-v6"></script>
 
   <!-- Flatpickr (Premium Custom Calendar Picker) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -7948,10 +7948,10 @@ YARZ.home = {
 
  // Stock Valuation
  const active = inv.filter(p=>p.status!=='Archived');
- const totalStockUnits = active.reduce((s,p)=>s+(Number(p.stock)||0),0);
- const totalStockValue = active.reduce((s,p)=>s+(Number(p.stock)||0)*(Number(p.cost)||0),0);
- const totalRetailValue = active.reduce((s,p)=>s+(Number(p.stock)||0)*(Number(p.sale)||0),0);
- const lowStockCount = active.filter(p=>(p.stock||0)<=2).length;
+ const totalStockUnits = active.reduce((s,p)=>s+(Number(p.totalStock)||0),0);
+ const totalStockValue = active.reduce((s,p)=>s+(Number(p.totalStock)||0)*(Number(p.cost)||0),0);
+ const totalRetailValue = active.reduce((s,p)=>s+(Number(p.totalStock)||0)*(Number(p.sale)||0),0);
+ const lowStockCount = active.filter(p=>(p.totalStock||0)<=2).length;
 
  const svEl = $('stock-valuation');
  if(svEl){
@@ -8016,8 +8016,8 @@ YARZ.home = {
     const today = new Date(); today.setHours(0,0,0,0);
 
     // Low stock alerts
-    inv.filter(p=>(p.stock||0)<=2 && p.status!=='Archived').forEach(p=>{
-      alerts.push({type:'danger',icon:'ri-alarm-warning-line',msg:`Low stock: <strong>${esc(p.name)}</strong> — only ${toBn(p.stock)} left`});
+    inv.filter(p=>(p.totalStock||0)<=2 && p.status!=='Archived').forEach(p=>{
+      alerts.push({type:'danger',icon:'ri-alarm-warning-line',msg:`Low stock: <strong>${esc(p.name)}</strong> — only ${toBn(p.totalStock)} left`});
     });
 
     // Pending website orders
@@ -8128,18 +8128,8 @@ YARZ.home = {
     </div>`;
   },
 
-  // ─── Stock Valuation ───────────────
-  renderStockValuation(){
-    const inv = state.data.inventory || [];
-    const active = inv.filter(p=>p.status!=='Archived');
-    const totalStock = active.reduce((s,p)=>s+(Number(p.stock)||0),0);
-    const totalValue = active.reduce((s,p)=>s+(Number(p.stock)||0)*(Number(p.cost)||0),0);
-    const totalRetailValue = active.reduce((s,p)=>s+(Number(p.stock)||0)*(Number(p.sale)||0),0);
-    const totalSold = active.reduce((s,p)=>s+(Number(p.totalSold)||0),0);
-
-    // Render inside a container that we'll place in today-summary or top-sellers area
-    // We'll add it as a separate section via the HTML
-  },
+  // ─── Stock Valuation (unused — rendered inline in home.render) ──────
+  renderStockValuation(){},
 
  // ─── Website Visitor Analytics (direct Supabase query) ─────────────
  // Queries website_visitors table directly — never hits the Worker,
