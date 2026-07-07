@@ -8394,8 +8394,7 @@ YARZ.home = {
   renderStockValuation(){},
 
  // ─── Website Visitor Analytics (direct Supabase query) ─────────────
- // Queries website_visitors table directly — never hits the Worker,
- // so admin panel visits are never counted as website traffic.
+ // Uses visitor_stats for cumulative counts, website_visitors for today/yesterday
  // Auto-refresh: every 30s while admin is on Home page (visibility-aware).
  _vis: { timer: null, lastFetch: 0 },
  async loadVisitorStats(){
@@ -8407,7 +8406,7 @@ YARZ.home = {
   const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-  // Fetch all visitor rows (small table, fast)
+  // Fetch today/yesterday from website_visitors (raw data)
   const { data: rows, error } = await db.from('website_visitors').select('visit_date, visit_count, visitor_ip');
   if (error) throw error;
 
@@ -8423,18 +8422,20 @@ YARZ.home = {
   const yestVisits = yestRows.reduce((s, r) => s + (r.visit_count || 0), 0);
   const yestUnique = yestRows.length;
 
-  // Total
-  const totalVisits = data.reduce((s, r) => s + (r.visit_count || 0), 0);
-  const uniqueIps = new Set(data.map(r => r.visitor_ip).filter(Boolean));
+  // Cumulative totals from visitor_stats (never decreases)
+  const { data: statsRows } = await db.from('visitor_stats').select('cumulative_unique, cumulative_total').order('visit_date', { ascending: false }).limit(1);
+  const latestStats = (statsRows && statsRows.length > 0) ? statsRows[0] : null;
+  const cumulativeUnique = latestStats ? (latestStats.cumulative_unique || 0) : new Set(data.map(r => r.visitor_ip).filter(Boolean)).size;
+  const cumulativeTotal = latestStats ? (latestStats.cumulative_total || 0) : data.reduce((s, r) => s + (r.visit_count || 0), 0);
 
   // Unique visitors (deduplicated by IP)
   $('vis-today').textContent  = toBn(todayUnique);
   $('vis-yesterday').textContent = toBn(yestUnique);
-  $('vis-total').textContent  = toBn(uniqueIps.size);
+  $('vis-total').textContent  = toBn(cumulativeUnique);
   // Total visits (every hit counts)
   $('vis-today-v').textContent  = toBn(todayVisits);
   $('vis-yesterday-v').textContent = toBn(yestVisits);
-  $('vis-total-v').textContent  = toBn(totalVisits);
+  $('vis-total-v').textContent  = toBn(cumulativeTotal);
 
   const now = new Date();
   const hh = String(now.getHours()).padStart(2,'0');
@@ -8740,19 +8741,18 @@ YARZ.inv = {
  YARZ.openModal('delete-confirm', {
  name: `Product: ${name}`,
  onArchive: `YARZ.inv.changeStatus('${esc(name)}', 'Archived')`,
- onDeleteKeepFin: `YARZ.inv._permanentlyDeleteProduct('${esc(name)}', true)`,
- onDelete: `YARZ.inv._permanentlyDeleteProduct('${esc(name)}', false)`
+ onDeleteKeepFin: `YARZ.inv._deleteProduct('${esc(name)}')`
  });
  },
 
- async _permanentlyDeleteProduct(name, keepFin = false){
+ async _deleteProduct(name){
  showLoader('Deleting...');
  try {
- const res = await appsPost('deleteProduct', { name, keepFinancials: keepFin });
+ const res = await appsPost('deleteProduct', { name });
  if(res && res.success===false) throw new Error(res.error||res.msg||'Failed');
  state.data.inventory = state.data.inventory.filter(x=>x.name!==name);
  YARZ.render();
-  toast('Permanently deleted', 'success');
+  toast('Product deleted (financial data preserved)', 'success');
   try{ if(window.YARZ_API && YARZ_API.flushAllCaches) YARZ_API.flushAllCaches(); }catch(e){}
   } catch(e){ toast(e.message,'error'); }
   finally { hideLoader(); }
@@ -10994,15 +10994,44 @@ YARZ.finance = {
  const allTx = state.data.transactions.filter(t=>ff._range==='all'||ff.inRange(t.date));
  const allAd = state.data.adTracker.filter(t=>ff._range==='all'||ff.inRange(t.date));
  const allExp = state.data.expenses.filter(t=>ff._range==='all'||ff.inRange(t.date));
- const histAd = state.data.monthlySummaries.reduce((s,m)=>s+Number(m.total_ad_spend || 0),0);
- const histExp = state.data.monthlySummaries.reduce((s,m)=>s+Number(m.total_expenses || 0),0);
- const totalAd = allAd.reduce((s,a)=>s+a.amount,0) + histAd;
- const histReturn = state.data.monthlySummaries.reduce((s,m)=>s+Number(m.total_returns || 0),0);
- const totalExp = allExp.reduce((s,e)=>s+e.amount,0) + histExp;
- const totalReturn = allTx.filter(t=>t.type==='Return').length + histReturn;
- const totalRev = allTx.reduce((s,t)=>s+(Number(t.revenue)||0),0);
- const totalCost = allTx.reduce((s,t)=>s+(Number(t.cost)||0),0);
- const totalReturns = allTx.filter(t=>t.type==='Return').reduce((s,t)=>s+Math.abs(Number(t.revenue)||0),0);
+
+ // Current month key (e.g. "2026-07") — raw data exists for this month
+ const now = new Date();
+ const currentYM = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+
+ // Helper: check if a year_month is in the filtered range
+ const msInRange = (ym) => {
+   if (ff._range === 'all') return ym !== currentYM; // all time: include all except current month
+   // For filtered range: check if the month falls within the filter
+   const parts = ym.split('-');
+   const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, 15);
+   return ff.inRange(d.toISOString()) && ym !== currentYM;
+ };
+
+ // Historical aggregates from monthly_summaries (EXCLUDING current month — raw data covers that)
+ const histRev = state.data.monthlySummaries.filter(m=>msInRange(m.year_month)).reduce((s,m)=>s+Number(m.total_revenue||0),0);
+ const histCost = state.data.monthlySummaries.filter(m=>msInRange(m.year_month)).reduce((s,m)=>s+Number(m.total_cost||0),0);
+ const histAd = state.data.monthlySummaries.filter(m=>msInRange(m.year_month)).reduce((s,m)=>s+Number(m.total_ad_spend||0),0);
+ const histExp = state.data.monthlySummaries.filter(m=>msInRange(m.year_month)).reduce((s,m)=>s+Number(m.total_expenses||0),0);
+ const histReturnAmt = state.data.monthlySummaries.filter(m=>msInRange(m.year_month)).reduce((s,m)=>s+Number(m.total_return_amount||m.total_returns||0),0);
+ const histOrders = state.data.monthlySummaries.filter(m=>msInRange(m.year_month)).reduce((s,m)=>s+Number(m.total_orders||0),0);
+ const histReturnCount = state.data.monthlySummaries.filter(m=>msInRange(m.year_month)).reduce((s,m)=>s+Number(m.total_returns||0),0);
+
+ // Raw data totals (current month + any filtered months with raw data)
+ const rawRev = allTx.filter(t=>t.type!=='Return').reduce((s,t)=>s+(Number(t.revenue)||0),0);
+ const rawCost = allTx.reduce((s,t)=>s+(Number(t.cost)||0),0);
+ const rawAd = allAd.reduce((s,a)=>s+(Number(a.amount)||0),0);
+ const rawExp = allExp.reduce((s,e)=>s+(Number(e.amount)||0),0);
+ const rawReturnAmt = allTx.filter(t=>t.type==='Return').reduce((s,t)=>s+Math.abs(Number(t.revenue)||0),0);
+ const rawReturnCount = allTx.filter(t=>t.type==='Return').length;
+
+ // Combined totals: historical summaries + raw data (no double-counting)
+ const totalRev = histRev + rawRev;
+ const totalCost = histCost + rawCost;
+ const totalAd = histAd + rawAd;
+ const totalExp = histExp + rawExp;
+ const totalReturns = histReturnAmt + rawReturnAmt;
+ const totalReturn = histReturnCount + rawReturnCount;
  const netRevenue = totalRev - totalReturns;
  const grossProfit = netRevenue - totalCost;
  const netProfit = grossProfit - totalAd - totalExp;
@@ -11572,18 +11601,41 @@ YARZ.rep = {
   };
  const bump = (k, kind2, v)=>{
  if(!k) return;
- out[k] = out[k] || { rev:0, cost:0, ad:0, exp:0, orders:0, returns:0 };
+ out[k] = out[k] || { rev:0, cost:0, ad:0, exp:0, orders:0, returns:0, returnAmt:0 };
  out[k][kind2] += v;
  };
+ // Raw data
  tx.filter(t=>this._inRange(t.date)).forEach(t=>{
  const k = keyOf(t.date); if(!k) return;
- if(t.type==='Return'){ out[k] = out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0}; out[k].returns++; }
- out[k] = out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0};
- out[k].rev += t.revenue; out[k].cost += t.cost;
+ if(t.type==='Return'){ out[k] = out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0,returnAmt:0}; out[k].returns++; out[k].returnAmt += Math.abs(Number(t.revenue)||0); }
+ out[k] = out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0,returnAmt:0};
+ out[k].rev += Number(t.revenue)||0; out[k].cost += Number(t.cost)||0;
  });
- ad.filter(a=>this._inRange(a.date)).forEach(a=>{ const k=keyOf(a.date); if(!k)return; out[k]=out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0}; out[k].ad += a.amount; });
- ex.filter(e=>this._inRange(e.date)).forEach(e=>{ const k=keyOf(e.date); if(!k)return; out[k]=out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0}; out[k].exp += e.amount; });
- ord.filter(o=>this._inRange(o.date)).forEach(o=>{ const k=keyOf(o.date); if(!k)return; if(['Cancelled', 'Returned'].includes(o.status)) return; out[k]=out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0}; out[k].orders++; });
+ ad.filter(a=>this._inRange(a.date)).forEach(a=>{ const k=keyOf(a.date); if(!k)return; out[k]=out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0,returnAmt:0}; out[k].ad += Number(a.amount)||0; });
+ ex.filter(e=>this._inRange(e.date)).forEach(e=>{ const k=keyOf(e.date); if(!k)return; out[k]=out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0,returnAmt:0}; out[k].exp += Number(e.amount)||0; });
+ ord.filter(o=>this._inRange(o.date)).forEach(o=>{ const k=keyOf(o.date); if(!k)return; if(['Cancelled', 'Returned'].includes(o.status)) return; out[k]=out[k]||{rev:0,cost:0,ad:0,exp:0,orders:0,returns:0,returnAmt:0}; out[k].orders++; });
+
+ // Historical data from monthly_summaries (for months without raw data)
+ (state.data.monthlySummaries || []).forEach(m => {
+   const k = kind === 'month' ? m.year_month : m.year_month?.substring(0, 4);
+   if (!k || out[k]) return; // Skip if raw data exists for this month
+   if (this.filter.from || this.filter.to) {
+     // Check if this month is in the filter range
+     const parts = m.year_month.split('-');
+     const midDate = new Date(parseInt(parts[0]), parseInt(parts[1])-1, 15);
+     if (!this._inRange(midDate.toISOString())) return;
+   }
+   out[k] = {
+     rev: Number(m.total_revenue) || 0,
+     cost: Number(m.total_cost) || 0,
+     ad: Number(m.total_ad_spend) || 0,
+     exp: Number(m.total_expenses) || 0,
+     orders: Number(m.total_orders) || 0,
+     returns: Number(m.total_returns) || 0,
+     returnAmt: Number(m.total_return_amount || m.total_returns) || 0
+   };
+ });
+
  return Object.keys(out).sort().map(k=>{
  const r = out[k]; const net = r.rev-r.cost-r.ad-r.exp;
  const margin = r.rev>0 ? Math.round(net/r.rev*100) : 0;
@@ -13927,11 +13979,10 @@ const modalBuilders = {
   <h3><i class="ri-delete-bin-line" style="color:var(--danger)"></i> Delete Confirmation</h3>
   <button class="modal-close" onclick="YARZ.closeModal()"><i class="fas fa-xmark"></i></button>
  </div>
- <p style="margin-bottom:20px;color:var(--ink-2)">Are you sure you want to delete <b>${esc(data.name)}</b>? Do you want to just Archive/Cancel instead of deleting?</p>
+ <p style="margin-bottom:20px;color:var(--ink-2)">Are you sure you want to delete <b>${esc(data.name)}</b>? Financial data (orders, transactions, reports) will be preserved.</p>
  <div style="display:grid;gap:10px">
   ${data.onArchive ? `<button class="btn btn-primary" onclick="YARZ.closeModal(); ${data.onArchive}"><i class="ri-archive-line"></i> Archive / Hide (Recommended)</button>` : ''}
-  ${data.onDeleteKeepFin ? `<button class="btn btn-ghost" style="color:#d97706;border:1px solid #d97706" onclick="YARZ.closeModal(); ${data.onDeleteKeepFin}"><i class="ri-eraser-line"></i> Delete Product ONLY (Keep Financials)</button>` : ''}
-  <button class="btn btn-ghost" style="color:var(--danger);border:1px solid var(--danger)" onclick="YARZ.closeModal(); ${data.onDelete}"><i class="ri-delete-bin-6-fill"></i> Permanently Delete EVERYTHING</button>
+  ${data.onDeleteKeepFin ? `<button class="btn btn-ghost" style="color:#d97706;border:1px solid #d97706" onclick="YARZ.closeModal(); ${data.onDeleteKeepFin}"><i class="ri-eraser-line"></i> Delete Product (Keep Financials)</button>` : ''}
  </div>
  `;
  },

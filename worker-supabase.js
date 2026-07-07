@@ -1033,7 +1033,7 @@ async function handleTelegramWebhook(request, env) {
     try {
       const now = new Date().toISOString();
       // Update order status in Supabase directly (REST PATCH)
-      await supabaseRequest(
+      await supabaseRequest(env,
         "website_orders?order_id=eq." + encodeURIComponent(orderId),
         {
           method: "PATCH",
@@ -2176,6 +2176,12 @@ async function createAgentOrder(env, order) {
  * @returns {Promise<Response>}
  */
 async function handleAgentWebhook(request, env) {
+  // Auth check: require X-Agent-Secret header
+  const providedSecret = request.headers.get("x-agent-secret") || "";
+  const expectedSecret = (env && env.AGENT_SECRET) || "";
+  if (!expectedSecret || providedSecret !== expectedSecret) {
+    return jsonResponse({ success: false, error: "Unauthorized" }, 401);
+  }
   let body;
   try { body = await request.json(); } catch (e) {
     return jsonResponse({ success: false, error: "Invalid JSON" }, 400);
@@ -2241,6 +2247,12 @@ async function handleAgentSettings(request, env) {
     return jsonResponse({ success: true, data: settings });
   }
   if (request.method === "POST") {
+    // Auth check: require X-Agent-Secret header (set in Telegram bot + admin panel)
+    const providedSecret = request.headers.get("x-agent-secret") || "";
+    const expectedSecret = (env && env.AGENT_SECRET) || "";
+    if (!expectedSecret || providedSecret !== expectedSecret) {
+      return jsonResponse({ success: false, error: "Unauthorized" }, 401);
+    }
     let body;
     try { body = await request.json(); } catch (e) {
       return jsonResponse({ success: false, error: "Invalid JSON" }, 400);

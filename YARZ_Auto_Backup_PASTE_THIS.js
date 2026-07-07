@@ -1,105 +1,189 @@
 /**
  * ==============================================================
  * YARZ Advanced Auto-Backup & Auto-Cleanup System
- * Version: 1.0
- * Date: 2026-06-24
+ * Version: 2.0 - Rolling Window
+ * Date: 2026-07-08
  * 
  * এই কোডটি প্রতিদিন রাত ১২টা-১টায় নিজে থেকে চলবে।
- * - মাসের ১ তারিখে: ব্যবসার ডেটা Google Drive-এ ব্যাকআপ নেবে।
+ * - প্রতিদিন: পুরনো ব্যবসার ডেটা Google Drive-এ ব্যাকআপ নেবে (Rolling Window)।
  * - প্রতিদিন: অপ্রয়োজনীয় লগ ফাইল ডিলিট করবে।
+ * - জানুয়ারিতে: inventory/delivery_charges বার্ষিক ব্যাকআপ।
  * ==============================================================
  */
 
 var SUPABASE_URL = "https://xdzduowhwubogaavraap.supabase.co";
 var SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkemR1b3dod3Vib2dhYXZyYWFwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTEwNzgxNiwiZXhwIjoyMDk2NjgzODE2fQ.7UlQv2dKyKq-ZllQH1LJ4SFgAYXbl0dNHkV1xpH5G00";
 
-// কোন টেবিল কত মাস পর পর ব্যাকআপ হবে
-var CONFIG = {
-  "orders": 2,
-  "website_orders": 2,
-  "transactions": 2,
-  "inventory": 2,
-  "expenses": 6,
-  "monthly_reports": 6,
-  "yearly_reports": 12
+// Date column mapping per table — NOT every table uses created_at!
+var DATE_COLUMNS = {
+  "orders": "created_at",
+  "website_orders": "date",
+  "transactions": "date",
+  "inventory": "updated_at",
+  "expenses": "date",
+  "ad_tracker": "date",
+  "customers": "created_at",
+  "delivery_charges": "updated_at"
 };
 
-var LOG_DATA_DAYS = 30;
-var AUDIT_DATA_DAYS = 90;
+// Rolling window backup tables: key=tableName, value=retention in DAYS
+// Data older than N days gets backed up and deleted EVERY DAY
+var BACKUP_CONFIG = {
+  "orders":            60,
+  "website_orders":    60,
+  "transactions":      60,
+  "customers":        180,
+  "expenses":         180,
+  "ad_tracker":       180,
+  "delivery_charges": 365
+};
+
+// Yearly backup tables — only backed up in January, never deleted
+var YEARLY_BACKUP_TABLES = ["inventory", "delivery_charges"];
+
+// Tables that should NOT be backed up but DO need cleanup
+var CLEANUP_CONFIG = {
+  "admin_login_attempts":    { column: "created_at",   days: 10 },
+  "admin_sessions":          { column: "created_at",   days: 10 },
+  "rate_limit_log":          { column: "created_at",   days: 10 },
+  "audit_log":               { column: "ts",           days: 10 },
+  "_activity":               { column: "ts",           days: 10 },
+  "fortress_log":            { column: "created_at",   days: 10 },
+  "ai_messages":             { column: "created_at",   days: 30 },
+  "steadfast_consignments":  { column: "created_at",   days: 90 },
+  "steadfast_balance_cache": { column: "updated_at",   days: 7 }
+};
 
 // ==========================================
 // মেইন ফাংশন (এটি প্রতিদিন রাতে চলবে)
 // ==========================================
 function YARZ_Nightly_Maintenance() {
-  Logger.log("Starting YARZ Nightly Maintenance...");
+  Logger.log("=== Starting YARZ Nightly Maintenance (Rolling Window v2.0) ===");
   
   var today = new Date();
-  
-  // ১. Business Data Backup (শুধু মাসের ১ তারিখে)
-  if (today.getDate() === 1) {
-    Logger.log("Today is the 1st! Running Monthly Backup...");
-    var currentMonth = today.getMonth() + 1;
+  var isJanuary = (today.getMonth() === 0);
+
+  // ১. Rolling Window Backup + Delete (প্রতিদিন)
+  Logger.log("--- Phase 1: Rolling window backup & cleanup ---");
+  for (var tableName in BACKUP_CONFIG) {
+    var retentionDays = BACKUP_CONFIG[tableName];
     
-    // ১.১. ডিলিটের আগে Monthly Summary তৈরি ও সেভ করা (২ মাসের জন্য)
-    if (currentMonth % 2 === 1) {
-      try {
-        var summaryRange = getBackupRange(today, 2);
-        generateMonthlySummary(summaryRange.firstDay, summaryRange.lastDay);
-      } catch (e) {
-        Logger.log("Error generating monthly summaries: " + e.toString());
+    if (YEARLY_BACKUP_TABLES.indexOf(tableName) !== -1) {
+      // Yearly tables: only backup in January, never delete
+      if (isJanuary) {
+        Logger.log("[" + tableName + "] January yearly backup (no delete)...");
+        processYearlyBackup(tableName);
+      } else {
+        Logger.log("[" + tableName + "] Skipping yearly table (not January).");
       }
+    } else {
+      Logger.log("[" + tableName + "] Rolling window backup (retention=" + retentionDays + " days)...");
+      processRollingBackup(tableName, retentionDays, today);
     }
-    
-    for (var tableName in CONFIG) {
-      var interval = CONFIG[tableName];
-      var shouldRun = false;
-      
-      if (interval === 2 && currentMonth % 2 === 1) shouldRun = true;
-      if (interval === 6 && currentMonth % 6 === 1) shouldRun = true;
-      if (interval === 12 && currentMonth === 1) shouldRun = true;
-      
-      if (shouldRun) {
-        var range = getBackupRange(today, interval);
-        processTableBackup(tableName, range);
-      }
-    }
-  } else {
-    Logger.log("Not the 1st. Skipping business backups.");
   }
+
+  // ২. Cleanup-only tables (প্রতিদিন)
+  Logger.log("--- Phase 2: Cleanup-only tables ---");
+  for (var cleanupTable in CLEANUP_CONFIG) {
+    var cfg = CLEANUP_CONFIG[cleanupTable];
+    Logger.log("[" + cleanupTable + "] Cleaning data older than " + cfg.days + " days...");
+    deleteOldData(cleanupTable, cfg.column, cfg.days);
+  }
+
+  // ৩. Visitor Stats Aggregation (প্রতিদিন)
+  Logger.log("--- Phase 3: Visitor stats aggregation ---");
+  aggregateVisitorStats(today);
+
+  // ৪. Customer Summary Update (before orders get deleted - already handled in processRollingBackup)
+  //    Customer summaries are updated inside processRollingBackup for the "orders" table.
   
-  // ২. System Logs Cleanup (প্রতিদিন)
-  Logger.log("Running daily log cleanup...");
-  deleteOldData("admin_login_attempts", "created_at", LOG_DATA_DAYS);
-  deleteOldData("admin_sessions", "created_at", LOG_DATA_DAYS);
-  deleteOldData("rate_limit_log", "created_at", LOG_DATA_DAYS);
-  deleteOldData("fortress_log", "created_at", AUDIT_DATA_DAYS);
-  deleteOldData("_activity", "ts", AUDIT_DATA_DAYS);
-  deleteOldData("audit_log", "ts", AUDIT_DATA_DAYS);
-  
-  Logger.log("YARZ Nightly Maintenance Complete!");
+  Logger.log("=== YARZ Nightly Maintenance Complete! ===");
 }
 
 // ==========================================
-// তারিখের রেঞ্জ বের করা
+// Rolling Window Backup (প্রতিদিন চলবে)
 // ==========================================
-function getBackupRange(today, intervalMonths) {
-  var startTarget = new Date(today.getFullYear(), today.getMonth() - intervalMonths, 1);
-  var endTarget = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
-  
-  var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  var startMonthName = months[startTarget.getMonth()];
-  var endMonthName = months[endTarget.getMonth()];
-  
-  var label = startMonthName + "_to_" + endMonthName + "_" + endTarget.getFullYear();
-  if (startTarget.getFullYear() !== endTarget.getFullYear()) {
-    label = startMonthName + "_" + startTarget.getFullYear() + "_to_" + endMonthName + "_" + endTarget.getFullYear();
+function processRollingBackup(tableName, retentionDays, today) {
+  var cutoff = new Date(today);
+  cutoff.setDate(cutoff.getDate() - retentionDays);
+  var firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+  var lastDay = new Date(cutoff.getFullYear(), cutoff.getMonth(), cutoff.getDate() - 1, 23, 59, 59, 999).toISOString();
+
+  // Monthly summaries: only generate when cutoff falls on 1st (= complete months)
+  var generateSummaries = (cutoff.getDate() === 1);
+  if (generateSummaries) {
+    Logger.log("[" + tableName + "] Cutoff is 1st of month — generating monthly summaries before delete...");
+    generateSummariesForRange(firstDay, lastDay);
   }
-  
-  return {
-    firstDay: startTarget.toISOString(),
-    lastDay: endTarget.toISOString(),
-    label: label
-  };
+
+  // Customer summary: update customers before deleting orders
+  if (tableName === "orders") {
+    Logger.log("[customers] Updating customer summaries from orders in deletion range...");
+    updateCustomerSummary(firstDay, lastDay);
+  }
+
+  // Iterate month by month (back up each month, then delete it)
+  var cursor = new Date(today.getFullYear(), today.getMonth(), 1);
+  while (cursor.getTime() > cutoff.getTime()) {
+    var year = cursor.getFullYear();
+    var month = cursor.getMonth();
+
+    var mFirst = new Date(year, month, 1);
+    var mLast = new Date(year, month + 1, 0, 23, 59, 59, 999);
+
+    // Clamp to cutoff
+    if (mFirst.getTime() < cutoff.getTime()) mFirst = new Date(cutoff);
+    if (mLast.getTime() > new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1, 23, 59, 59, 999).getTime()) {
+      mLast = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1, 23, 59, 59, 999);
+    }
+
+    var mFirstISO = mFirst.toISOString();
+    var mLastISO = mLast.toISOString();
+
+    var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    var label = months[month] + "_" + year;
+
+    Logger.log("[" + tableName + "] Processing " + label + " (" + mFirstISO.substring(0,10) + " to " + mLastISO.substring(0,10) + ")...");
+
+    var data = fetchAllDataForTable(tableName, mFirstISO, mLastISO);
+    if (data && data.length > 0) {
+      var csvContent = jsonToCsv(data);
+      var fileName = "YARZ_" + tableName + "_" + label + ".csv";
+      var folder = getTableFolder(tableName);
+      folder.createFile(fileName, csvContent, MimeType.CSV);
+      Logger.log("[" + tableName + "] Backup saved: " + fileName + " (" + data.length + " records)");
+      deleteExactRange(tableName, DATE_COLUMNS[tableName], mFirstISO, mLastISO);
+      Logger.log("[" + tableName + "] Deleted backed up data from Supabase.");
+    } else {
+      Logger.log("[" + tableName + "] No records found for " + label + ".");
+    }
+
+    cursor = new Date(year, month, 0); // previous month
+  }
+}
+
+// ==========================================
+// Yearly Backup (শুধু জানুয়ারিতে)
+// ==========================================
+function processYearlyBackup(tableName) {
+  var today = new Date();
+  var prevYear = today.getFullYear() - 1;
+  var firstDay = new Date(prevYear, 0, 1).toISOString();
+  var lastDay = new Date(prevYear, 11, 31, 23, 59, 59, 999).toISOString();
+  var label = "Year_" + prevYear;
+
+  Logger.log("[" + tableName + "] Yearly backup for " + label + "...");
+  var data = fetchAllDataForTable(tableName, firstDay, lastDay);
+  if (data && data.length > 0) {
+    var csvContent = jsonToCsv(data);
+    var fileName = "YARZ_" + tableName + "_" + label + ".csv";
+    var folder = getTableFolder(tableName);
+    folder.createFile(fileName, csvContent, MimeType.CSV);
+    Logger.log("[" + tableName + "] Yearly backup saved: " + fileName + " (" + data.length + " records)");
+  } else {
+    Logger.log("[" + tableName + "] No records found for " + label + ".");
+  }
+  // Never delete yearly tables
 }
 
 // ==========================================
@@ -117,70 +201,22 @@ function getTableFolder(tableName) {
 }
 
 // ==========================================
-// টেবিল ব্যাকআপ (Supabase -> Google Drive)
+// Generate Summaries for a Date Range
 // ==========================================
-function processTableBackup(tableName, range) {
-  Logger.log("Fetching " + tableName + " for " + range.label);
-  
-  // সব ডেটা একসাথে আনার জন্য পেজিনেশন (১০০০ করে)
-  var allData = [];
-  var offset = 0;
-  var batchSize = 1000;
-  var keepFetching = true;
-  
-  while (keepFetching) {
-    var url = SUPABASE_URL + "/rest/v1/" + tableName + "?created_at=gte." + range.firstDay + "&created_at=lte." + range.lastDay + "&order=created_at.asc&offset=" + offset + "&limit=" + batchSize;
-    if (tableName === "monthly_reports" || tableName === "yearly_reports") {
-      url = SUPABASE_URL + "/rest/v1/" + tableName + "?offset=" + offset + "&limit=" + batchSize;
-    }
-    
-    var options = {
-      method: "get",
-      headers: {
-        "apikey": SUPABASE_SERVICE_KEY,
-        "Authorization": "Bearer " + SUPABASE_SERVICE_KEY,
-        "Content-Type": "application/json",
-        "Range": offset + "-" + (offset + batchSize - 1),
-        "Prefer": "count=exact"
-      },
-      muteHttpExceptions: true
-    };
-    
-    var response = UrlFetchApp.fetch(url, options);
-    if (response.getResponseCode() !== 200 && response.getResponseCode() !== 206) {
-      Logger.log("Error fetching " + tableName + ": " + response.getContentText());
-      if (allData.length === 0) return;
-      break;
-    }
-    
-    var batch = JSON.parse(response.getContentText());
-    if (batch && batch.length > 0) {
-      allData = allData.concat(batch);
-      offset += batchSize;
-      if (batch.length < batchSize) keepFetching = false;
-    } else {
-      keepFetching = false;
-    }
-  }
-  
-  var data = allData;
-  
-  if (data && data.length > 0) {
-    Logger.log("Found " + data.length + " records. Creating backup...");
-    var csvContent = jsonToCsv(data);
-    var fileName = "YARZ_" + tableName + "_" + range.label + ".csv";
-    var folder = getTableFolder(tableName);
-    folder.createFile(fileName, csvContent, MimeType.CSV);
-    Logger.log("Backup saved: " + fileName);
-    
-    // ব্যাকআপ সফল হওয়ার পর Supabase থেকে ডিলিট করা
-    // (Views যেমন monthly_reports, yearly_reports ডিলিট করা যায় না)
-    if (tableName !== "monthly_reports" && tableName !== "yearly_reports") {
-      deleteExactRange(tableName, "created_at", range.firstDay, range.lastDay);
-      Logger.log("Deleted backed up data from Supabase: " + tableName);
-    }
-  } else {
-    Logger.log("No records found in " + tableName + " for this period.");
+function generateSummariesForRange(firstDay, lastDay) {
+  var startDate = new Date(firstDay);
+  var endDate = new Date(lastDay);
+  var cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+
+  while (cursor <= endDate) {
+    var year = cursor.getFullYear();
+    var month = cursor.getMonth();
+    var mFirst = new Date(year, month, 1).toISOString();
+    var mLast = new Date(year, month + 1, 0, 23, 59, 59, 999).toISOString();
+
+    Logger.log("Generating monthly summary for " + (month + 1) + "/" + year + "...");
+    generateMonthlySummary(mFirst, mLast);
+    cursor = new Date(year, month + 1, 1);
   }
 }
 
@@ -245,7 +281,7 @@ function jsonToCsv(jsonArray) {
 }
 
 // ==========================================
-// ১.২. Monthly Summaries জেনারেটর ও সেভার
+// Monthly Summaries জেনারেটর ও সেভার
 // ==========================================
 function generateMonthlySummary(firstDay, lastDay) {
   Logger.log("Generating monthly summaries for range: " + firstDay + " to " + lastDay);
@@ -283,7 +319,8 @@ function generateMonthlySummary(firstDay, lastDay) {
         total_ad_spend: 0,
         total_expenses: 0,
         net_profit: 0,
-        total_returns: 0
+        total_returns: 0,
+        total_return_amount: 0
       };
     }
   };
@@ -296,6 +333,7 @@ function generateMonthlySummary(firstDay, lastDay) {
     
     if (t.type === 'Return') {
       summaries[ym].total_returns += 1;
+      summaries[ym].total_return_amount += Math.abs(Number(t.revenue || 0));
     }
     summaries[ym].total_revenue += Number(t.revenue || 0);
     summaries[ym].total_cost += Number(t.cost || 0);
@@ -350,15 +388,24 @@ function generateMonthlySummary(firstDay, lastDay) {
   }
 }
 
+// ==========================================
 // Helper to fetch all pages of a table from Supabase for a range
+// ==========================================
 function fetchAllDataForTable(tableName, firstDay, lastDay) {
   var allData = [];
   var offset = 0;
   var batchSize = 1000;
   var keepFetching = true;
   
+  var dateCol = DATE_COLUMNS[tableName];
+  
   while (keepFetching) {
-    var url = SUPABASE_URL + "/rest/v1/" + tableName + "?created_at=gte." + firstDay + "&created_at=lte." + lastDay + "&offset=" + offset + "&limit=" + batchSize;
+    var url;
+    if (dateCol) {
+      url = SUPABASE_URL + "/rest/v1/" + tableName + "?" + dateCol + "=gte." + firstDay + "&" + dateCol + "=lte." + lastDay + "&offset=" + offset + "&limit=" + batchSize;
+    } else {
+      url = SUPABASE_URL + "/rest/v1/" + tableName + "?offset=" + offset + "&limit=" + batchSize;
+    }
     var options = {
       method: "get",
       headers: {
@@ -388,9 +435,10 @@ function fetchAllDataForTable(tableName, firstDay, lastDay) {
   return allData;
 }
 
+// ==========================================
 // Upsert a summary row into monthly_summaries table
+// ==========================================
 function upsertMonthlySummary(summary) {
-  // Check if a row for this year_month already exists
   var url = SUPABASE_URL + "/rest/v1/monthly_summaries?year_month=eq." + summary.year_month;
   var options = {
     method: "get",
@@ -423,7 +471,6 @@ function upsertMonthlySummary(summary) {
   };
   
   if (exists) {
-    // Update existing row
     postUrl = SUPABASE_URL + "/rest/v1/monthly_summaries?id=eq." + id;
     method = "patch";
   }
@@ -441,4 +488,205 @@ function upsertMonthlySummary(summary) {
   } else {
     Logger.log("Failed to save summary for " + summary.year_month + ": " + postResponse.getContentText());
   }
+}
+
+// ==========================================
+// Customer Summary Updater
+// ==========================================
+function updateCustomerSummary(firstDay, lastDay) {
+  var orders = fetchAllDataForTable("orders", firstDay, lastDay);
+  if (!orders || orders.length === 0) {
+    Logger.log("[customers] No orders found in range. Skipping.");
+    return;
+  }
+
+  var customerMap = {};
+  orders.forEach(function(o) {
+    var key = o.phone || o.customer_phone || o.name || o.customer_name;
+    if (!key) return;
+    if (!customerMap[key]) {
+      customerMap[key] = {
+        name: o.customer_name || o.name || "",
+        phone: o.phone || o.customer_phone || "",
+        total_orders: 0,
+        total_spent: 0,
+        last_order_date: null
+      };
+    }
+    var c = customerMap[key];
+    c.total_orders += 1;
+    c.total_spent += Number(o.total || o.amount || o.price || 0);
+    var orderDate = o.date || o.created_at;
+    if (orderDate && (!c.last_order_date || orderDate > c.last_order_date)) {
+      c.last_order_date = orderDate;
+    }
+  });
+
+  var count = 0;
+  for (var key in customerMap) {
+    var cust = customerMap[key];
+    upsertCustomerSummary(cust);
+    count++;
+  }
+  Logger.log("[customers] Updated " + count + " customer summaries.");
+}
+
+function upsertCustomerSummary(cust) {
+  var identifier = cust.phone || cust.name;
+  if (!identifier) return;
+
+  var queryParam = cust.phone ? "phone" : "name";
+  var url = SUPABASE_URL + "/rest/v1/customers?" + queryParam + "=eq." + encodeURIComponent(identifier);
+  
+  var getOptions = {
+    method: "get",
+    headers: {
+      "apikey": SUPABASE_SERVICE_KEY,
+      "Authorization": "Bearer " + SUPABASE_SERVICE_KEY,
+      "Content-Type": "application/json"
+    },
+    muteHttpExceptions: true
+  };
+  
+  var response = UrlFetchApp.fetch(url, getOptions);
+  var exists = false;
+  var existingId = null;
+  var existingTotalOrders = 0;
+  var existingTotalSpent = 0;
+  var existingLastDate = null;
+  
+  if (response.getResponseCode() === 200) {
+    var rows = JSON.parse(response.getContentText());
+    if (rows && rows.length > 0) {
+      exists = true;
+      existingId = rows[0].id;
+      existingTotalOrders = Number(rows[0].total_orders || 0);
+      existingTotalSpent = Number(rows[0].total_spent || 0);
+      existingLastDate = rows[0].last_order_date;
+    }
+  }
+  
+  var finalOrders = existingTotalOrders + cust.total_orders;
+  var finalSpent = existingTotalSpent + cust.total_spent;
+  var finalLastDate = cust.last_order_date;
+  if (existingLastDate && cust.last_order_date && existingLastDate > cust.last_order_date) {
+    finalLastDate = existingLastDate;
+  } else if (existingLastDate && !cust.last_order_date) {
+    finalLastDate = existingLastDate;
+  }
+  
+  var payload = {
+    name: cust.name || undefined,
+    phone: cust.phone || undefined,
+    total_orders: finalOrders,
+    total_spent: finalSpent,
+    last_order_date: finalLastDate
+  };
+  
+  var postUrl = SUPABASE_URL + "/rest/v1/customers";
+  var method = "post";
+  var headers = {
+    "apikey": SUPABASE_SERVICE_KEY,
+    "Authorization": "Bearer " + SUPABASE_SERVICE_KEY,
+    "Content-Type": "application/json",
+    "Prefer": "return=minimal"
+  };
+  
+  if (exists) {
+    postUrl = SUPABASE_URL + "/rest/v1/customers?id=eq." + existingId;
+    method = "patch";
+    delete payload.name;
+    delete payload.phone;
+  }
+  
+  var postOptions = {
+    method: method,
+    headers: headers,
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+  
+  UrlFetchApp.fetch(postUrl, postOptions);
+}
+
+// ==========================================
+// Visitor Stats Aggregation
+// ==========================================
+function aggregateVisitorStats(today) {
+  var lookback = new Date(today);
+  lookback.setDate(lookback.getDate() - 180);
+  var firstDay = lookback.toISOString();
+  var lastDay = today.toISOString();
+
+  var visitors = fetchAllDataForTable("website_visitors", firstDay, lastDay);
+  if (!visitors || visitors.length === 0) {
+    Logger.log("[visitor_stats] No visitors found. Skipping.");
+    return;
+  }
+
+  var dailyCounts = {};
+  visitors.forEach(function(v) {
+    var d = v.visit_date;
+    if (!d) return;
+    var dateKey = d.length >= 10 ? d.substring(0, 10) : d;
+    dailyCounts[dateKey] = (dailyCounts[dateKey] || 0) + 1;
+  });
+
+  var count = 0;
+  for (var dateKey in dailyCounts) {
+    upsertVisitorStat(dateKey, dailyCounts[dateKey]);
+    count++;
+  }
+  Logger.log("[visitor_stats] Updated " + count + " daily stats.");
+}
+
+function upsertVisitorStat(dateStr, visitorCount) {
+  var url = SUPABASE_URL + "/rest/v1/visitor_stats?date=eq." + dateStr;
+  var getOptions = {
+    method: "get",
+    headers: {
+      "apikey": SUPABASE_SERVICE_KEY,
+      "Authorization": "Bearer " + SUPABASE_SERVICE_KEY,
+      "Content-Type": "application/json"
+    },
+    muteHttpExceptions: true
+  };
+  
+  var response = UrlFetchApp.fetch(url, getOptions);
+  var exists = false;
+  var id = null;
+  
+  if (response.getResponseCode() === 200) {
+    var rows = JSON.parse(response.getContentText());
+    if (rows && rows.length > 0) {
+      exists = true;
+      id = rows[0].id;
+    }
+  }
+  
+  var postUrl = SUPABASE_URL + "/rest/v1/visitor_stats";
+  var method = "post";
+  var headers = {
+    "apikey": SUPABASE_SERVICE_KEY,
+    "Authorization": "Bearer " + SUPABASE_SERVICE_KEY,
+    "Content-Type": "application/json",
+    "Prefer": "return=minimal"
+  };
+  
+  var payload = { date: dateStr, visitor_count: visitorCount };
+  
+  if (exists) {
+    postUrl = SUPABASE_URL + "/rest/v1/visitor_stats?id=eq." + id;
+    method = "patch";
+    payload = { visitor_count: visitorCount };
+  }
+  
+  var postOptions = {
+    method: method,
+    headers: headers,
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+  
+  UrlFetchApp.fetch(postUrl, postOptions);
 }
