@@ -199,14 +199,14 @@ body{
 .sidebar{
  width:232px;flex-shrink:0;
  padding:24px 16px;
- position:sticky;top:16px;height:calc(100vh - 32px);
- margin:16px 0 16px 16px;
+ position:fixed;top:16px;left:16px;height:calc(100vh - 32px);
  border-radius:24px;
  display:flex;flex-direction:column;gap:4px;
  z-index:50;
  background:var(--surface);
  border:1px solid var(--line);
  box-shadow:var(--shadow-sm);
+ overflow-y:auto;
 }
 body.dark .sidebar{
  background:var(--surface);
@@ -261,6 +261,7 @@ body.dark .sidebar{
  flex:1;min-width:0;
  padding:24px 28px 100px;
  max-width:100%;
+ margin-left:248px;
 }
 
 /* Topbar */
@@ -1433,7 +1434,7 @@ body.light .load-overlay p{color:var(--ink)}
 /* ============ RESPONSIVE ============ */
 @media (max-width:900px){
  .sidebar{display:none}
- .main{padding:18px 14px 96px}
+ .main{padding:18px 14px 96px;margin-left:0 !important}
  .bottom-nav{display:block}
   .grid-6{grid-template-columns:repeat(3,1fr)}
   .grid-4{grid-template-columns:repeat(2,1fr)}
