@@ -296,6 +296,7 @@ body.dark .sidebar{
 
 /* Cards grid */
 .grid{display:grid;gap:12px}
+.grid-6{grid-template-columns:repeat(6,minmax(0,1fr))}
 .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -1384,9 +1385,10 @@ body.light .load-overlay p{color:var(--ink)}
  .sidebar{display:none}
  .main{padding:18px 14px 96px}
  .bottom-nav{display:block}
- .grid-4{grid-template-columns:repeat(2,1fr)}
- .grid-3{grid-template-columns:repeat(2,1fr)}
- .qa-grid{grid-template-columns:repeat(2,1fr)}
+  .grid-6{grid-template-columns:repeat(3,1fr)}
+  .grid-4{grid-template-columns:repeat(2,1fr)}
+  .grid-3{grid-template-columns:repeat(2,1fr)}
+  .qa-grid{grid-template-columns:repeat(2,1fr)}
  .topbar{margin-bottom:16px}
  .topbar .page-title{font-size:22px}
 }
@@ -2464,11 +2466,12 @@ body.dark .input, body.dark .select, body.dark .textarea{
  .bn-item i{ font-size:17px !important; }
  .bn-item span{ font-size:9.5px !important; }
 
- /* Grids on mobile — clean 2-col */
- .grid{ gap:10px !important; }
- .grid-4{ grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
- .grid-3{ grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
- .grid-2{ grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+  /* Grids on mobile — clean 2-col */
+  .grid{ gap:10px !important; }
+  .grid-6{ grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .grid-4{ grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .grid-3{ grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .grid-2{ grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
  .qa-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap:10px !important; }
 
  /* Stat card — more compact */
@@ -2629,9 +2632,10 @@ body.dark .input, body.dark .select, body.dark .textarea{
  .topbar .user-chip .avatar{ width: 28px !important; height: 28px !important; font-size: 12px !important; }
  .topbar .user-chip .uc-name{ display: none !important; } /* only avatar on tiny screens */
 
- /* Stats — single column if very cramped */
- .grid-4{ grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
- .stat-value{ font-size: 20px !important; }
+  /* Stats — single column if very cramped */
+  .grid-6{ grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .grid-4{ grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .stat-value{ font-size: 20px !important; }
  .stat-icon{ width:32px !important; height:32px !important; margin-bottom:8px !important; }
 
  .qa-card{ padding:14px 12px !important; }
@@ -3315,14 +3319,24 @@ table tbody tr:hover{ background:var(--surface-2); }
  <div id="pages">
  <!-- HOME -->
  <div class="page active" data-page="home">
-  <div class="grid grid-4" id="home-stats"></div>
+   <div class="grid grid-6" id="home-stats"></div>
 
-  <div class="section">
-  <div class="section-title"><h2><i class="ri-calendar-todo-line" style="color:var(--accent-2)"></i> Today's Summary</h2><span class="hint" id="today-date"></span></div>
-  <div class="grid grid-3" id="today-summary"></div>
-  </div>
+   <div class="section">
+   <div class="section-title"><h2><i class="ri-calendar-todo-line" style="color:var(--accent-2)"></i> Today's Summary</h2><span class="hint" id="today-date"></span></div>
+   <div class="grid grid-3" id="today-summary"></div>
+   </div>
 
-  <!-- ✅ v15.28: Website Visitor Analytics — live data from Supabase
+   <div class="section">
+   <div class="section-title"><h2><i class="ri-bar-chart-box-line" style="color:var(--accent)"></i> Product Performance</h2></div>
+   <div id="product-performance"></div>
+   </div>
+
+   <div class="section">
+   <div class="section-title"><h2><i class="ri-calendar-line" style="color:var(--accent-2)"></i> Monthly Trend</h2></div>
+   <div id="monthly-trend"></div>
+   </div>
+
+   <!-- ✅ v15.28: Website Visitor Analytics — live data from Supabase
    Tracks unique visitors (by IP per day) and total visits. Updates
    every 30s; admin sees near-real-time counts. -->
   <div class="section">
@@ -3509,7 +3523,7 @@ table tbody tr:hover{ background:var(--surface-2); }
 
  <!-- FINANCE -->
  <div class="page" data-page="finance">
-  <div class="grid grid-3" id="finance-stats" style="margin-bottom:14px"></div>
+  <div class="grid grid-4" id="finance-stats" style="margin-bottom:14px"></div>
   <div class="card" style="padding:14px;margin-bottom:14px">
   <div class="flex-gap" style="flex-wrap:wrap;gap:8px">
   <button class="btn btn-purple btn-sm" onclick="YARZ.openModal('ad-spend')"><i class="ri-megaphone-line"></i> Ad Spend</button>
@@ -3517,13 +3531,29 @@ table tbody tr:hover{ background:var(--surface-2); }
   <button class="btn btn-amber btn-sm" onclick="YARZ.openModal('return')"><i class="ri-arrow-go-back-line"></i> Return Entry</button>
   </div>
   </div>
-  <div class="card" style="padding:18px;margin-bottom:14px">
-  <div class="section-title"><h2><i class="ri-megaphone-line" style="color:var(--purple)"></i> Recent Ad Spend</h2></div>
-  <div id="ad-list" class="list"></div>
+
+  <!-- P&L Statement -->
+  <div class="section">
+  <div class="section-title"><h2><i class="ri-file-list-3-line" style="color:var(--success)"></i> Profit & Loss Statement</h2></div>
+  <div id="finance-pl"></div>
   </div>
-  <div class="card" style="padding:18px">
-  <div class="section-title"><h2><i class="ri-bill-line" style="color:var(--danger)"></i> Recent Expenses</h2></div>
-  <div id="exp-list" class="list"></div>
+
+  <!-- Expense Breakdown -->
+  <div class="section">
+  <div class="section-title"><h2><i class="ri-pie-chart-line" style="color:var(--danger)"></i> Expense Breakdown</h2></div>
+  <div id="finance-expenses"></div>
+  </div>
+
+  <!-- Ad Performance -->
+  <div class="section">
+  <div class="section-title"><h2><i class="ri-megaphone-line" style="color:var(--purple)"></i> Ad Performance</h2></div>
+  <div id="finance-ads"></div>
+  </div>
+
+  <!-- Recent Transactions -->
+  <div class="section">
+  <div class="section-title"><h2><i class="ri-exchange-line" style="color:var(--accent)"></i> Recent Transactions</h2></div>
+  <div id="finance-recent"></div>
   </div>
  </div>
 
@@ -7668,6 +7698,18 @@ YARZ.home = {
   // Build the "This Month" stats array
   const tmRev = thisMonth ? (thisMonth.revenue_total || thisMonth.revenue || 0) : 0;
   const tmNet = thisMonth ? thisMonth.net_profit : 0;
+  const thisMonthStart = new Date(); thisMonthStart.setDate(1); thisMonthStart.setHours(0,0,0,0);
+  const tmTxAll = state.data.transactions.filter(t=>t.date && t.date>=thisMonthStart);
+  const tmAdAll = state.data.adTracker.filter(t=>t.date && t.date>=thisMonthStart);
+  const tmExpAll = state.data.expenses.filter(t=>t.date && t.date>=thisMonthStart);
+  const tmRevCalc = tmTxAll.reduce((s,t)=>s+(Number(t.revenue)||0),0);
+  const tmCostCalc = tmTxAll.reduce((s,t)=>s+(Number(t.cost)||0),0);
+  const tmSpendCalc = tmAdAll.reduce((s,t)=>s+(Number(t.amount)||0),0) + tmExpAll.reduce((s,t)=>s+(Number(t.amount)||0),0);
+  const tmNetCalc = tmRevCalc - tmCostCalc - tmSpendCalc;
+  const tmGross = tmRevCalc - tmCostCalc;
+  const tmAdSpend = tmAdAll.reduce((s,t)=>s+(Number(t.amount)||0),0);
+  const tmOtherExp = tmExpAll.reduce((s,t)=>s+(Number(t.amount)||0),0);
+  const tmMargin = tmRevCalc > 0 ? ((tmGross / tmRevCalc) * 100).toFixed(0) : 0;
   const lmRev = lastMonth ? (lastMonth.revenue_total || lastMonth.revenue || 0) : 0;
   const lmNet = lastMonth ? lastMonth.net_profit : 0;
   const revChange = lmRev > 0
@@ -7676,18 +7718,20 @@ YARZ.home = {
     ? (((tmNet - lmNet) / lmNet) * 100).toFixed(1) : null;
 
   const stats = [
-    { icon:'green', ic:'ri-shopping-bag-3-line', label:'Active Products', val:toBn(activeItems.length), sub:'Click to view', onClick:"YARZ.home.showList('active')" },
-    { icon:'amber', ic:'ri-draft-line', label:'Draft Products', val:toBn(draftItems.length), sub:'Click to view', onClick:"YARZ.home.showList('draft')" },
-    { icon:'blue', ic:'ri-money-dollar-circle-line', label:'This Month Revenue', val:fmtBDT(tmRev), sub: revChange !== null ? (revChange >= 0 ? '↑ ' : '↓ ') + toBn(Math.abs(revChange)) + '% vs last month' : 'No prior month' },
-    { icon: tmNet >= 0 ? 'purple' : 'red', ic:'ri-line-chart-line', label:'This Month Profit', val:fmtBDT(tmNet), sub: netChange !== null ? (netChange >= 0 ? '↑ ' : '↓ ') + toBn(Math.abs(netChange)) + '% vs last month' : (tmNet >= 0 ? 'Profit' : 'Loss') }
+    { icon:'blue', ic:'ri-money-dollar-circle-line', label:'Total Sales Revenue', val:fmtBDT(tmRevCalc) },
+    { icon:'amber', ic:'ri-shopping-bag-3-line', label:'Product Cost (COGS)', val:fmtBDT(tmCostCalc) },
+    { icon:'green', ic:'ri-line-chart-line', label:'Gross Profit', val:fmtBDT(tmGross), sub:tmMargin+'% margin' },
+    { icon:'purple', ic:'ri-megaphone-line', label:'Ad Spend', val:fmtBDT(tmAdSpend) },
+    { icon:'red', ic:'ri-wallet-3-line', label:'Other Expenses', val:fmtBDT(tmOtherExp) },
+    { icon: tmNetCalc >= 0 ? 'green' : 'red', ic:'ri-coin-line', label:'NET '+(tmNetCalc>=0?'PROFIT':'LOSS'), val:fmtBDT(tmNetCalc), sub:tmNetCalc>=0?'Profit':'Loss' }
   ];
 
  $('home-stats').innerHTML = stats.map(s=>`
- <div class="stat-card ${s.onClick?'clickable':''}" ${s.onClick?`onclick="${s.onClick}"`:''}>
+ <div class="stat-card">
   <div class="stat-icon ${s.icon}"><i class="${s.ic}"></i></div>
   <div class="stat-label">${s.label}</div>
   <div class="stat-value">${s.val}</div>
-  <div class="stat-sub">${s.sub}</div>
+  ${s.sub?`<div class="stat-sub">${s.sub}</div>`:''}
  </div>
  `).join('');
 
@@ -7723,6 +7767,104 @@ YARZ.home = {
   <div class="stat-sub">Net</div>
  </div>
  `;
+
+ // Product Performance
+ const prodStats = {};
+ tmTxAll.forEach(t => {
+   if (!prodStats[t.product]) prodStats[t.product] = { units: 0, revenue: 0, cost: 0, returns: 0 };
+   prodStats[t.product].units += Number(t.qty) || 0;
+   prodStats[t.product].revenue += Number(t.revenue) || 0;
+   prodStats[t.product].cost += Number(t.cost) || 0;
+   if (t.type === 'Return') prodStats[t.product].returns += Number(t.qty) || 0;
+ });
+
+ const prodRows = Object.entries(prodStats).map(([name, s]) => ({
+   name, ...s, profit: s.revenue - s.cost, margin: s.revenue > 0 ? (((s.revenue - s.cost) / s.revenue) * 100).toFixed(0) : 0
+ })).sort((a,b) => b.profit - a.profit);
+
+ $('product-performance').innerHTML = prodRows.length ? `
+<table style="width:100%;border-collapse:collapse;font-size:13px">
+<thead><tr style="border-bottom:2px solid var(--border);text-align:left">
+<th style="padding:10px 8px">Product</th>
+<th style="padding:10px 8px;text-align:right">Units Sold</th>
+<th style="padding:10px 8px;text-align:right">Revenue</th>
+<th style="padding:10px 8px;text-align:right">Cost</th>
+<th style="padding:10px 8px;text-align:right">Profit</th>
+<th style="padding:10px 8px;text-align:right">Margin</th>
+<th style="padding:10px 8px;text-align:right">Returns</th>
+</tr></thead>
+<tbody>${prodRows.map(p => `
+<tr style="border-bottom:1px solid var(--border)">
+<td style="padding:8px"><strong>${esc(p.name)}</strong></td>
+<td style="padding:8px;text-align:right">${toBn(p.units)}</td>
+<td style="padding:8px;text-align:right">${fmtBDT(p.revenue)}</td>
+<td style="padding:8px;text-align:right">${fmtBDT(p.cost)}</td>
+<td style="padding:8px;text-align:right;color:${p.profit>=0?'var(--success)':'var(--danger)'}"><strong>${fmtBDT(p.profit)}</strong></td>
+<td style="padding:8px;text-align:right">${p.margin}%</td>
+<td style="padding:8px;text-align:right">${toBn(p.returns)}</td>
+</tr>`).join('')}
+</tbody></table>
+` : '<div class="empty-state">No sales data this month</div>';
+
+ // Monthly Trend (last 6 months)
+ const monthlyData = {};
+ const allTx = state.data.transactions;
+ const allAd = state.data.adTracker;
+ const allExp = state.data.expenses;
+
+ allTx.forEach(t => {
+   if (!t.date) return;
+   const d = new Date(t.date);
+   const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+   if (!monthlyData[key]) monthlyData[key] = { rev: 0, cost: 0, ad: 0, exp: 0 };
+   monthlyData[key].rev += Number(t.revenue) || 0;
+   monthlyData[key].cost += Number(t.cost) || 0;
+ });
+
+ allAd.forEach(t => {
+   if (!t.date) return;
+   const d = new Date(t.date);
+   const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+   if (!monthlyData[key]) monthlyData[key] = { rev: 0, cost: 0, ad: 0, exp: 0 };
+   monthlyData[key].ad += Number(t.amount) || 0;
+ });
+
+ allExp.forEach(t => {
+   if (!t.date) return;
+   const d = new Date(t.date);
+   const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+   if (!monthlyData[key]) monthlyData[key] = { rev: 0, cost: 0, ad: 0, exp: 0 };
+   monthlyData[key].exp += Number(t.amount) || 0;
+ });
+
+ const months = Object.keys(monthlyData).sort().reverse().slice(0, 6);
+ const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+ $('monthly-trend').innerHTML = months.length ? `
+<table style="width:100%;border-collapse:collapse;font-size:13px">
+<thead><tr style="border-bottom:2px solid var(--border);text-align:left">
+<th style="padding:10px 8px">Month</th>
+<th style="padding:10px 8px;text-align:right">Revenue</th>
+<th style="padding:10px 8px;text-align:right">Cost</th>
+<th style="padding:10px 8px;text-align:right">Ad Spend</th>
+<th style="padding:10px 8px;text-align:right">Expenses</th>
+<th style="padding:10px 8px;text-align:right">Net Profit</th>
+</tr></thead>
+<tbody>${months.map(m => {
+  const d = monthlyData[m];
+  const net = d.rev - d.cost - d.ad - d.exp;
+  const [y, mo] = m.split('-');
+  return `<tr style="border-bottom:1px solid var(--border)">
+  <td style="padding:8px"><strong>${monthNames[parseInt(mo)-1]} ${y}</strong></td>
+  <td style="padding:8px;text-align:right">${fmtBDT(d.rev)}</td>
+  <td style="padding:8px;text-align:right">${fmtBDT(d.cost)}</td>
+  <td style="padding:8px;text-align:right">${fmtBDT(d.ad)}</td>
+  <td style="padding:8px;text-align:right">${fmtBDT(d.exp)}</td>
+  <td style="padding:8px;text-align:right;color:${net>=0?'var(--success)':'var(--danger)'}"><strong>${fmtBDT(net)}</strong></td>
+  </tr>`;
+}).join('')}
+</tbody></table>
+` : '<div class="empty-state">No data yet</div>';
 
  // Top sellers
  const sorted = [...inv].filter(p=>p.totalSold>0).sort((a,b)=>b.totalSold-a.totalSold).slice(0,3);
@@ -10296,54 +10438,156 @@ Team YARZ`;
 ============================================================ */
 YARZ.finance = {
  render(){
+ const allTx = state.data.transactions;
+ const allAd = state.data.adTracker;
+ const allExp = state.data.expenses;
  const histAd = state.data.monthlySummaries.reduce((s,m)=>s+Number(m.total_ad_spend || 0),0);
  const histExp = state.data.monthlySummaries.reduce((s,m)=>s+Number(m.total_expenses || 0),0);
- const totalAd = state.data.adTracker.reduce((s,a)=>s+a.amount,0) + histAd;
+ const totalAd = allAd.reduce((s,a)=>s+a.amount,0) + histAd;
  const histReturn = state.data.monthlySummaries.reduce((s,m)=>s+Number(m.total_returns || 0),0);
- const totalExp = state.data.expenses.reduce((s,e)=>s+e.amount,0) + histExp;
- const totalReturn = state.data.transactions.filter(t=>t.type==='Return').length + histReturn;
+ const totalExp = allExp.reduce((s,e)=>s+e.amount,0) + histExp;
+ const totalReturn = allTx.filter(t=>t.type==='Return').length + histReturn;
+ const totalRev = allTx.reduce((s,t)=>s+(Number(t.revenue)||0),0);
+ const totalCost = allTx.reduce((s,t)=>s+(Number(t.cost)||0),0);
+ const totalReturns = allTx.filter(t=>t.type==='Return').reduce((s,t)=>s+Math.abs(Number(t.revenue)||0),0);
+ const netRevenue = totalRev - totalReturns;
+ const grossProfit = netRevenue - totalCost;
+ const netProfit = grossProfit - totalAd - totalExp;
+
  $('finance-stats').innerHTML = `
+ <div class="stat-card">
+  <div class="stat-icon blue"><i class="ri-money-dollar-circle-line"></i></div>
+  <div class="stat-label">Total Revenue</div>
+  <div class="stat-value">${fmtBDT(totalRev)}</div>
+  <div class="stat-sub">${toBn(allTx.filter(t=>t.type!=='Return').length)} sales</div>
+ </div>
+ <div class="stat-card">
+  <div class="stat-icon green"><i class="ri-line-chart-line"></i></div>
+  <div class="stat-label">Gross Profit</div>
+  <div class="stat-value">${fmtBDT(grossProfit)}</div>
+  <div class="stat-sub">${netRevenue>0?((grossProfit/netRevenue)*100).toFixed(0):0}% margin</div>
+ </div>
  <div class="stat-card">
   <div class="stat-icon purple"><i class="ri-megaphone-line"></i></div>
   <div class="stat-label">Total Ad Spend</div>
   <div class="stat-value">${fmtBDT(totalAd)}</div>
-  <div class="stat-sub">${toBn(state.data.adTracker.length)} entries</div>
+  <div class="stat-sub">${toBn(allAd.length)} entries</div>
  </div>
  <div class="stat-card">
-  <div class="stat-icon red"><i class="ri-bill-line"></i></div>
-  <div class="stat-label">Total Expenses</div>
-  <div class="stat-value">${fmtBDT(totalExp)}</div>
-  <div class="stat-sub">${toBn(state.data.expenses.length)} entries</div>
- </div>
- <div class="stat-card">
-  <div class="stat-icon amber"><i class="ri-arrow-go-back-line"></i></div>
-  <div class="stat-label">Total Returns</div>
-  <div class="stat-value">${toBn(totalReturn)}</div>
-  <div class="stat-sub">Product Return</div>
+  <div class="stat-icon ${netProfit>=0?'green':'red'}"><i class="ri-coin-line"></i></div>
+  <div class="stat-label">Net ${netProfit>=0?'Profit':'Loss'}</div>
+  <div class="stat-value">${fmtBDT(netProfit)}</div>
+  <div class="stat-sub">After all expenses</div>
  </div>
  `;
 
- $('ad-list').innerHTML = state.data.adTracker.slice(-10).reverse().map(a=>`
- <div class="list-item">
-  <div class="thumb" style="background:rgba(139,127,217,0.18);color:var(--purple)"><i class="ri-megaphone-line"></i></div>
-  <div class="li-body">
-  <div class="li-title">${esc(a.product||a.campaign||'—')}</div>
-  <div class="li-sub">${fmtDateBn(a.date)} • ${esc(a.campaign||'')}</div>
-  </div>
-  <div class="price" style="color:var(--purple)">${fmtBDT(a.amount)}</div>
- </div>
- `).join('') || '<div class="empty-state"><i class="ri-megaphone-line" style="font-size:28px;opacity:0.4"></i><p style="margin-top:8px">any Ad Spend None</p></div>';
+ // P&L Statement
+ $('finance-pl').innerHTML = `
+ <table style="width:100%;border-collapse:collapse;font-size:13px">
+ <tbody>
+ <tr style="background:var(--surface-2)"><td colspan="2" style="padding:10px 8px;font-weight:700;color:var(--info)"><i class="ri-money-dollar-circle-line"></i> REVENUE</td></tr>
+ <tr><td style="padding:8px 16px;color:var(--ink-2)">Sales Revenue</td><td style="padding:8px;text-align:right;font-weight:600">${fmtBDT(totalRev)}</td></tr>
+ <tr><td style="padding:8px 16px;color:var(--danger)">Returns</td><td style="padding:8px;text-align:right;color:var(--danger)">-${fmtBDT(totalReturns)}</td></tr>
+ <tr style="border-bottom:2px solid var(--border)"><td style="padding:8px 16px;font-weight:700">Net Revenue</td><td style="padding:8px;text-align:right;font-weight:700">${fmtBDT(netRevenue)}</td></tr>
 
- $('exp-list').innerHTML = state.data.expenses.slice(-10).reverse().map(e=>`
- <div class="list-item">
-  <div class="thumb" style="background:rgba(232,98,92,0.14);color:var(--danger)"><i class="ri-bill-line"></i></div>
-  <div class="li-body">
-  <div class="li-title">${esc(e.category)}</div>
-  <div class="li-sub">${fmtDateBn(e.date)} • ${esc(e.description||e.paidTo||'')}</div>
-  </div>
-  <div class="price" style="color:var(--danger)">${fmtBDT(e.amount)}</div>
- </div>
- `).join('') || '<div class="empty-state"><i class="ri-bill-line" style="font-size:28px;opacity:0.4"></i><p style="margin-top:8px">any Expense None</p></div>';
+ <tr style="background:var(--surface-2)"><td colspan="2" style="padding:10px 8px;font-weight:700;color:var(--warn)"><i class="ri-shopping-bag-3-line"></i> COST OF GOODS</td></tr>
+ <tr><td style="padding:8px 16px;color:var(--danger)">Product Cost</td><td style="padding:8px;text-align:right;color:var(--danger)">-${fmtBDT(totalCost)}</td></tr>
+ <tr style="border-bottom:2px solid var(--border)"><td style="padding:8px 16px;font-weight:700">Gross Profit</td><td style="padding:8px;text-align:right;font-weight:700;color:${grossProfit>=0?'var(--success)':'var(--danger)'}">${fmtBDT(grossProfit)} <span style="font-size:11px;opacity:0.7">(${netRevenue>0?((grossProfit/netRevenue)*100).toFixed(0):0}% margin)</span></td></tr>
+
+ <tr style="background:var(--surface-2)"><td colspan="2" style="padding:10px 8px;font-weight:700;color:var(--danger)"><i class="ri-wallet-3-line"></i> OPERATING EXPENSES</td></tr>
+ <tr><td style="padding:8px 16px;color:var(--ink-2)">Ad Spend (Facebook/Instagram)</td><td style="padding:8px;text-align:right;color:var(--danger)">-${fmtBDT(totalAd)}</td></tr>
+ <tr><td style="padding:8px 16px;color:var(--ink-2)">Other Expenses</td><td style="padding:8px;text-align:right;color:var(--danger)">-${fmtBDT(totalExp)}</td></tr>
+ <tr style="border-bottom:2px solid var(--border)"><td style="padding:8px 16px;font-weight:700">Total Operating Expenses</td><td style="padding:8px;text-align:right;font-weight:700;color:var(--danger)">-${fmtBDT(totalAd+totalExp)}</td></tr>
+
+ <tr style="background:${netProfit>=0?'rgba(16,185,129,0.08)':'rgba(239,68,68,0.08)'}"><td style="padding:14px 16px;font-weight:800;font-size:14px">NET ${netProfit>=0?'PROFIT':'(LOSS)'}</td><td style="padding:14px 16px;text-align:right;font-weight:800;font-size:16px;color:${netProfit>=0?'var(--success)':'var(--danger)'}">${fmtBDT(netProfit)}</td></tr>
+ </tbody></table>
+ `;
+
+ // Expense Breakdown
+ const expByCategory = {};
+ allExp.forEach(e => {
+   const cat = e.category || 'Other';
+   if (!expByCategory[cat]) expByCategory[cat] = 0;
+   expByCategory[cat] += Number(e.amount) || 0;
+ });
+ const expSorted = Object.entries(expByCategory).sort((a,b) => b[1] - a[1]);
+ const expTotal = expSorted.reduce((s,[,v])=>s+v,0);
+
+ $('finance-expenses').innerHTML = expSorted.length ? `
+ <table style="width:100%;border-collapse:collapse;font-size:13px">
+ <thead><tr style="border-bottom:2px solid var(--border);text-align:left">
+ <th style="padding:10px 8px">Category</th>
+ <th style="padding:10px 8px;text-align:right">Amount</th>
+ <th style="padding:10px 8px;text-align:right">% of Total</th>
+ </tr></thead>
+ <tbody>${expSorted.map(([cat, amt]) => `
+ <tr style="border-bottom:1px solid var(--border)">
+ <td style="padding:8px"><strong>${esc(cat)}</strong></td>
+ <td style="padding:8px;text-align:right">${fmtBDT(amt)}</td>
+ <td style="padding:8px;text-align:right">${expTotal>0?((amt/expTotal)*100).toFixed(1):0}%</td>
+ </tr>`).join('')}
+ <tr style="border-top:2px solid var(--border);font-weight:700">
+ <td style="padding:10px 8px">Total</td>
+ <td style="padding:10px 8px;text-align:right">${fmtBDT(expTotal)}</td>
+ <td style="padding:10px 8px;text-align:right">100%</td>
+ </tr>
+ </tbody></table>
+ ` : '<div class="empty-state"><i class="ri-pie-chart-line" style="font-size:28px;opacity:0.4"></i><p style="margin-top:8px">No expenses recorded</p></div>';
+
+ // Ad Performance
+ const adByProduct = {};
+ allAd.forEach(a => {
+   const prod = a.product || a.campaign || 'Unknown';
+   if (!adByProduct[prod]) adByProduct[prod] = { spend: 0, count: 0 };
+   adByProduct[prod].spend += Number(a.amount) || 0;
+   adByProduct[prod].count++;
+ });
+ const adSorted = Object.entries(adByProduct).sort((a,b) => b[1].spend - a[1].spend);
+
+ $('finance-ads').innerHTML = adSorted.length ? `
+ <table style="width:100%;border-collapse:collapse;font-size:13px">
+ <thead><tr style="border-bottom:2px solid var(--border);text-align:left">
+ <th style="padding:10px 8px">Campaign / Product</th>
+ <th style="padding:10px 8px;text-align:right">Spend</th>
+ <th style="padding:10px 8px;text-align:right">Entries</th>
+ <th style="padding:10px 8px;text-align:right">Avg / Entry</th>
+ </tr></thead>
+ <tbody>${adSorted.map(([name, s]) => `
+ <tr style="border-bottom:1px solid var(--border)">
+ <td style="padding:8px"><strong>${esc(name)}</strong></td>
+ <td style="padding:8px;text-align:right;color:var(--purple)">${fmtBDT(s.spend)}</td>
+ <td style="padding:8px;text-align:right">${toBn(s.count)}</td>
+ <td style="padding:8px;text-align:right">${fmtBDT(s.spend / s.count)}</td>
+ </tr>`).join('')}
+ </tbody></table>
+ ` : '<div class="empty-state"><i class="ri-megaphone-line" style="font-size:28px;opacity:0.4"></i><p style="margin-top:8px">No ad spend recorded</p></div>';
+
+ // Recent Transactions
+ $('finance-recent').innerHTML = allTx.length ? `
+ <table style="width:100%;border-collapse:collapse;font-size:13px">
+ <thead><tr style="border-bottom:2px solid var(--border);text-align:left">
+ <th style="padding:10px 8px">Date</th>
+ <th style="padding:10px 8px">Product</th>
+ <th style="padding:10px 8px">Type</th>
+ <th style="padding:10px 8px;text-align:right">Qty</th>
+ <th style="padding:10px 8px;text-align:right">Revenue</th>
+ <th style="padding:10px 8px;text-align:right">Cost</th>
+ <th style="padding:10px 8px;text-align:right">Profit</th>
+ </tr></thead>
+ <tbody>${allTx.slice(-15).reverse().map(t => {
+   const profit = (Number(t.revenue)||0) - (Number(t.cost)||0);
+   return `<tr style="border-bottom:1px solid var(--border)">
+   <td style="padding:8px">${fmtDateBn(t.date)}</td>
+   <td style="padding:8px"><strong>${esc(t.product||'')}</strong></td>
+   <td style="padding:8px"><span class="chip ${t.type==='Return'?'chip-red':'chip-green'}" style="font-size:11px">${esc(t.type||'Sale')}</span></td>
+   <td style="padding:8px;text-align:right">${toBn(t.qty||0)}</td>
+   <td style="padding:8px;text-align:right">${fmtBDT(t.revenue||0)}</td>
+   <td style="padding:8px;text-align:right">${fmtBDT(t.cost||0)}</td>
+   <td style="padding:8px;text-align:right;color:${profit>=0?'var(--success)':'var(--danger)'}"><strong>${fmtBDT(profit)}</strong></td>
+   </tr>`;
+ }).join('')}
+ </tbody></table>
+ ` : '<div class="empty-state"><i class="ri-exchange-line" style="font-size:28px;opacity:0.4"></i><p style="margin-top:8px">No transactions yet</p></div>';
  }
 };
 
