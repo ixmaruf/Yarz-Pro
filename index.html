@@ -7657,7 +7657,7 @@ YARZ.home = {
     .then(r => r.json())
     .then(j => {
       if (j && j.success) {
-        state.data.currentMonthSnapshot = j;
+        state.data.currentMonthSnapshot = j.data || j;
         YARZ.home.render();
       }
     })
@@ -7682,7 +7682,7 @@ YARZ.home = {
     .then(r => r.json())
     .then(j => {
       if (j && j.success) {
-        state.data.lastMonthSnapshot = j;
+        state.data.lastMonthSnapshot = j.data || j;
         YARZ.home.render();
       }
     })
@@ -7690,10 +7690,19 @@ YARZ.home = {
   }
 
   // Build the "This Month" stats array
-  const tmRev = thisMonth ? thisMonth.revenue : 0;
-  const tmNet = thisMonth ? thisMonth.net_profit : 0;
-  const lmRev = lastMonth ? lastMonth.revenue : 0;
-  const lmNet = lastMonth ? lastMonth.net_profit : 0;
+  const tmRev = thisMonth ? (thisMonth.revenue_total || thisMonth.revenue || 0) : 0;
+  // Calculate this month's net profit from local data (revenue - ad spend - expenses - return losses)
+  const thisMonthStart = new Date(); thisMonthStart.setDate(1); thisMonthStart.setHours(0,0,0,0);
+  const tmTxAll = state.data.transactions.filter(t=>t.date && t.date>=thisMonthStart);
+  const tmAdAll = state.data.adTracker.filter(t=>t.date && t.date>=thisMonthStart);
+  const tmExpAll = state.data.expenses.filter(t=>t.date && t.date>=thisMonthStart);
+  const tmRevCalc = tmTxAll.filter(t=>t.type!=='Return').reduce((s,t)=>s+(Number(t.revenue)||0),0);
+  const tmCostCalc = tmTxAll.filter(t=>t.type!=='Return').reduce((s,t)=>s+(Number(t.cost)||0),0);
+  const tmReturnLoss = tmTxAll.filter(t=>t.type==='Return').reduce((s,t)=>s+(Number(t.revenue)||0)+(Number(t.delLoss)||0),0);
+  const tmSpendCalc = tmAdAll.reduce((s,t)=>s+(Number(t.amount)||0),0) + tmExpAll.reduce((s,t)=>s+(Number(t.amount)||0),0);
+  const tmNet = tmRevCalc - tmCostCalc - tmReturnLoss - tmSpendCalc;
+  const lmRev = lastMonth ? (lastMonth.revenue_total || lastMonth.revenue || 0) : 0;
+  const lmNet = lastMonth ? (lastMonth.net_profit || 0) : 0;
   const revChange = lmRev > 0
     ? (((tmRev - lmRev) / lmRev) * 100).toFixed(1) : null;
   const netChange = lmNet > 0

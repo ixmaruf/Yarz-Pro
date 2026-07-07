@@ -640,7 +640,14 @@
     upd[soldCol] = (await db.from("inventory").select(soldCol).eq("product", name).single()).data[soldCol] + qty;
     var r = await db.from("inventory").update(upd).eq("product", name);
     if (r.error) throw new Error(r.error.message);
-    await db.from("transactions").insert([{ product: name, type: "Sale", size: size, qty: qty }]);
+    // ✅ FIX: Look up sale price and cost from inventory for revenue/profit tracking
+    var invRow = (await db.from("inventory").select("sale, cost").eq("product", name).single()).data;
+    var salePrice = Number(invRow.sale) || 0;
+    var costPrice = Number(invRow.cost) || 0;
+    var revenue = salePrice * qty;
+    var cost = costPrice * qty;
+    var profit = revenue - cost;
+    await db.from("transactions").insert([{ product: name, type: "Sale", size: size, qty: qty, revenue: revenue, cost: cost, profit: profit }]);
     return ok({ msg: "Sale recorded" });
   }
 
