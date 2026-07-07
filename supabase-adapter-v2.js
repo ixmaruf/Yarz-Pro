@@ -647,7 +647,7 @@
     var revenue = salePrice * qty;
     var cost = costPrice * qty;
     var profit = revenue - cost;
-    await db.from("transactions").insert([{ product: name, type: "Sale", size: size, qty: qty, revenue: revenue, cost: cost, profit: profit }]);
+    await db.from("transactions").insert([{ product: name, type: "Sale", size: size, qty: qty, revenue: revenue, cost: cost }]);
     return ok({ msg: "Sale recorded" });
   }
 
