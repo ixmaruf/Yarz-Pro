@@ -9911,20 +9911,30 @@ Team YARZ`;
     YARZ.closeModal();
     showLoader('Blocking customer...');
     try {
-      const res = await appsPost('__fortress_block', {
-        deviceId: deviceId,
-        ip: ip || '',
-        blockedBy: 'admin',
-        reason: reason || 'fake_order_from_orders_tab',
-        blockType: 'hard',
-        expiresAt: ''
-      });
-      if (res && res.ok) {
-        toast('🚫 Customer blocked permanently: ' + (customerName || deviceId.slice(0, 16) + '…'), 'success');
-        if (YARZ.firewall && YARZ.firewall.refresh) YARZ.firewall.refresh();
-      } else {
-        toast('Block failed: ' + (res.msg || 'unknown error'), 'error');
+      // Block 1: Block by device fingerprint ID
+      if (deviceId) {
+        const res1 = await appsPost('__fortress_block', {
+          deviceId: deviceId,
+          ip: ip || '',
+          blockedBy: 'admin',
+          reason: reason || 'fake_order_from_orders_tab',
+          blockType: 'hard',
+          expiresAt: ''
+        });
       }
+      // Block 2: Also block by IP address as separate entry (PERSISTENT — survives browser change/clear)
+      if (ip && ip !== deviceId) {
+        const res2 = await appsPost('__fortress_block', {
+          deviceId: ip,
+          ip: ip,
+          blockedBy: 'admin',
+          reason: (reason || 'fake_order_from_orders_tab') + '_ip_block',
+          blockType: 'hard',
+          expiresAt: ''
+        });
+      }
+      toast('🚫 Customer blocked permanently: ' + (customerName || (deviceId || ip).slice(0, 16) + '…') + (ip ? ' (IP: ' + ip + ')' : ''), 'success');
+      if (YARZ.firewall && YARZ.firewall.refresh) YARZ.firewall.refresh();
     } catch (e) {
       toast('Block error: ' + e.message, 'error');
     } finally {
@@ -14721,8 +14731,16 @@ window.publishToWebsiteAction = async function() {
           toast('Please enter a Device ID, IP, Composite Hash, or Visitor ID', 'warning');
           return;
         }
-        if (!confirm('Block this device permanently?\n\n' + identifier + '\n\nThe customer will see a fake success page and never receive orders.')) return;
-        await this.block(identifier, { reason: reason || 'manual_block_from_protection_tab', by: 'admin' });
+        if (!confirm('Block this device/IP permanently?\n\n' + identifier + '\n\nThe customer will see a blocked page and cannot place orders.')) return;
+        // Check if it looks like an IP address
+        const isIp = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(identifier);
+        if (isIp) {
+          // Block by IP: save IP as device_id for persistent cross-browser blocking
+          await this.block(identifier, { reason: reason || 'manual_ip_block', by: 'admin' });
+        } else {
+          // Block by device ID / hash
+          await this.block(identifier, { reason: reason || 'manual_block_from_protection_tab', by: 'admin' });
+        }
         if (input) input.value = '';
         if (reasonInput) reasonInput.value = '';
       },
