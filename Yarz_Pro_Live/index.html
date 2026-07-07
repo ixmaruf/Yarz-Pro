@@ -3126,7 +3126,7 @@ table tbody tr:hover{ background:var(--surface-2); }
 </script>
 
 <!-- Admin Panel script (now uses supabase-adapter-v2.js with full RPC support) -->
-<script src="supabase-adapter-v2.js?v=2026-07-07-v6"></script>
+<script src="supabase-adapter-v2.js?v=2026-07-07-v7"></script>
 
   <!-- Flatpickr (Premium Custom Calendar Picker) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -6780,8 +6780,10 @@ async function loadInventory(){
   accessory: safeStr(r[COL.ACCESSORY-1])||''
  });
  }
- state.data.rawInventoryStr = JSON.stringify(items);
-   state.data.inventory = items;
+    state.data.inventory = items;
+    // ✅ PERFORMANCE: Build O(1) product lookup map
+    state.data.productMap = new Map();
+    items.forEach(p => state.data.productMap.set(p.name, p));
    } catch(e) {
  console.error('loadInventory error:', e);
  state.data.inventory = [];
@@ -7109,17 +7111,22 @@ const YARZ = window.YARZ = {
  },
 
  render(){
- this.home.render();
- this.inv.render();
- this.ord.render();
- this.finance.render();
- this.rep.render();
- this.preview.render();
- this.webControl.render();
- this.settings.render();
- try { this.settings._fillAdminIdentity(); } catch(e) {}
- this.updateBadges();
- },
+  // ✅ PERFORMANCE: Only render the active page, not all 8+ pages
+  const page = state.currentPage || 'home';
+  const pageRenderers = {
+    home: () => this.home.render(),
+    inventory: () => this.inv.render(),
+    orders: () => this.ord.render(),
+    finance: () => this.finance.render(),
+    reports: () => this.rep.render(),
+    preview: () => this.preview.render(),
+    'web-control': () => this.webControl.render(),
+    settings: () => this.settings.render()
+  };
+  if (pageRenderers[page]) pageRenderers[page]();
+  try { this.settings._fillAdminIdentity(); } catch(e) {}
+  this.updateBadges();
+  },
 
  updateBadges(){
  let pendingOrders = state.data.websiteOrders.filter(o=>!o.status || o.status==='Pending' || o.status==='Processing' || o.status==='Confirmed');
@@ -7806,7 +7813,8 @@ YARZ.home = {
     { icon: tmNet >= 0 ? 'green' : 'red', ic:'ri-coin-line', label:'NET '+(tmNet>=0?'PROFIT':'LOSS'), val:fmtBDT(tmNet), sub:tmNet>=0?'Profit':'Loss' }
   ];
 
- $('home-stats').innerHTML = stats.map(s=>`
+ const homeStatsEl = $('home-stats');
+ if(homeStatsEl) homeStatsEl.innerHTML = stats.map(s=>`
  <div class="stat-card">
   <div class="stat-icon ${s.icon}"><i class="${s.ic}"></i></div>
   <div class="stat-label">${s.label}</div>
@@ -7827,7 +7835,8 @@ YARZ.home = {
  const todaySpend = todayAd.reduce((s,t)=>s+t.amount,0) + todayExp.reduce((s,t)=>s+t.amount,0);
  const todayProfit = todayRev-todayCost-todaySpend;
 
- $('today-summary').innerHTML = `
+ const todaySummaryEl = $('today-summary');
+ if(todaySummaryEl) todaySummaryEl.innerHTML = `
  <div class="stat-card">
   <div class="stat-icon blue"><i class="ri-shopping-cart-2-line"></i></div>
   <div class="stat-label">Today's sales</div>
@@ -7862,7 +7871,8 @@ YARZ.home = {
    name, ...s, profit: s.revenue - s.cost, margin: s.revenue > 0 ? (((s.revenue - s.cost) / s.revenue) * 100).toFixed(0) : 0
  })).sort((a,b) => b.profit - a.profit);
 
- $('product-performance').innerHTML = prodRows.length ? `
+ const ppEl = $('product-performance');
+ if(ppEl) ppEl.innerHTML = prodRows.length ? `
 <table style="width:100%;border-collapse:collapse;font-size:13px">
 <thead><tr style="border-bottom:2px solid var(--border);text-align:left">
 <th style="padding:10px 8px">Product</th>
@@ -7920,7 +7930,8 @@ YARZ.home = {
  const months = Object.keys(monthlyData).sort().reverse().slice(0, 6);
  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
- $('monthly-trend').innerHTML = months.length ? `
+ const mtEl = $('monthly-trend');
+ if(mtEl) mtEl.innerHTML = months.length ? `
 <table style="width:100%;border-collapse:collapse;font-size:13px">
 <thead><tr style="border-bottom:2px solid var(--border);text-align:left">
 <th style="padding:10px 8px">Month</th>
@@ -7982,7 +7993,8 @@ YARZ.home = {
 
  // Top sellers
  const sorted = [...inv].filter(p=>p.totalSold>0).sort((a,b)=>b.totalSold-a.totalSold).slice(0,3);
- $('top-sellers').innerHTML = sorted.length ? sorted.map(p=>`
+ const topSellersEl = $('top-sellers');
+ if(topSellersEl) topSellersEl.innerHTML = sorted.length ? sorted.map(p=>`
  <div class="list-item" onclick="YARZ.inv.showDetails('${esc(p.name)}')">
   <div class="thumb" style="${p.img1?`background-image:url('${esc(getImgSrc(p.img1))}')`:''}">${p.img1?'':'<i class=\"ri-shopping-bag-3-line\"></i>'}</div>
   <div class="li-body">
@@ -8274,7 +8286,13 @@ YARZ.inv = {
  if(f) items = items.filter(p=>p.fabric===f);
  if(q) items = items.filter(p=>(p.name+' '+p.category+' '+p.fabric).toLowerCase().includes(q));
 
- $('inv-list').innerHTML = items.length ? items.map(p=>{
+ // ✅ PERFORMANCE: Pagination — only render 20 items at a time
+ const pag = YARZ.pagination.slice('inventory', items);
+ const pagNav = YARZ.pagination.renderNav('inventory', items.length, 'YARZ.inv.goPage');
+
+ const el = $('inv-list');
+ if(!el) return;
+ el.innerHTML = pag.length ? pag.map(p=>{
  const stockLeft = Math.max(0, p.remaining);
  const lowStock = stockLeft<5;
  return `
@@ -8299,8 +8317,14 @@ YARZ.inv = {
   <button class="btn btn-red btn-xs" onclick="YARZ.inv.deleteProduct('${esc(p.name)}')"><i class="ri-delete-bin-6-line"></i></button>
   </div>
   </div>
- </div>`;
+  </div>`;
  }).join('') : '<div class="empty-state"><i class="ri-archive-line" style="font-size:32px;opacity:0.4"></i><p style="margin-top:10px">No products found</p></div>';
+ el.innerHTML += pagNav;
+ },
+
+ goPage(idx) {
+   YARZ.pagination.set('inventory', idx);
+   YARZ.inv.render();
  },
 
  // ✅ v11.1: Per-category inventory summary widget
@@ -10699,7 +10723,8 @@ YARZ.finance = {
  const grossProfit = netRevenue - totalCost;
  const netProfit = grossProfit - totalAd - totalExp;
 
- $('finance-stats').innerHTML = `
+ const fsEl = $('finance-stats');
+ if(fsEl) fsEl.innerHTML = `
  <div class="stat-card">
   <div class="stat-icon blue"><i class="ri-money-dollar-circle-line"></i></div>
   <div class="stat-label">Total Revenue</div>
@@ -10727,7 +10752,8 @@ YARZ.finance = {
  `;
 
  // P&L Statement
- $('finance-pl').innerHTML = `
+ const fpEl = $('finance-pl');
+ if(fpEl) fpEl.innerHTML = `
  <table style="width:100%;border-collapse:collapse;font-size:13px">
  <tbody>
  <tr style="background:var(--surface-2)"><td colspan="2" style="padding:10px 8px;font-weight:700;color:var(--info)"><i class="ri-money-dollar-circle-line"></i> REVENUE</td></tr>
@@ -10758,7 +10784,8 @@ YARZ.finance = {
  const expSorted = Object.entries(expByCategory).sort((a,b) => b[1] - a[1]);
  const expTotal = expSorted.reduce((s,[,v])=>s+v,0);
 
- $('finance-expenses').innerHTML = expSorted.length ? `
+ const feEl = $('finance-expenses');
+ if(feEl) feEl.innerHTML = expSorted.length ? `
  <table style="width:100%;border-collapse:collapse;font-size:13px">
  <thead><tr style="border-bottom:2px solid var(--border);text-align:left">
  <th style="padding:10px 8px">Category</th>
@@ -10789,7 +10816,8 @@ YARZ.finance = {
  });
  const adSorted = Object.entries(adByProduct).sort((a,b) => b[1].spend - a[1].spend);
 
- $('finance-ads').innerHTML = adSorted.length ? `
+ const faEl = $('finance-ads');
+ if(faEl) faEl.innerHTML = adSorted.length ? `
  <table style="width:100%;border-collapse:collapse;font-size:13px">
  <thead><tr style="border-bottom:2px solid var(--border);text-align:left">
  <th style="padding:10px 8px">Campaign / Product</th>
@@ -10808,7 +10836,8 @@ YARZ.finance = {
  ` : '<div class="empty-state"><i class="ri-megaphone-line" style="font-size:28px;opacity:0.4"></i><p style="margin-top:8px">No ad spend recorded</p></div>';
 
  // Recent Transactions
- $('finance-recent').innerHTML = allTx.length ? `
+ const frEl = $('finance-recent');
+ if(frEl) frEl.innerHTML = allTx.length ? `
  <table style="width:100%;border-collapse:collapse;font-size:13px">
  <thead><tr style="border-bottom:2px solid var(--border);text-align:left">
  <th style="padding:10px 8px">Date</th>
@@ -16381,7 +16410,13 @@ setTimeout(() => {
  ============ GLOBAL SEARCH MODULE ============
 ============================================================ */
 YARZ.search = {
+  _debounce: null,
   onInput(q){
+    // ✅ PERFORMANCE: Debounce 200ms to avoid scanning 4000+ items on every keystroke
+    clearTimeout(this._debounce);
+    this._debounce = setTimeout(() => this._doSearch(q), 200);
+  },
+  _doSearch(q){
     const el = $('gs-results');
     if(!el) return;
     q = (q||'').trim().toLowerCase();
@@ -16403,9 +16438,9 @@ YARZ.search = {
       results.push({type:'tx',label:`${t.product} (${t.type})`,sub:`${fmtDateBn(t.date)} • ${fmtBDT(t.revenue)}`,action:`YARZ.goPage('finance')`});
     });
 
-    // Search orders
-    orders.filter(o=>(o.name||'').toLowerCase().includes(q)||(o.phone||'').includes(q)||(o.id||'').toLowerCase().includes(q)).slice(0,5).forEach(o=>{
-      results.push({type:'ord',label:o.name||o.id,sub:`${o.phone||''} • ${fmtBDT(o.total||0)} • ${o.status||''}`,action:`YARZ.goPage('orders')`});
+    // ✅ FIX: Search orders — use correct field names (customer/phone/orderId)
+    orders.filter(o=>(o.customer||'').toLowerCase().includes(q)||(o.phone||'').includes(q)||(o.orderId||'').toLowerCase().includes(q)).slice(0,5).forEach(o=>{
+      results.push({type:'ord',label:o.customer||o.orderId,sub:`${o.phone||''} • ${fmtBDT(o.total||0)} • ${o.status||''}`,action:`YARZ.goPage('orders')`});
     });
 
     // Search expenses
@@ -16443,7 +16478,8 @@ YARZ.autoRefresh = {
       if(timer) timer.textContent = this._countdown+'s';
       if(this._countdown <= 0){
         this._countdown = 60;
-        YARZ.loadAll(true);
+        // ✅ PERFORMANCE: Only re-render active page, don't re-fetch all data
+        YARZ.render();
         const spin = $('refresh-spin');
         if(spin){ spin.style.animation='spin 1s linear 1'; setTimeout(()=>spin.style.animation='none',1000); }
       }
@@ -16454,6 +16490,42 @@ YARZ.autoRefresh = {
 
 // Start auto-refresh on load
 setTimeout(()=>YARZ.autoRefresh.start(), 3000);
+
+/* ============================================================
+ ============ PAGINATION MODULE ============
+============================================================ */
+YARZ.pagination = {
+  _pages: {},  // { pageName: currentPageIndex }
+  PER_PAGE: { inventory: 20, transactions: 15, orders: 20, recentTx: 10 },
+  get(page, totalItems) {
+    const pp = this.PER_PAGE[page] || 20;
+    const maxPage = Math.max(1, Math.ceil(totalItems / pp));
+    const cur = this._pages[page] || 1;
+    if (cur > maxPage) this._pages[page] = maxPage;
+    return { page: this._pages[page] || 1, perPage: pp, maxPage, total: totalItems };
+  },
+  set(page, idx) { this._pages[page] = idx; },
+  slice(page, arr) {
+    const p = this.get(page, arr.length);
+    return arr.slice((p.page - 1) * p.perPage, p.page * p.perPage);
+  },
+  renderNav(page, totalItems, onPageChange) {
+    const p = this.get(page, totalItems);
+    if (p.maxPage <= 1) return '';
+    let html = '<div class="pagination-nav" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;flex-wrap:wrap">';
+    html += `<button class="btn btn-xs ${p.page<=1?'btn-disabled':''}" onclick="${p.page>1?onPageChange+'('+(p.page-1)+')':''}"><i class="ri-arrow-left-s-line"></i></button>`;
+    const start = Math.max(1, p.page - 2);
+    const end = Math.min(p.maxPage, p.page + 2);
+    if (start > 1) html += `<button class="btn btn-xs btn-ghost" onclick="${onPageChange}(1)">1</button><span style="opacity:0.5">...</span>`;
+    for (let i = start; i <= end; i++) {
+      html += `<button class="btn btn-xs ${i===p.page?'btn-primary':'btn-ghost'}" onclick="${onPageChange}(${i})">${i}</button>`;
+    }
+    if (end < p.maxPage) html += `<span style="opacity:0.5">...</span><button class="btn btn-xs btn-ghost" onclick="${onPageChange}(${p.maxPage})">${p.maxPage}</button>`;
+    html += `<button class="btn btn-xs ${p.page>=p.maxPage?'btn-disabled':''}" onclick="${p.page<p.maxPage?onPageChange+'('+(p.page+1)+')':''}"><i class="ri-arrow-right-s-line"></i></button>`;
+    html += `<span style="font-size:11px;opacity:0.5;margin-left:4px">${p.total} items</span></div>`;
+    return html;
+  }
+};
 
 /* ============================================================
  ============ FINANCE DATE FILTER MODULE ============
