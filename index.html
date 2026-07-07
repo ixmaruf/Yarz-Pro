@@ -3393,7 +3393,7 @@ body.dark *{ scrollbar-color:rgba(255,255,255,0.2) rgba(255,255,255,0.06); }
   <!-- Dynamic Alerts -->
   <div id="dashboard-alerts"></div>
 
-  <div class="grid grid-6" id="home-stats"></div>
+  <div class="grid grid-6" id="home-stats" style="display:none"></div>
 
   <div class="section">
   <div class="section-title"><h2><i class="ri-calendar-todo-line" style="color:var(--accent-2)"></i> Today's Summary</h2><span class="hint" id="today-date"></span></div>
@@ -8084,14 +8084,7 @@ YARZ.home = {
   const netChange = lmNet > 0
     ? (((tmNet - lmNet) / lmNet) * 100).toFixed(1) : null;
 
-  const stats = [
-    { icon:'blue', ic:'ri-money-dollar-circle-line', label:'Total Sales Revenue', val:fmtBDT(tmRevCalc) },
-    { icon:'amber', ic:'ri-shopping-bag-3-line', label:'Product Cost (COGS)', val:fmtBDT(tmCostCalc) },
-    { icon:'green', ic:'ri-line-chart-line', label:'Gross Profit', val:fmtBDT(tmGross), sub:tmMargin+'% margin' },
-    { icon:'purple', ic:'ri-megaphone-line', label:'Ad Spend', val:fmtBDT(tmAdSpend) },
-    { icon:'red', ic:'ri-wallet-3-line', label:'Other Expenses', val:fmtBDT(tmOtherExp) },
-    { icon: tmNet >= 0 ? 'green' : 'red', ic:'ri-coin-line', label:'NET '+(tmNet>=0?'PROFIT':'LOSS'), val:fmtBDT(tmNet), sub:tmNet>=0?'Profit':'Loss' }
-  ];
+  const stats = [];
 
  const homeStatsEl = $('home-stats');
  if(homeStatsEl) homeStatsEl.innerHTML = stats.map(s=>`
