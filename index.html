@@ -3126,7 +3126,7 @@ table tbody tr:hover{ background:var(--surface-2); }
 </script>
 
 <!-- Admin Panel script (now uses supabase-adapter-v2.js with full RPC support) -->
-<script src="supabase-adapter-v2.js?v=2026-07-07-v7"></script>
+<script src="supabase-adapter-v2.js?v=2026-07-07-v8"></script>
 
   <!-- Flatpickr (Premium Custom Calendar Picker) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -9482,6 +9482,10 @@ Team YARZ`;
  return tb - ta;
  });
 
+ // Paginate website orders
+ const totalWebsite = items.length;
+ items = YARZ.pagination.slice('websiteOrders', items);
+
  const container = $('wo-list');
  if(!items.length){
  const emptyMsg = {
@@ -9532,9 +9536,10 @@ Team YARZ`;
   ${g.items.map(o=>this._renderOrderCard(o, stage, g.isToday)).join('')}
   </div>
  `;
- });
+  });
 
- container.innerHTML = html;
+ const webPagNav = YARZ.pagination.renderNav('websiteOrders', totalWebsite, 'YARZ.ord.goWebsitePage');
+ container.innerHTML = html + webPagNav;
  },
 
  _renderOrderCard(o, stage, isToday){
@@ -10399,7 +10404,11 @@ Team YARZ`;
  </div>
  `;
 
- const listHtml = items.length ? items.map(o=>{
+ // Paginate manual orders
+ const totalManual = items.length;
+ const pagItems = YARZ.pagination.slice('manualOrders', items);
+
+ const listHtml = pagItems.length ? pagItems.map(o=>{
  const s = o.status||'Pending';
  const sc = STATUS_COLORS[s]||'chip-gray';
 
@@ -10478,7 +10487,7 @@ Team YARZ`;
    <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--brand,#3b82f6),#8b5cf6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;flex-shrink:0">${esc((o.customer||'?').charAt(0).toUpperCase())}</div>
    <div style="min-width:0">
     <div style="font-size:14px;font-weight:700;color:var(--ink);line-height:1.2;display:flex;align-items:center;gap:4px">${esc(o.customer||'—')}<button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px;flex-shrink:0" onclick="event.stopPropagation();YARZ.ord._copy('${esc(o.customer||'')}',this,'Copied')"><i class="ri-file-copy-line"></i></button></div>
-     <div style="font-size:11.5px;color:var(--ink-3);margin-top:1px;display:flex;align-items:center;gap:4px"><i class="ri-phone-line" style="font-size:10px"></i><span class="bn-num">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</span><button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._normalizeBdPhone('${esc(o.phone||'')}')||'${esc(o.phone||'')}',this,'Copied')"><i class="ri-file-copy-line"></i></button></div>
+      <div style="font-size:11.5px;color:var(--ink-3);margin-top:1px;display:flex;align-items:center;gap:4px"><i class="ri-phone-line" style="font-size:10px"></i><span class="bn-num">${esc(YARZ.ord._fmtBdPhoneDisplay(o.phone))}</span><button class="copy-btn" style="width:18px;height:18px;padding:0;margin:0;font-size:9px" onclick="event.stopPropagation();YARZ.ord._copy(YARZ.ord._normalizeBdPhone('${esc(o.phone||'')}')||'${esc(o.phone||'')}',this,'Copied')"><i class="ri-file-copy-line"></i></button></div>
     </div>
    </div>
    <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:11.5px">
@@ -10519,12 +10528,28 @@ Team YARZ`;
  </div>`;
  }).join('') : '<div class="empty-state"><i class="ri-file-list-3-line" style="font-size:32px;opacity:0.4"></i><p style="margin-top:10px">No orders</p></div>';
 
- $('mo-list').innerHTML = stageTabsHtml + listHtml;
+ const manualPagNav = YARZ.pagination.renderNav('manualOrders', totalManual, 'YARZ.ord.goManualPage');
+ $('mo-list').innerHTML = stageTabsHtml + listHtml + manualPagNav;
  },
 
  setManualStage(stage){
  this._manualStage = stage;
  this.renderManual();
+ },
+
+ goManualPage(idx){
+ YARZ.pagination.set('manualOrders', idx);
+ this.renderManual();
+ },
+
+ goWebsitePage(idx){
+ YARZ.pagination.set('websiteOrders', idx);
+ this.renderWebsite();
+ },
+
+ goCustomerPage(idx){
+ YARZ.pagination.set('customers', idx);
+ this.renderCustomers();
  },
 
  showManualStatusMenu(orderId){
@@ -10611,7 +10636,12 @@ Team YARZ`;
  });
  let arr = Object.values(map).sort((a,b)=>b.total-a.total);
  if(q) arr = arr.filter(c=>(c.name+c.phone).toLowerCase().includes(q));
- $('cu-list').innerHTML = arr.length ? arr.map(c=>`
+
+ // Paginate customers
+ const totalCust = arr.length;
+ const pagCust = YARZ.pagination.slice('customers', arr);
+
+ $('cu-list').innerHTML = (pagCust.length ? pagCust.map(c=>`
  <div class="list-item" onclick="YARZ.ord.showCustomer('${esc(c.phone)}')" style="cursor:pointer">
   <div class="thumb" style="background:rgba(139,127,217,0.18);color:var(--purple)"><i class="ri-user-3-line"></i></div>
   <div class="li-body">
@@ -10624,7 +10654,7 @@ Team YARZ`;
   <div style="font-size:10.5px;opacity:0.55;font-weight:600;margin-top:2px">View <i class="ri-arrow-right-s-line"></i></div>
   </div>
  </div>
- `).join('') : '<div class="empty-state"><i class="ri-team-line" style="font-size:32px;opacity:0.4"></i><p style="margin-top:10px">No customers</p></div>';
+ `).join('') : '<div class="empty-state"><i class="ri-team-line" style="font-size:32px;opacity:0.4"></i><p style="margin-top:10px">No customers</p></div>') + YARZ.pagination.renderNav('customers', totalCust, 'YARZ.ord.goCustomerPage');
  },
 
  // ✅ Customer 360 — full profile + order history for one customer (phone).
@@ -16510,7 +16540,7 @@ setTimeout(()=>YARZ.autoRefresh.start(), 3000);
 ============================================================ */
 YARZ.pagination = {
   _pages: {},  // { pageName: currentPageIndex }
-  PER_PAGE: { inventory: 20, transactions: 15, orders: 20, recentTx: 10 },
+  PER_PAGE: { inventory: 20, transactions: 15, orders: 20, recentTx: 10, manualOrders: 15, websiteOrders: 15, customers: 20 },
   get(page, totalItems) {
     const pp = this.PER_PAGE[page] || 20;
     const maxPage = Math.max(1, Math.ceil(totalItems / pp));
