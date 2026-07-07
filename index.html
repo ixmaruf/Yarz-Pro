@@ -2009,6 +2009,9 @@ body.dark .input, body.dark .select, body.dark .textarea{
  padding: 14px !important;
  gap:14px !important;
  backdrop-filter: blur(16px);
+ /* ✅ PERFORMANCE: Browser skips rendering off-screen list items until visible */
+ content-visibility: auto;
+ contain-intrinsic-size: auto 84px;
 }
 body.dark .list-item{
  background: rgba(23,28,36,0.65) !important;
@@ -7014,16 +7017,16 @@ const YARZ = window.YARZ = {
     return;
   },
  async loadAll(showMsg){
-  showLoader('Loading from Supabase...');
- try {
- // ✅ v15.99 RESILIENCE: Promise.allSettled (was Promise.all). Previously, if
- // ANY single sheet read failed (e.g. INVENTORY rethrew on a transient 5xx /
- // quota / auth hiccup), Promise.all rejected, render() never ran, and the
- // WHOLE panel showed empty — even the sheets that loaded fine. allSettled
- // lets every loader finish independently; each loader already defaults its
- // own state.data.* to [] on failure, so the panel renders with whatever
- // loaded and the owner is never staring at a blank dashboard.
- await Promise.allSettled([
+   showLoader('Loading from Supabase...');
+  try {
+  // ✅ v15.99 RESILIENCE: Promise.allSettled (was Promise.all). Previously, if
+  // ANY single sheet read failed (e.g. INVENTORY rethrew on a transient 5xx /
+  // quota / auth hiccup), Promise.all rejected, render() never ran, and the
+  // WHOLE panel showed empty — even the sheets that loaded fine. allSettled
+  // lets every loader finish independently; each loader already defaults its
+  // own state.data.* to [] on failure, so the panel renders with whatever
+  // loaded and the owner is never staring at a blank dashboard.
+  await Promise.allSettled([
    loadInventory(),
    loadOrders(),
    loadWebsiteOrders(),
@@ -7033,71 +7036,155 @@ const YARZ = window.YARZ = {
     loadMonthlySummaries(),
    loadSettings(),
    loadDeviceModels()
- ]);
- await loadDeliveryCharges().catch(()=>{});
+  ]);
+  await loadDeliveryCharges().catch(()=>{});
    if(typeof YARZ._patchInventoryPendingOrders === 'function') YARZ._patchInventoryPendingOrders();
    state.loaded = true;
- this.render();
- // Detect new orders (for notification)
- this.detectNewOrders();
- if(showMsg) toast('Data refreshed', 'success');
+  // ✅ PERFORMANCE: Pre-compute dashboard stats ONCE after data load
+  this._computeDashboardCache();
+  this.render();
+  // Detect new orders (for notification)
+  this.detectNewOrders();
+  if(showMsg) toast('Data refreshed', 'success');
 
- // ✅ FIX v3.1: Async resolve ALL 6 image fields (img1-img6) with auto-format detection
- setTimeout(async () => {
-  let changed = false;
-  for(let p of state.data.inventory) {
-  // Check if ANY of the 6 image fields needs resolving
-  let needsResolve = false;
-  for(const k of ['img1','img2','img3','img4','img5','img6']){
-  const u = p[k];
-  if(!u || typeof u !== 'string') continue;
-  const url = u.trim();
-  if(!url) continue;
-  if(!url.startsWith('http')) { needsResolve = true; break; }
-  if(/\.(jpg|jpeg|png|gif|webp|svg|bmp|avif|tiff?)(\?.*)?$/i.test(url)) continue;
-  if(/^https?:\/\/i\.ibb\.co\//i.test(url)) continue;
-  if(/^https?:\/\/lh\d\.googleusercontent\.com\//i.test(url)) continue;
-  if(/^https?:\/\/i\.(postimg\.cc|imgur\.com)\//i.test(url)) continue;
-  // Anything else (share page, drive share, unknown CDN) → resolve
-  needsResolve = true;
-  break;
-  }
-  if(!needsResolve) continue;
+  // ✅ FIX v3.1: Async resolve ALL 6 image fields (img1-img6) with auto-format detection
+  // ✅ PERFORMANCE: Use requestIdleCallback to avoid blocking main thread
+  const resolveImages = async () => {
+   let changed = false;
+   for(let p of state.data.inventory) {
+   // Check if ANY of the 6 image fields needs resolving
+   let needsResolve = false;
+   for(const k of ['img1','img2','img3','img4','img5','img6']){
+   const u = p[k];
+   if(!u || typeof u !== 'string') continue;
+   const url = u.trim();
+   if(!url) continue;
+   if(!url.startsWith('http')) { needsResolve = true; break; }
+   if(/\.(jpg|jpeg|png|gif|webp|svg|bmp|avif|tiff?)(\?.*)?$/i.test(url)) continue;
+   if(/^https?:\/\/i\.ibb\.co\//i.test(url)) continue;
+   if(/^https?:\/\/lh\d\.googleusercontent\.com\//i.test(url)) continue;
+   if(/^https?:\/\/i\.(postimg\.cc|imgur\.com)\//i.test(url)) continue;
+   // Anything else (share page, drive share, unknown CDN) → resolve
+   needsResolve = true;
+   break;
+   }
+   if(!needsResolve) continue;
 
-  const olds = {
-  img1:p.img1, img2:p.img2, img3:p.img3,
-  img4:p.img4, img5:p.img5, img6:p.img6
+   const olds = {
+   img1:p.img1, img2:p.img2, img3:p.img3,
+   img4:p.img4, img5:p.img5, img6:p.img6
+   };
+   await resolveImageLinks(p);
+   for(const k of ['img1','img2','img3','img4','img5','img6']){
+   if(p[k] !== olds[k]) { changed = true; break; }
+   }
+   }
+   if(changed && state.loaded) this.render();
   };
-  await resolveImageLinks(p);
-  for(const k of ['img1','img2','img3','img4','img5','img6']){
-  if(p[k] !== olds[k]) { changed = true; break; }
+  if('requestIdleCallback' in window) {
+   requestIdleCallback(resolveImages, { timeout: 5000 });
+  } else {
+   setTimeout(resolveImages, 500);
   }
-  }
-  if(changed && state.loaded) this.render();
- }, 500);
 
- } catch(e){
- console.error(e);
- toast('Error loading data: '+e.message, 'error');
- } finally {
- hideLoader();
- }
- },
+  } catch(e){
+  console.error(e);
+  toast('Error loading data: '+e.message, 'error');
+  } finally {
+  hideLoader();
+  }
+  },
 
  _updateStkBadge: function(prefix){
- const pName = $(prefix+'-product').value;
- let size = $(prefix+'-size').value;
- const badge = $(prefix+'-stk-badge');
- if(!badge) return;
- if(!pName || !size) { badge.style.display = 'none'; return; }
- const p = state.data.inventory.find(x=>x.name===pName);
- if(!p) { badge.style.display = 'none'; return; }
- // ✅ v16.1 ONE-SIZE: the "ONE" token's stock lives in the M slot.
- if(String(size).toUpperCase() === 'ONE') size = 'M';
- const stk = (p['stk'+size]||0) - (p['sold'+size]||0);
- badge.style.display = 'inline-block';
- badge.innerHTML = `Stock: ${stk}`;
- badge.className = `chip ${stk>0?'chip-green':'chip-red'}`;
+  const pName = $(prefix+'-product').value;
+  let size = $(prefix+'-size').value;
+  const badge = $(prefix+'-stk-badge');
+  if(!badge) return;
+  if(!pName || !size) { badge.style.display = 'none'; return; }
+  const p = state.data.inventory.find(x=>x.name===pName);
+  if(!p) { badge.style.display = 'none'; return; }
+  // ✅ v16.1 ONE-SIZE: the "ONE" token's stock lives in the M slot.
+  if(String(size).toUpperCase() === 'ONE') size = 'M';
+  const stk = (p['stk'+size]||0) - (p['sold'+size]||0);
+  badge.style.display = 'inline-block';
+  badge.innerHTML = `Stock: ${stk}`;
+  badge.className = `chip ${stk>0?'chip-green':'chip-red'}`;
+ },
+
+ // ✅ PERFORMANCE: Pre-compute all dashboard stats ONCE, cache for re-renders
+ _computeDashboardCache(){
+  const inv = state.data.inventory;
+  const tx = state.data.transactions;
+  const ad = state.data.adTracker;
+  const exp = state.data.expenses;
+
+  // Inventory summary
+  state.data._cache = {
+   activeCount: 0, draftCount: 0, totalRevenue: 0, totalNet: 0, lowStock: 0,
+   thisMonthTx: [], thisMonthAd: [], thisMonthExp: [],
+   todayTx: [], todayAd: [], todayExp: [],
+   monthlyData: {}
+  };
+  const c = state.data._cache;
+  const threshold = int(state.data.settings['Low Stock Threshold']||5);
+
+  inv.forEach(p => {
+   if(p.status==='Active') c.activeCount++;
+   else if(p.status==='Draft') c.draftCount++;
+   c.totalRevenue += p.revenue || 0;
+   c.totalNet += p.net || 0;
+   // Low stock count
+   if(p.status==='Active'){
+    if(_isOneSizeP(p)){ if((p.stkM-p.soldM) <= threshold) c.lowStock++; }
+    else {
+     const sizes = [p.stkS-p.soldS, p.stkM-p.soldM, p.stkL-p.soldL, p.stkXL-p.soldXL, p.stkXXL-p.soldXXL, p.stk3XL-p.sold3XL];
+     if(sizes.some(s=>s<=threshold)) c.lowStock++;
+    }
+   }
+  });
+
+  // This month
+  const thisMonthStart = new Date(); thisMonthStart.setDate(1); thisMonthStart.setHours(0,0,0,0);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
+
+  tx.forEach(t => {
+   if(t.date && t.date >= thisMonthStart) c.thisMonthTx.push(t);
+   if(t.date && t.date >= today && t.date < tomorrow) c.todayTx.push(t);
+   // Monthly trend
+   if(t.date) {
+    const d = new Date(t.date);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if(!c.monthlyData[key]) c.monthlyData[key] = { rev:0, cost:0, ad:0, exp:0 };
+    c.monthlyData[key].rev += Number(t.revenue) || 0;
+    c.monthlyData[key].cost += Number(t.cost) || 0;
+   }
+  });
+  ad.forEach(t => {
+   if(t.date && t.date >= thisMonthStart) c.thisMonthAd.push(t);
+   if(t.date && t.date >= today && t.date < tomorrow) c.todayAd.push(t);
+   if(t.date) {
+    const d = new Date(t.date);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if(!c.monthlyData[key]) c.monthlyData[key] = { rev:0, cost:0, ad:0, exp:0 };
+    c.monthlyData[key].ad += Number(t.amount) || 0;
+   }
+  });
+  exp.forEach(t => {
+   if(t.date && t.date >= thisMonthStart) c.thisMonthExp.push(t);
+   if(t.date && t.date >= today && t.date < tomorrow) c.todayExp.push(t);
+   if(t.date) {
+    const d = new Date(t.date);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    if(!c.monthlyData[key]) c.monthlyData[key] = { rev:0, cost:0, ad:0, exp:0 };
+    c.monthlyData[key].exp += Number(t.amount) || 0;
+   }
+  });
+
+  // Pending orders count
+  c.pendingOrders = new Set(
+   state.data.websiteOrders.filter(o=>!o.status || o.status==='Pending' || o.status==='Processing' || o.status==='Confirmed').map(o=>o.orderId)
+  ).size;
  },
 
  // Silent background refresh (polling every 60s for new orders)
@@ -7105,8 +7192,11 @@ const YARZ = window.YARZ = {
  try {
  await loadWebsiteOrders();
    if(typeof YARZ._patchInventoryPendingOrders === 'function') YARZ._patchInventoryPendingOrders();
-   this.updateBadges();
+ // ✅ PERFORMANCE: Only update badges, DON'T re-render full page (prevents hang)
+ this.updateBadges();
  this.detectNewOrders();
+ // Silently update cache without re-render
+ this._computeDashboardCache();
  } catch(e){ /* silent */ }
  },
 
@@ -7129,8 +7219,8 @@ const YARZ = window.YARZ = {
   },
 
  updateBadges(){
- let pendingOrders = state.data.websiteOrders.filter(o=>!o.status || o.status==='Pending' || o.status==='Processing' || o.status==='Confirmed');
- const pendingCount = new Set(pendingOrders.map(o => o.orderId)).size;
+ // ✅ PERFORMANCE: Use cached counts instead of scanning all 3500 items
+ const pendingCount = state.data._cache?.pendingOrders || 0;
  
  const b = $('nav-orders-badge');
  if(pendingCount>0){ b.textContent = toBn(pendingCount); b.classList.remove('hidden'); }
@@ -7141,7 +7231,7 @@ const YARZ = window.YARZ = {
 
  // Calculate unread notifications based on clearedTime
  const clearedTime = parseInt(_ls('yarz_notif_cleared') || '0', 10);
- const unreadItems = pendingOrders.filter(o => !o.date || o.date.getTime() > clearedTime);
+ const unreadItems = state.data.websiteOrders.filter(o => !o.date || o.date.getTime() > clearedTime);
  const unreadCount = new Set(unreadItems.map(o => o.orderId)).size;
 
  // Notification bell indicator
@@ -7157,17 +7247,8 @@ const YARZ = window.YARZ = {
  else npc.classList.add('hidden');
  }
 
- const threshold = int(state.data.settings['Low Stock Threshold']||5);
- let low = 0;
- state.data.inventory.forEach(p=>{
- if(p.status!=='Active') return;
- // ✅ v16.1 ONE-SIZE: only check the M slot for sizeless products, else the
- // 5 always-zero size slots count every one-size product as "low" (matches
- // the showLowStock modal guard so the badge and modal agree).
- if(_isOneSizeP(p)){ if((p.stkM-p.soldM) <= threshold) low++; return; }
- const sizes = [p.stkS-p.soldS, p.stkM-p.soldM, p.stkL-p.soldL, p.stkXL-p.soldXL, p.stkXXL-p.soldXXL, p.stk3XL-p.sold3XL];
- if(sizes.some(s=>s<=threshold)) low++;
- });
+ // ✅ PERFORMANCE: Use cached low stock count
+ const low = state.data._cache?.lowStock || 0;
  $('lowstock-count').textContent = low>0 ? toBn(low)+' Items' : 'All good';
 
  // If notification panel is open, re-render it
@@ -7740,10 +7821,13 @@ _ls('yarz_settings', JSON.stringify(sav));
 YARZ.home = {
  render(){
  const inv = state.data.inventory;
- const activeItems = inv.filter(p=>p.status==='Active');
- const draftItems = inv.filter(p=>p.status==='Draft');
- const totalRev = inv.reduce((s,p)=>s+p.revenue, 0);
- const totalNet = inv.reduce((s,p)=>s+p.net, 0);
+ const c = state.data._cache || {};
+
+ // ✅ PERFORMANCE: Use cached counts instead of scanning 3500 items twice
+ const activeCount = c.activeCount || 0;
+ const draftCount = c.draftCount || 0;
+ const totalRev = c.totalRevenue || 0;
+ const totalNet = c.totalNet || 0;
 
    // ✅ v2.0: replace lifetime cards with "This Month" cards
   let thisMonth = state.data.currentMonthSnapshot || null;
@@ -7798,11 +7882,10 @@ YARZ.home = {
 
   // Build the "This Month" stats array
   const tmRev = thisMonth ? (thisMonth.revenue_total || thisMonth.revenue || 0) : 0;
-  // ✅ Calculate this month's net profit from ALL transactions (Returns have negative values that reduce totals)
-  const thisMonthStart = new Date(); thisMonthStart.setDate(1); thisMonthStart.setHours(0,0,0,0);
-  const tmTxAll = state.data.transactions.filter(t=>t.date && t.date>=thisMonthStart);
-  const tmAdAll = state.data.adTracker.filter(t=>t.date && t.date>=thisMonthStart);
-  const tmExpAll = state.data.expenses.filter(t=>t.date && t.date>=thisMonthStart);
+  // ✅ PERFORMANCE: Use cached this-month data instead of filtering 4400+ transactions
+  const tmTxAll = c.thisMonthTx || [];
+  const tmAdAll = c.thisMonthAd || [];
+  const tmExpAll = c.thisMonthExp || [];
   const tmRevCalc = tmTxAll.reduce((s,t)=>s+(Number(t.revenue)||0),0);
   const tmCostCalc = tmTxAll.reduce((s,t)=>s+(Number(t.cost)||0),0);
   const tmSpendCalc = tmAdAll.reduce((s,t)=>s+(Number(t.amount)||0),0) + tmExpAll.reduce((s,t)=>s+(Number(t.amount)||0),0);
@@ -7837,12 +7920,10 @@ YARZ.home = {
  </div>
  `).join('');
 
- // Today's summary
- const today = new Date(); today.setHours(0,0,0,0);
- const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
- const todayTx = state.data.transactions.filter(t=>t.date && t.date>=today && t.date<tomorrow);
- const todayAd = state.data.adTracker.filter(t=>t.date && t.date>=today && t.date<tomorrow);
- const todayExp = state.data.expenses.filter(t=>t.date && t.date>=today && t.date<tomorrow);
+ // Today's summary — ✅ PERFORMANCE: Use cached data
+ const todayTx = c.todayTx || [];
+ const todayAd = c.todayAd || [];
+ const todayExp = c.todayExp || [];
  // ✅ Include Return transactions — their negative revenue/cost properly reduces totals
  const todayRev = todayTx.reduce((s,t)=>s+(t.revenue||0),0);
  const todayCost= todayTx.reduce((s,t)=>s+(t.cost||0),0);
@@ -7910,36 +7991,8 @@ YARZ.home = {
 </tbody></table>
 ` : '<div class="empty-state">No sales data this month</div>';
 
- // Monthly Trend (last 6 months)
- const monthlyData = {};
- const allTx = state.data.transactions;
- const allAd = state.data.adTracker;
- const allExp = state.data.expenses;
-
- allTx.forEach(t => {
-   if (!t.date) return;
-   const d = new Date(t.date);
-   const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-   if (!monthlyData[key]) monthlyData[key] = { rev: 0, cost: 0, ad: 0, exp: 0 };
-   monthlyData[key].rev += Number(t.revenue) || 0;
-   monthlyData[key].cost += Number(t.cost) || 0;
- });
-
- allAd.forEach(t => {
-   if (!t.date) return;
-   const d = new Date(t.date);
-   const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-   if (!monthlyData[key]) monthlyData[key] = { rev: 0, cost: 0, ad: 0, exp: 0 };
-   monthlyData[key].ad += Number(t.amount) || 0;
- });
-
- allExp.forEach(t => {
-   if (!t.date) return;
-   const d = new Date(t.date);
-   const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-   if (!monthlyData[key]) monthlyData[key] = { rev: 0, cost: 0, ad: 0, exp: 0 };
-   monthlyData[key].exp += Number(t.amount) || 0;
- });
+ // Monthly Trend (last 6 months) — ✅ PERFORMANCE: Use pre-cached monthlyData
+ const monthlyData = c.monthlyData || {};
 
  const months = Object.keys(monthlyData).sort().reverse().slice(0, 6);
  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
