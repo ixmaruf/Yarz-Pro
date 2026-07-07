@@ -7201,29 +7201,43 @@ const YARZ = window.YARZ = {
  },
 
  // ----- Navigation -----
- goPage(page){
- state.currentPage = page;
- qsa('.page').forEach(el=>el.classList.remove('active'));
- const target = qs(`.page[data-page="${page}"]`);
- if(target) target.classList.add('active');
- qsa('.nav-item').forEach(n=>n.classList.remove('active'));
- qsa(`.nav-item[data-page="${page}"]`).forEach(n=>n.classList.add('active'));
- qsa('.bn-item').forEach(n=>n.classList.remove('active'));
- qsa(`.bn-item[data-page="${page}"]`).forEach(n=>n.classList.add('active'));
- const titles = {
- home: ['Dashboard','Today\'s overview'],
- inventory:['Inventory','Products no/not'],
- orders:['Orders','Orders which'],
- finance:['Finance','and/more '],
- reports:['Reports','Monthly Yearly'],
- preview:['Website preview','buyer '],
- settings:['Settings',' config']
- };
- const t = titles[page]||[page,''];
- $('topbar-title').textContent = t[0];
- $('topbar-sub').textContent = t[1];
- window.scrollTo({top:0,behavior:'smooth'});
- },
+  goPage(page){
+  state.currentPage = page;
+  qsa('.page').forEach(el=>el.classList.remove('active'));
+  const target = qs(`.page[data-page="${page}"]`);
+  if(target) target.classList.add('active');
+  qsa('.nav-item').forEach(n=>n.classList.remove('active'));
+  qsa(`.nav-item[data-page="${page}"]`).forEach(n=>n.classList.add('active'));
+  qsa('.bn-item').forEach(n=>n.classList.remove('active'));
+  qsa(`.bn-item[data-page="${page}"]`).forEach(n=>n.classList.add('active'));
+  const titles = {
+  home: ['Dashboard','Today\'s overview'],
+  inventory:['Inventory','Products no/not'],
+  orders:['Orders','Orders which'],
+  finance:['Finance','and/more '],
+  reports:['Reports','Monthly Yearly'],
+  preview:['Website preview','buyer '],
+  settings:['Settings',' config']
+  };
+  const t = titles[page]||[page,''];
+  $('topbar-title').textContent = t[0];
+  $('topbar-sub').textContent = t[1];
+  window.scrollTo({top:0,behavior:'smooth'});
+  // ✅ PERFORMANCE: Render the target page content on navigation
+  const renderers = {
+    home: () => this.home.render(),
+    inventory: () => this.inv.render(),
+    orders: () => this.ord.render(),
+    finance: () => this.finance.render(),
+    reports: () => this.rep.render(),
+    preview: () => this.preview.render(),
+    'web-control': () => this.webControl.render(),
+    settings: () => { this.settings.render(); try { this.settings._fillAdminIdentity(); } catch(e) {} }
+  };
+  if (renderers[page]) {
+    try { renderers[page](); } catch(e) { console.error('goPage render error:', e); }
+  }
+  },
 
  // ----- Theme (Default: Light CoachPro mint) -----
  toggleTheme(){
