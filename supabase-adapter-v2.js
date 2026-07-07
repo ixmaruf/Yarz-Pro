@@ -748,21 +748,47 @@
 
   async function saveReturnFromForm(p) {
     var db = getWriteDb(); await ensureAuth();
-    // FIX #29: Accept both short (GAS) and long (Supabase) field names
     var name = p.product || p.prod || ''; if (!name) throw new Error('product required');
     var qty = Number(p.qty) || 0;
     var size = (p.size || p.sz || '').toUpperCase();
+    var delLoss = Number(p.delLoss) || 0;
     var colMap = { S:"stk_s", M:"stk_m", L:"stk_l", XL:"stk_xl", XXL:"stk_xxl", "3XL":"stk_3xl" };
-    var soldMap = { S:"sold_s", M:"sold_m", L:"sold_l", XL:"sold_xl", XXL:"sold_xxl", "3XL":"sold_3xl" };
-    var stkCol = colMap[size], soldCol = soldMap[size];
+    var stkCol = colMap[size];
     if (stkCol) {
       await db.rpc("atomic_adjust_stock", {
         p_product: name, p_size: size, p_delta: qty, p_kind: "return"
       });
     }
+    // Look up the most recent sale for this product+size to reverse it
+    var lastSale = await db.from("transactions")
+      .select("revenue, cost, qty")
+      .eq("product", name)
+      .eq("type", "Sale")
+      .eq("size", size)
+      .order("date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    var saleRevPerUnit = 0, saleCostPerUnit = 0;
+    if (lastSale && lastSale.data) {
+      var saleQty = Number(lastSale.data.qty) || 1;
+      saleRevPerUnit = (Number(lastSale.data.revenue) || 0) / saleQty;
+      saleCostPerUnit = (Number(lastSale.data.cost) || 0) / saleQty;
+    } else {
+      // Fallback: look up from inventory table
+      var inv = await db.from("inventory").select("sale, cost").eq("product", name).maybeSingle();
+      if (inv && inv.data) {
+        saleRevPerUnit = Number(inv.data.sale) || 0;
+        saleCostPerUnit = Number(inv.data.cost) || 0;
+      }
+    }
+    // Return reverses the original sale; delivery loss adds as cost
+    var returnRevenue = -(saleRevPerUnit * qty);
+    var returnCost = -(saleCostPerUnit * qty) + delLoss;
+    // profit column is GENERATED (revenue - cost), so we don't set it
     await db.from("transactions").insert([{
       product: name, type: "Return", size: size, qty: qty,
-      revenue: Number(p.refund) || Number(p.delLoss) || 0
+      revenue: returnRevenue,
+      cost: returnCost
     }]);
     return ok({ msg: "Return recorded" });
   }

@@ -7691,16 +7691,15 @@ YARZ.home = {
 
   // Build the "This Month" stats array
   const tmRev = thisMonth ? (thisMonth.revenue_total || thisMonth.revenue || 0) : 0;
-  // Calculate this month's net profit from local data (revenue - ad spend - expenses - return losses)
+  // ✅ Calculate this month's net profit from ALL transactions (Returns have negative values that reduce totals)
   const thisMonthStart = new Date(); thisMonthStart.setDate(1); thisMonthStart.setHours(0,0,0,0);
   const tmTxAll = state.data.transactions.filter(t=>t.date && t.date>=thisMonthStart);
   const tmAdAll = state.data.adTracker.filter(t=>t.date && t.date>=thisMonthStart);
   const tmExpAll = state.data.expenses.filter(t=>t.date && t.date>=thisMonthStart);
-  const tmRevCalc = tmTxAll.filter(t=>t.type!=='Return').reduce((s,t)=>s+(Number(t.revenue)||0),0);
-  const tmCostCalc = tmTxAll.filter(t=>t.type!=='Return').reduce((s,t)=>s+(Number(t.cost)||0),0);
-  const tmReturnLoss = tmTxAll.filter(t=>t.type==='Return').reduce((s,t)=>s+(Number(t.revenue)||0)+(Number(t.delLoss)||0),0);
+  const tmRevCalc = tmTxAll.reduce((s,t)=>s+(Number(t.revenue)||0),0);
+  const tmCostCalc = tmTxAll.reduce((s,t)=>s+(Number(t.cost)||0),0);
   const tmSpendCalc = tmAdAll.reduce((s,t)=>s+(Number(t.amount)||0),0) + tmExpAll.reduce((s,t)=>s+(Number(t.amount)||0),0);
-  const tmNet = tmRevCalc - tmCostCalc - tmReturnLoss - tmSpendCalc;
+  const tmNet = tmRevCalc - tmCostCalc - tmSpendCalc;
   const lmRev = lastMonth ? (lastMonth.revenue_total || lastMonth.revenue || 0) : 0;
   const lmNet = lastMonth ? (lastMonth.net_profit || 0) : 0;
   const revChange = lmRev > 0
@@ -7730,8 +7729,9 @@ YARZ.home = {
  const todayTx = state.data.transactions.filter(t=>t.date && t.date>=today && t.date<tomorrow);
  const todayAd = state.data.adTracker.filter(t=>t.date && t.date>=today && t.date<tomorrow);
  const todayExp = state.data.expenses.filter(t=>t.date && t.date>=today && t.date<tomorrow);
- const todayRev = todayTx.filter(t=>t.type!=='Return').reduce((s,t)=>s+t.revenue,0);
- const todayCost= todayTx.filter(t=>t.type!=='Return').reduce((s,t)=>s+t.cost,0);
+ // ✅ Include Return transactions — their negative revenue/cost properly reduces totals
+ const todayRev = todayTx.reduce((s,t)=>s+(t.revenue||0),0);
+ const todayCost= todayTx.reduce((s,t)=>s+(t.cost||0),0);
  const todaySpend = todayAd.reduce((s,t)=>s+t.amount,0) + todayExp.reduce((s,t)=>s+t.amount,0);
  const todayProfit = todayRev-todayCost-todaySpend;
 
@@ -10650,14 +10650,13 @@ YARZ.rep = {
  
  // Most Profitable Products
 
- // Filter profitable products by date range
- const fTx = state.data.transactions.filter(t => this._inRange(t.date));
- const pNet = {};
- fTx.forEach(t => {
-   if(t.type !== 'Return') {
-     pNet[t.product] = (pNet[t.product]||0) + (t.revenue - t.cost);
-   }
- });
+  // Filter profitable products by date range
+  const fTx = state.data.transactions.filter(t => this._inRange(t.date));
+  const pNet = {};
+  fTx.forEach(t => {
+    // ✅ Include Returns — their negative revenue/cost properly reduces product profit
+    pNet[t.product] = (pNet[t.product]||0) + (Number(t.revenue)||0) - (Number(t.cost)||0);
+  });
  const topProfitable = state.data.inventory
    .map(p => ({ ...p, fNet: pNet[p.name] || 0 }))
    .filter(p => p.fNet > 0)
