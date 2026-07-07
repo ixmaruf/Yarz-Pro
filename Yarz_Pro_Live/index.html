@@ -1612,11 +1612,12 @@ body.dark .blob.b3{background:#3A2E1D}
  border: 1px solid rgba(255,255,255,0.6) !important;
  border-radius: var(--radius) !important;
  padding: 22px 14px !important;
- position: sticky; top:18px;
+ position: fixed; top:18px; left:18px;
  height: calc(100vh - 36px);
  box-shadow: var(--shadow);
  z-index:50;
  display:flex; flex-direction:column; gap:3px;
+ overflow-y: auto;
 }
 body.dark .sidebar{
  background: rgba(23,28,36,0.75) !important;
@@ -1715,6 +1716,7 @@ body.dark .sidebar .brand-icon:has(svg){ background: #0F1623 !important; }
  padding: 26px 30px !important;
  box-shadow: var(--shadow);
  overflow:hidden;
+ margin-left: 234px;
 }
 body.dark .main{
  background: rgba(23,28,36,0.75) !important;
@@ -1728,6 +1730,7 @@ body.dark .main{
  border:none;
  box-shadow:none;
  padding: 16px 14px 96px !important;
+ margin-left: 0 !important;
  }
 }
 
