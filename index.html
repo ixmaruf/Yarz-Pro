@@ -3390,26 +3390,72 @@ table tbody tr:hover{ background:var(--surface-2); }
    <div class="grid grid-3" id="today-summary"></div>
    </div>
 
-   <div class="section">
-   <div class="section-title"><h2><i class="ri-bar-chart-box-line" style="color:var(--accent)"></i> Product Performance</h2></div>
-   <div id="product-performance"></div>
+   <!-- Product Performance — Collapsible -->
+   <div class="card rep-card" style="padding:0;margin-bottom:12px" id="dash-card-perf">
+    <div class="rep-card-header" onclick="YARZ.home.toggleSection('perf')">
+     <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:10px;background:rgba(59,130,246,0.1);color:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0"><i class="ri-bar-chart-box-line"></i></div>
+      <div>
+       <h3 style="margin:0;font-size:14.5px;font-weight:700;letter-spacing:-0.01em">Product Performance</h3>
+       <span style="font-size:11px;color:var(--ink-3)">Top selling products</span>
+      </div>
+     </div>
+     <div class="rep-toggle"><i class="ri-arrow-down-s-line"></i></div>
+    </div>
+    <div class="rep-card-body" style="padding:0 20px 20px">
+     <div id="product-performance"></div>
+    </div>
    </div>
 
-   <div class="section">
-   <div class="section-title"><h2><i class="ri-calendar-line" style="color:var(--accent-2)"></i> Monthly Trend</h2></div>
-   <div id="monthly-trend"></div>
+   <!-- Monthly Trend — Collapsible -->
+   <div class="card rep-card" style="padding:0;margin-bottom:12px" id="dash-card-trend">
+    <div class="rep-card-header" onclick="YARZ.home.toggleSection('trend')">
+     <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:10px;background:rgba(139,92,246,0.1);color:#8b5cf6;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0"><i class="ri-calendar-line"></i></div>
+      <div>
+       <h3 style="margin:0;font-size:14.5px;font-weight:700;letter-spacing:-0.01em">Monthly Trend</h3>
+       <span style="font-size:11px;color:var(--ink-3)">Last 6 months overview</span>
+      </div>
+     </div>
+     <div class="rep-toggle"><i class="ri-arrow-down-s-line"></i></div>
+    </div>
+    <div class="rep-card-body" style="padding:0 20px 20px">
+     <div id="monthly-trend"></div>
+    </div>
    </div>
 
-   <!-- Revenue & Profit Chart -->
-   <div class="section">
-   <div class="section-title"><h2><i class="ri-bar-chart-grouped-line" style="color:var(--info)"></i> Revenue & Profit Trend</h2></div>
-   <div class="chart-wrap"><canvas id="dashboard-chart"></canvas></div>
+   <!-- Revenue & Profit Trend — Collapsible -->
+   <div class="card rep-card" style="padding:0;margin-bottom:12px" id="dash-card-rev">
+    <div class="rep-card-header" onclick="YARZ.home.toggleSection('rev')">
+     <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:10px;background:rgba(59,130,246,0.1);color:#3b82f6;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0"><i class="ri-bar-chart-grouped-line"></i></div>
+      <div>
+       <h3 style="margin:0;font-size:14.5px;font-weight:700;letter-spacing:-0.01em">Revenue & Profit Trend</h3>
+       <span style="font-size:11px;color:var(--ink-3)">Chart visualization</span>
+      </div>
+     </div>
+     <div class="rep-toggle"><i class="ri-arrow-down-s-line"></i></div>
+    </div>
+    <div class="rep-card-body" style="padding:0 20px 20px">
+     <div class="chart-wrap"><canvas id="dashboard-chart"></canvas></div>
+    </div>
    </div>
 
-   <!-- Cash Flow Widget -->
-   <div class="section">
-   <div class="section-title"><h2><i class="ri-bank-line" style="color:var(--accent-2)"></i> Cash Flow Overview</h2></div>
-   <div id="cashflow-widget"></div>
+   <!-- Cash Flow Overview — Collapsible -->
+   <div class="card rep-card" style="padding:0;margin-bottom:12px" id="dash-card-cash">
+    <div class="rep-card-header" onclick="YARZ.home.toggleSection('cash')">
+     <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:10px;background:rgba(139,92,246,0.1);color:#8b5cf6;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0"><i class="ri-bank-line"></i></div>
+      <div>
+       <h3 style="margin:0;font-size:14.5px;font-weight:700;letter-spacing:-0.01em">Cash Flow Overview</h3>
+       <span style="font-size:11px;color:var(--ink-3)">Inflows & outflows</span>
+      </div>
+     </div>
+     <div class="rep-toggle"><i class="ri-arrow-down-s-line"></i></div>
+    </div>
+    <div class="rep-card-body" style="padding:0 20px 20px">
+     <div id="cashflow-widget"></div>
+    </div>
    </div>
 
    <!-- ✅ v15.28: Website Visitor Analytics — live data from Supabase
@@ -7942,6 +7988,10 @@ _ls('yarz_settings', JSON.stringify(sav));
  ============ HOME MODULE ============
 ============================================================ */
 YARZ.home = {
+ toggleSection(id) {
+   const card = $('dash-card-' + id);
+   if(card) card.classList.toggle('collapsed');
+ },
  render(){
  const inv = state.data.inventory;
  const c = state.data._cache || {};
