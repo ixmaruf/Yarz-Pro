@@ -6799,33 +6799,9 @@ async function loadTransactions(){
  revenue: num(r[5]), cost: num(r[6]), profit: num(r[7])
  }));
  
- // Process Returns: Erase the matched Sale and neutralize the Return's negative numbers
- let sales = txs.filter(t => t.type === 'Sale');
- let returns = txs.filter(t => t.type === 'Return');
- 
- returns.forEach(ret => {
- let qToCancel = ret.qty;
- for (let i = sales.length - 1; i >= 0; i--) {
-  let s = sales[i];
-  if (qToCancel <= 0) break;
-  if (s.product === ret.product && s.size === ret.size && s.qty > 0 && s.date <= ret.date) {
-  let cancelQty = Math.min(qToCancel, s.qty);
-  let ratio = cancelQty / s.qty;
-  s.qty -= cancelQty;
-  s.revenue -= (s.revenue * ratio);
-  s.cost -= (s.cost * ratio);
-  s.profit -= (s.profit * ratio);
-  qToCancel -= cancelQty;
-  }
- }
- // Zero out the return so it doesn't show as negative on the Dashboard
- ret.revenue = 0;
- ret.cost = 0;
- ret.profit = 0;
- });
- 
- // Remove fully cancelled sales
- state.data.transactions = txs.filter(t => t.type !== 'Sale' || t.qty > 0);
+ // DB already stores correct Sale/Return values — pass through as-is
+ // Sale: positive revenue/cost; Return: negative revenue/cost; Del Loss: cost=-saleCost+delLoss
+ state.data.transactions = txs;
  } catch(e){ state.data.transactions = []; }
 }
 
