@@ -837,14 +837,16 @@
     var reason = p.reason || p.block_reason || "manual";
     var blockedBy = p.blocked_by || p.blockedBy || "admin";
     if (!deviceId) throw new Error("device_id required");
+    var ipsSeen = p.ips_seen || p.ipsSeen || p.ip || "";
+    var phonesSeen = p.phones_seen || p.phonesSeen || "";
     var r = await db.from("blocked_devices").upsert({
       device_id: deviceId,
       block_reason: reason,
       blocked_by: blockedBy,
       block_type: "hard",
       status: "active",
-      phones_seen: p.phones_seen || "",
-      ips_seen: p.ips_seen || ""
+      phones_seen: phonesSeen,
+      ips_seen: ipsSeen
     }, { onConflict: "device_id" }).select();
     if (r.error) throw new Error(r.error.message);
     return ok({ success: true, data: r.data });
