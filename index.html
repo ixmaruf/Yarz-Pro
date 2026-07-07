@@ -796,10 +796,10 @@ body.dark .modal-overlay{background:rgba(0,0,0,0.7)}
 .bar-label{font-size:10.5px;color:var(--ink-3);font-weight:500;text-align:center}
 
 /* Scrollbars */
-::-webkit-scrollbar{width:7px;height:7px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
-::-webkit-scrollbar-thumb:hover{background:var(--ink-4)}
+::-webkit-scrollbar{width:12px;height:12px}
+::-webkit-scrollbar-track{background:rgba(0,0,0,0.05);border-radius:999px}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.22);border-radius:999px}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,0.38)}
 
 /* Loading overlay */
 .load-overlay{
@@ -2852,11 +2852,16 @@ table thead th{
 table tbody tr{ transition:background-color .14s ease; }
 table tbody tr:hover{ background:var(--surface-2); }
 
-/* Custom scrollbar — subtle, modern (WebKit) */
-*::-webkit-scrollbar{ width:10px; height:10px; }
-*::-webkit-scrollbar-thumb{ background:var(--line-2); border-radius:999px; border:2px solid transparent; background-clip:content-box; }
-*::-webkit-scrollbar-thumb:hover{ background:var(--ink-4); background-clip:content-box; }
-*::-webkit-scrollbar-track{ background:transparent; }
+/* Custom scrollbar — bold, visible */
+*::-webkit-scrollbar{ width:12px; height:12px; }
+*::-webkit-scrollbar-track{ background:rgba(0,0,0,0.05); border-radius:999px; }
+*::-webkit-scrollbar-thumb{ background:rgba(0,0,0,0.22); border-radius:999px; border:3px solid transparent; background-clip:content-box; }
+*::-webkit-scrollbar-thumb:hover{ background:rgba(0,0,0,0.38); background-clip:content-box; }
+body.dark *::-webkit-scrollbar-track{ background:rgba(255,255,255,0.06); }
+body.dark *::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.2); }
+body.dark *::-webkit-scrollbar-thumb:hover{ background:rgba(255,255,255,0.35); }
+*{ scrollbar-width:thin; scrollbar-color:rgba(0,0,0,0.22) rgba(0,0,0,0.05); }
+body.dark *{ scrollbar-color:rgba(255,255,255,0.2) rgba(255,255,255,0.06); }
 
 /* Respect reduced-motion users */
 @media (prefers-reduced-motion: reduce){
