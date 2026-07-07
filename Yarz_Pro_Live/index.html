@@ -260,12 +260,10 @@ body.dark .sidebar{
 .main{
  flex:1;min-width:0;
  padding:24px 28px 100px;
- width: calc(100vw - 280px);
- max-width: 1200px;
- margin-left: auto;
- margin-right: auto;
- margin-top:18px;
- margin-bottom:18px;
+ max-width:100%;
+ margin-left: calc((100vw - 238px - 1200px) / 2 + 238px);
+ margin-right: calc((100vw - 238px - 1200px) / 2);
+ width: 1200px;
 }
 
 /* Topbar */
@@ -1721,10 +1719,6 @@ body.dark .sidebar .brand-icon:has(svg){ background: #0F1623 !important; }
  padding: 26px 30px !important;
  box-shadow: var(--shadow);
  overflow:hidden;
- width: calc(100vw - 280px);
- max-width: 1200px;
- margin-left: auto;
- margin-right: auto;
 }
 body.dark .main{
  background: rgba(23,28,36,0.75) !important;
