@@ -627,7 +627,7 @@
   }
 
   async function recordSale(p) {
-    var db = getDb();
+    var db = getWriteDb();
     var name = p.product; if (!name) throw new Error("product required");
     var size = (p.size || "").toUpperCase();
     var qty = Number(p.qty) || 0;
