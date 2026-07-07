@@ -1474,7 +1474,7 @@ body.light .load-overlay p{color:var(--ink)}
  .icon-btn{width:34px;height:34px;font-size:12px}
 }
 @media (min-width:1400px){
- .main{padding:28px 40px 40px;max-width:1500px;margin:0 auto;width:100%}
+ .main{padding:28px 40px 40px}
 }
 
 /* Utilities */
@@ -1721,6 +1721,10 @@ body.dark .sidebar .brand-icon:has(svg){ background: #0F1623 !important; }
  padding: 26px 30px !important;
  box-shadow: var(--shadow);
  overflow:hidden;
+ width: calc(100vw - 280px);
+ max-width: 1200px;
+ margin-left: auto;
+ margin-right: auto;
 }
 body.dark .main{
  background: rgba(23,28,36,0.75) !important;
