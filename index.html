@@ -199,7 +199,7 @@ body{
 .sidebar{
  width:232px;flex-shrink:0;
  padding:24px 16px;
- position:fixed;top:16px;left:16px;height:calc(100vh - 32px);
+ position:fixed !important;top:16px;left:16px;height:calc(100vh - 32px);
  border-radius:24px;
  display:flex;flex-direction:column;gap:4px;
  z-index:50;
@@ -1613,7 +1613,7 @@ body.dark .blob.b3{background:#3A2E1D}
  border: 1px solid rgba(255,255,255,0.6) !important;
  border-radius: var(--radius) !important;
  padding: 22px 14px !important;
- position: fixed; top:18px; left:18px;
+ position: fixed !important; top:18px; left:18px;
  height: calc(100vh - 36px);
  box-shadow: var(--shadow);
  z-index:50;
@@ -2399,7 +2399,7 @@ body.dark .notif-panel, body.dark .login-card, body.dark .modal{
 
 /* Glass highlight edge (top) */
 .card, .stat-card, .qa-card, .order-card, .preview-card, .list-item,
-.login-card, .modal, .sidebar, .main{
+.login-card, .modal{
  position:relative;
 }
 
