@@ -281,6 +281,31 @@ function analyzeTable(name,rows){
   return r;
 }
 
+// Date formatting helpers
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function fmtDate(d){
+  if(!d||typeof d!=='string')return d;
+  const m=d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m)return d;
+  return parseInt(m[3])+' '+MONTHS[parseInt(m[2])-1]+' '+m[1];
+}
+function fmtMonth(m){
+  if(!m||typeof m!=='string')return m;
+  const p=m.match(/^(\d{4})-(\d{2})$/);
+  if(!p)return m;
+  return MONTHS[parseInt(p[2])-1]+' '+p[1];
+}
+function fmtDateRange(a,b){
+  if(a&&b){
+    const pa=a.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const pb=b.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(pa&&pb&&pa[1]===pb[1]&&pa[2]===pb[2])return parseInt(pa[3])+'–'+parseInt(pb[3])+' '+MONTHS[parseInt(pa[2])-1]+' '+pa[1];
+    if(pa&&pb&&pa[1]===pb[1])return MONTHS[parseInt(pa[2])-1]+' '+parseInt(pa[3])+' – '+MONTHS[parseInt(pb[2])-1]+' '+parseInt(pb[3])+', '+pa[1];
+    return fmtDate(a)+' – '+fmtDate(b);
+  }
+  return fmtDate(a||b);
+}
+
 // Upload
 const ub=document.getElementById('uploadBox'),fi=document.getElementById('fileInput');
 ub.onclick=()=>fi.click();
@@ -306,7 +331,7 @@ function loadFile(f){
       document.getElementById('hTables').textContent=Object.keys(DATA).length;
       document.getElementById('hRows').textContent=total.toLocaleString();
       document.getElementById('hSize').textContent=(f.size/1024/1024).toFixed(1)+' MB';
-      document.getElementById('hDate').textContent=bdate||'—';
+      document.getElementById('hDate').textContent=bdate?fmtDate(bdate):'—';
       renderSide();
       toast('Loaded '+f.name,'ok');
     }catch(err){toast('Invalid JSON: '+err.message,'err')}
@@ -324,7 +349,7 @@ function renderSide(q=''){
     const c=gc(name);
     const li=document.createElement('li');
     li.className='ti';
-    li.innerHTML=`<div class="ti-left"><div class="ti-name">${name}</div><div class="ti-meta"><span class="ti-badge ${c}">${c==='perm'?'permanent':c}</span>${bdate?`<span class="ti-date">${bdate}</span>`:''}</div></div><span class="ti-count">${total.toLocaleString()}</span>`;
+    li.innerHTML=`<div class="ti-left"><div class="ti-name">${name}</div><div class="ti-meta"><span class="ti-badge ${c}">${c==='perm'?'permanent':c}</span>${bdate?`<span class="ti-date">${fmtDate(bdate)}</span>`:''}</div></div><span class="ti-count">${total.toLocaleString()}</span>`;
     li.onclick=()=>selectTable(name,li);
     list.appendChild(li);
   });
@@ -356,9 +381,9 @@ function renderInfo(name,info,cnt){
   const el=document.getElementById('tableInfo');
   const fmt=n=>{if(Math.abs(n)>=100000)return'BDT '+n.toLocaleString();return n.toLocaleString()};
   let h=`<div class="info-chip"><span class="ic-label">Rows</span><span class="ic-value">${cnt.toLocaleString()}</span></div>`;
-  if(info.min)h+=`<div class="info-chip green"><span class="ic-label">From</span><span class="ic-value">${info.min}</span></div>`;
-  if(info.max)h+=`<div class="info-chip green"><span class="ic-label">To</span><span class="ic-value">${info.max}</span></div>`;
-  if(info.months.length)h+=`<div class="info-chip blue"><span class="ic-label">Months</span><span class="ic-value">${info.months.length} (${info.months[0]} → ${info.months[info.months.length-1]})</span></div>`;
+  if(info.min)h+=`<div class="info-chip green"><span class="ic-label">From</span><span class="ic-value">${fmtDate(info.min)}</span></div>`;
+  if(info.max)h+=`<div class="info-chip green"><span class="ic-label">To</span><span class="ic-value">${fmtDate(info.max)}</span></div>`;
+  if(info.months.length)h+=`<div class="info-chip blue"><span class="ic-label">Months</span><span class="ic-value">${info.months.length} (${fmtMonth(info.months[0])}${info.months.length>1?' → '+fmtMonth(info.months[info.months.length-1]):''})</span></div>`;
   if(FIN_TABLES.has(name)&&info.totalAmt)h+=`<div class="info-chip amber"><span class="ic-label">Total Amount</span><span class="ic-value">${fmt(info.totalAmt)}</span></div>`;
   if(FIN_TABLES.has(name)&&info.totalCost)h+=`<div class="info-chip purple"><span class="ic-label">Total Cost</span><span class="ic-value">${fmt(info.totalCost)}</span></div>`;
   if(FIN_TABLES.has(name)&&info.totalProfit)h+=`<div class="info-chip green"><span class="ic-label">Total Profit</span><span class="ic-value">${fmt(info.totalProfit)}</span></div>`;
@@ -395,7 +420,7 @@ function fc(v){
   if(typeof v==='boolean')return`<span class="v-bool-${v}">${v}</span>`;
   if(typeof v==='number')return`<span class="v-num">${v.toLocaleString()}</span>`;
   if(typeof v==='string'){
-    if(/^\d{4}-\d{2}-\d{2}/.test(v))return`<span class="v-date">${esc(v.split('T')[0])}</span>`;
+    if(/^\d{4}-\d{2}-\d{2}/.test(v))return`<span class="v-date">${esc(fmtDate(v.split('T')[0]))}</span>`;
     if(/^\d+$/.test(v)&&v.length<10)return`<span class="v-num">${parseInt(v).toLocaleString()}</span>`;
     const s=String(v);return`<span class="v-text" title="${esc(s)}">${esc(s.length>60?s.substring(0,60)+'…':s)}</span>`;
   }
