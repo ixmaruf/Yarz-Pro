@@ -13949,62 +13949,64 @@ YARZ.settings = {
    }
   },
 
-  async downloadBackups(){
-   if(!confirm('Download all backups from R2 and clear storage?\n\nThis will:\n1. Download all backup files as JSON\n2. Clear R2 storage\n3. New backups will start accumulating from tonight')) return;
-   showLoader('Preparing backup download...');
-   try {
-    // Step 1: List all files
-    const listRes = await fetch(WORKER_URL + '/backup/list', {
-     headers: { 'Authorization': 'Bearer yarz-admin-2026' }
-    });
-    const listData = await listRes.json();
-    if(!listData.success) throw new Error(listData.error || 'Failed to list backups');
-    const files = listData.files || [];
-    if(!files.length){ toast('No backups to download', 'warn'); hideLoader(); return; }
-
-    // Step 2: Download each file
-    const allData = {};
-    for(const file of files){
-     const parts = file.key.split('/');
-     const table = parts[1] || parts[0];
-     const date = parts[2] || 'unknown';
-     const downloadRes = await fetch(WORKER_URL + '/backup/download?key=' + encodeURIComponent(file.key), {
+   async downloadBackups(){
+    if(!confirm('Download all backups as HTML file and clear R2?\n\nThis will:\n1. Download an HTML file you can open by double-click\n2. Clear R2 storage\n3. New backups start tonight')) return;
+    showLoader('Preparing backup download...');
+    try {
+     const listRes = await fetch(WORKER_URL + '/backup/list', {
       headers: { 'Authorization': 'Bearer yarz-admin-2026' }
      });
-     if(downloadRes.ok){
-      const jsonData = await downloadRes.json();
-      if(!allData[table]) allData[table] = [];
-      allData[table].push({ date, data: jsonData });
-     }
-    }
+     const listData = await listRes.json();
+     if(!listData.success) throw new Error(listData.error || 'Failed to list backups');
+     const files = listData.files || [];
+     if(!files.length){ toast('No backups to download', 'warn'); hideLoader(); return; }
 
-    // Step 3: Create and download ZIP-like JSON file
-    const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+     const allData = {};
+     for(const file of files){
+      const parts = file.key.split('/');
+      const table = parts[1] || parts[0];
+      const date = parts[2] || 'unknown';
+      const downloadRes = await fetch(WORKER_URL + '/backup/download?key=' + encodeURIComponent(file.key), {
+       headers: { 'Authorization': 'Bearer yarz-admin-2026' }
+      });
+      if(downloadRes.ok){
+       const jsonData = await downloadRes.json();
+       if(!allData[table]) allData[table] = [];
+       allData[table].push({ date, data: jsonData });
+      }
+     }
+
+     const viewerRes = await fetch('https://ixmaruf.github.io/Yarz-Pro/backup-viewer.html');
+     let viewerHtml = await viewerRes.text();
+     const jsonStr = JSON.stringify(allData, null, 2);
+     const injectScript = '<scr' + 'ipt>window.BACKUP_DATA=' + jsonStr + ';</scr' + 'ipt>';
+     viewerHtml = viewerHtml.replace('</body>', injectScript + '\n</body>');
+
+     const blob = new Blob([viewerHtml], { type: 'text/html' });
+     const url = URL.createObjectURL(blob);
+     const a = document.createElement('a');
+     a.href = url;
      const now = new Date();
      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
      const monthName = months[now.getMonth()];
      const year = now.getFullYear();
      const day = String(now.getDate()).padStart(2,'0');
-     a.download = `YARZ_Backup_${monthName}_${year}_${day}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+     a.download = 'YARZ_Backup_' + monthName + '_' + year + '_' + day + '.html';
+     a.click();
+     URL.revokeObjectURL(url);
 
-    // Step 4: Clear R2 storage
-    const clearRes = await fetch(WORKER_URL + '/backup/clear', {
-     method: 'POST',
-     headers: { 'Authorization': 'Bearer yarz-admin-2026' }
-    });
+     await fetch(WORKER_URL + '/backup/clear', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer yarz-admin-2026' }
+     });
 
-    toast('Backup downloaded and R2 cleared!', 'success');
-    const el = $('backup-status');
-    if(el) el.innerHTML = '<span style="color:var(--success)"><i class="ri-check-line"></i> Downloaded & cleared. New backups start tonight.</span>';
-   } catch(e){
-    toast('Download failed: ' + e.message, 'error');
-   } finally { hideLoader(); }
-  },
+     toast('HTML backup downloaded and R2 cleared!', 'success');
+     const el = $('backup-status');
+     if(el) el.innerHTML = '<span style="color:var(--success)"><i class="ri-check-line"></i> Downloaded & cleared. New backups start tonight.</span>';
+    } catch(e){
+     toast('Download failed: ' + e.message, 'error');
+    } finally { hideLoader(); }
+   },
 
   async testBackupNow(){
    showLoader('Running backup now...');
