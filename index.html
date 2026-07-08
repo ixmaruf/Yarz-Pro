@@ -8307,6 +8307,14 @@ YARZ.home = {
       alerts.push({type:'warn',icon:'ri-time-line',msg:`${toBn(pendingOrders.length)} pending order${pendingOrders.length>1?'s':''} awaiting processing`});
     }
 
+    // Monthly backup reminder — last day of month
+    const _now = new Date();
+    const _lastDay = new Date(_now.getFullYear(), _now.getMonth() + 1, 0).getDate();
+    if(_now.getDate() === _lastDay){
+      const _monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      alerts.push({type:'warn',icon:'ri-download-cloud-2-line',msg:`<strong>Monthly Backup Reminder!</strong> Today is the last day of ${_monthNames[_now.getMonth()]}. Go to <strong>Settings → Backup</strong> and click <strong>"Download & Clear"</strong> to save your backup.`});
+    }
+
     // Net loss warning
     const thisMonthStart = new Date(); thisMonthStart.setDate(1); thisMonthStart.setHours(0,0,0,0);
     const tmTx = tx.filter(t=>t.date && t.date>=thisMonthStart);
