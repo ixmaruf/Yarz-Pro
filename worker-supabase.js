@@ -1295,7 +1295,7 @@ async function supaQueryAll(env, table, limit = 10000) {
 }
 
 async function supaDelete(env, table, dateCol, op, cutoff) {
-  const filter = `?${dateCol}=${op}.${encodeURIComponent(cutoff)}`;
+  const filter = `?${dateCol}=${op}.${cutoff}`;
   const url = `${env.SUPABASE_URL}/rest/v1/${table}${filter}`;
   const resp = await fetch(url, {
     method: "DELETE",
@@ -1305,8 +1305,11 @@ async function supaDelete(env, table, dateCol, op, cutoff) {
       "Prefer": "return=minimal"
     }
   });
-  if (!resp.ok) throw new Error(`Supabase ${table} delete failed: ${resp.status}`);
-  return 0; // Supabase doesn't return count with Prefer=minimal
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => "");
+    throw new Error(`Supabase ${table} delete failed: ${resp.status} ${errText}`);
+  }
+  return 0;
 }
 
 async function r2Put(env, key, value) {
