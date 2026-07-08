@@ -1199,8 +1199,10 @@ const PERMANENT_BACKUP_TABLES = [
 
 async function runDailyBackup(env) {
   const now = new Date();
-  const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
-  const month = now.getMonth() + 1;
+  // Bangladesh time (UTC+6)
+  const bdNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+  const dateStr = bdNow.toISOString().slice(0, 10); // YYYY-MM-DD in BD time
+  const month = bdNow.getMonth() + 1;
   const results = [];
 
   // ---- Step 1: Backup rolling window tables ----
@@ -1254,14 +1256,17 @@ async function runDailyBackup(env) {
   for (const table of PERMANENT_BACKUP_TABLES) {
     try {
       const rows = await supaQueryAll(env, table);
-      if (!rows.length) { results.push({ table, action: "skip", reason: "no rows" }); continue; }
+      if (!rows.length) { results.push({ table: table, action: "skip", reason: "no rows" }); continue; }
       const key = `permanent/${table}/${dateStr}.json`;
       await r2Put(env, key, JSON.stringify(rows));
-      results.push({ table, action: "permanent-backup", rows: rows.length, key });
+      results.push({ table: table, action: "permanent-backup", rows: rows.length, key: key });
     } catch (e) {
-      results.push({ table, action: "error", msg: e.message });
+      results.push({ table: table, action: "error", msg: e.message });
     }
   }
+
+  // NOTE: R2 cleanup removed — all rolling backups kept forever in R2 (free tier 10GB, ~100MB used)
+  // User can download & clear manually from admin panel anytime
 
   console.log("[BACKUP]", dateStr, JSON.stringify(results));
   return results;
