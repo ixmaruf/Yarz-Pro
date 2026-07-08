@@ -14145,8 +14145,8 @@ document.getElementById('hTables').textContent=Object.keys(DATA).length;
 document.getElementById('hRows').textContent=total.toLocaleString();
 document.getElementById('hSize').textContent='${(jsonStr.length/1024/1024).toFixed(1)} MB';
 renderSide();
-</script>
-<script type="application/json" id="backupData">${jsonStr}</script>
+<\/script>
+<script type="application/json" id="backupData">${jsonStr}<\/script>
 </body>
 </html>`;
     const blob = new Blob([htmlContent], { type: 'text/html' });
