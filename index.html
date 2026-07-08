@@ -13917,9 +13917,9 @@ YARZ.settings = {
     this._setPinMsg('❌ ' + (e.message || 'Failed to remove PIN'), 'error');
     toast(e.message || 'Failed to remove PIN', 'error');
    } finally { hideLoader(); }
-   }
+    },
 
-  // ---- Backup Management ----
+   // ---- Backup Management ----
   async listBackups(){
    const el = $('backup-status');
    if(el) el.innerHTML = '<i class="ri-loader-4-line"></i> Checking backups...';
