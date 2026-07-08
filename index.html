@@ -11454,6 +11454,8 @@ YARZ.rep = {
     if(YARZ.rep._fpTo) YARZ.rep._fpTo.clear();
     this.filter.from = null;
     this.filter.to = null;
+    this._showAll_monthly-table = false;
+    this._showAll_yearly-table = false;
     this.render();
   },
 
@@ -11706,37 +11708,42 @@ YARZ.rep = {
  },
 
  _renderTable(elId, data, kind){
- const el = $(elId);
- if(!data.length){ el.innerHTML=''; return; }
- const rev = data.slice().reverse();
- el.innerHTML = `
- <div style="overflow-x:auto">
-  <table style="width:100%;font-size:12px;border-collapse:collapse">
-  <thead><tr style="background:rgba(255,255,255,0.04);text-align:left">
-  <th style="padding:8px">${kind==='monthly'?'':''}</th>
-  <th style="padding:8px">Orders</th>
-  <th style="padding:8px">Revenue</th>
-  <th style="padding:8px">Cost</th>
-  <th style="padding:8px">Ad</th>
-  <th style="padding:8px">Exp</th>
-  <th style="padding:8px">Net</th>
-  <th style="padding:8px">Margin</th>
-  </tr></thead>
-  <tbody>
-  ${rev.map(d=>`<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
-   <td style="padding:8px"><b>${kind==='monthly'?fmtBnMonth(d.key):toBn(d.key)}</b></td>
-   <td style="padding:8px">${toBn(d.orders)}</td>
-   <td style="padding:8px;color:#60A5FA">${fmtBDT(d.rev)}</td>
-   <td style="padding:8px">${fmtBDT(d.cost)}</td>
-   <td style="padding:8px;color:#A78BFA">${fmtBDT(d.ad)}</td>
-   <td style="padding:8px;color:#F87171">${fmtBDT(d.exp)}</td>
-   <td style="padding:8px;color:${d.net>=0?'#34D399':'#F87171'};font-weight:700">${fmtBDT(d.net)}</td>
-   <td style="padding:8px">${toBn(d.margin)}%</td>
-  </tr>`).join('')}
-  </tbody>
-  </table>
- </div>
- `;
+  const el = $(elId);
+  if(!data.length){ el.innerHTML=''; return; }
+  const rev = data.slice().reverse();
+  const showAll = this['_showAll_' + elId] || false;
+  const limited = showAll ? rev : rev.slice(0, 24);
+  const hasMore = rev.length > 24;
+  el.innerHTML = `
+  <div style="overflow-x:auto">
+   ${hasMore && !showAll ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin-bottom:6px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:11px;color:var(--ink-3)"><span>Showing latest 24 of ${toBn(rev.length)} months</span><button onclick="YARZ.rep['_showAll_${elId}']=true;YARZ.rep.render()" style="background:var(--brand);color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:10.5px;cursor:pointer;font-weight:600">Show All</button></div>` : ''}
+   ${showAll && hasMore ? `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;margin-bottom:6px;background:rgba(255,255,255,0.03);border-radius:8px;font-size:11px;color:var(--ink-3)"><span>Showing all ${toBn(rev.length)} months</span><button onclick="YARZ.rep['_showAll_${elId}']=false;YARZ.rep.render()" style="background:var(--brand);color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:10.5px;cursor:pointer;font-weight:600">Show Latest 24</button></div>` : ''}
+   <table style="width:100%;font-size:12px;border-collapse:collapse">
+   <thead><tr style="background:rgba(255,255,255,0.04);text-align:left">
+   <th style="padding:8px">${kind==='monthly'?'':''}</th>
+   <th style="padding:8px">Orders</th>
+   <th style="padding:8px">Revenue</th>
+   <th style="padding:8px">Cost</th>
+   <th style="padding:8px">Ad</th>
+   <th style="padding:8px">Exp</th>
+   <th style="padding:8px">Net</th>
+   <th style="padding:8px">Margin</th>
+   </tr></thead>
+   <tbody>
+   ${limited.map(d=>`<tr style="border-bottom:1px solid rgba(255,255,255,0.05)">
+    <td style="padding:8px"><b>${kind==='monthly'?fmtBnMonth(d.key):toBn(d.key)}</b></td>
+    <td style="padding:8px">${toBn(d.orders)}</td>
+    <td style="padding:8px;color:#60A5FA">${fmtBDT(d.rev)}</td>
+    <td style="padding:8px">${fmtBDT(d.cost)}</td>
+    <td style="padding:8px;color:#A78BFA">${fmtBDT(d.ad)}</td>
+    <td style="padding:8px;color:#F87171">${fmtBDT(d.exp)}</td>
+    <td style="padding:8px;color:${d.net>=0?'#34D399':'#F87171'};font-weight:700">${fmtBDT(d.net)}</td>
+    <td style="padding:8px">${toBn(d.margin)}%</td>
+   </tr>`).join('')}
+   </tbody>
+   </table>
+  </div>
+  `;
  },
 
  async generate(kind){
