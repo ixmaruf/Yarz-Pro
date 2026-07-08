@@ -352,7 +352,7 @@ function selectTable(name,li){
   renderTable();
 }
 
-function renderInfo(name,rows,cnt){
+function renderInfo(name,info,cnt){
   const el=document.getElementById('tableInfo');
   const fmt=n=>{if(Math.abs(n)>=100000)return'BDT '+n.toLocaleString();return n.toLocaleString()};
   let h=`<div class="info-chip"><span class="ic-label">Rows</span><span class="ic-value">${cnt.toLocaleString()}</span></div>`;
