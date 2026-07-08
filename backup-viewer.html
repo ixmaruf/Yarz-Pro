@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YARZ Backup Viewer & Restore</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f1117;color:#e1e4e8;min-height:100vh}
+.header{background:#161b22;border-bottom:1px solid #30363d;padding:16px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+.header h1{font-size:20px;color:#58a6ff}
+.header .subtitle{color:#8b949e;font-size:13px}
+.upload-zone{border:2px dashed #30363d;border-radius:12px;padding:60px;text-align:center;margin:40px;cursor:pointer;transition:all .2s}
+.upload-zone:hover{border-color:#58a6ff;background:rgba(88,166,255,.05)}
+.upload-zone h2{color:#e1e4e8;margin-bottom:8px}
+.upload-zone p{color:#8b949e;font-size:14px}
+.upload-zone input{display:none}
+.layout{display:none;height:calc(100vh - 60px)}
+.sidebar{width:260px;background:#161b22;border-right:1px solid #30363d;overflow-y:auto;flex-shrink:0}
+.sidebar h3{padding:12px 16px;color:#8b949e;font-size:12px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #30363d}
+.table-list{list-style:none}
+.table-list li{padding:10px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #21262d;transition:background .15s}
+.table-list li:hover{background:#1c2128}
+.table-list li.active{background:#1f6feb22;border-left:3px solid #58a6ff}
+.table-list .tname{font-size:14px;color:#e1e4e8}
+.table-list .tcount{background:#30363d;color:#8b949e;padding:2px 8px;border-radius:10px;font-size:11px}
+.table-list .taction{font-size:10px;color:#8b949e;margin-top:2px}
+.main{flex:1;overflow:auto;padding:0}
+.main-header{padding:16px 24px;border-bottom:1px solid #30363d;background:#161b22;position:sticky;top:0;z-index:10}
+.main-header h2{font-size:18px;color:#e1e4e8;margin-bottom:8px}
+.search-box{width:100%;padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e1e4e8;font-size:14px;outline:none}
+.search-box:focus{border-color:#58a6ff}
+.table-wrapper{overflow-x:auto;padding:0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#161b22;color:#8b949e;padding:10px 12px;text-align:left;border-bottom:2px solid #30363d;position:sticky;top:0;cursor:pointer;white-space:nowrap;user-select:none}
+th:hover{color:#e1e4e8}
+th.sorted-asc::after{content:' ▲';color:#58a6ff}
+th.sorted-desc::after{content:' ▼';color:#58a6ff}
+td{padding:8px 12px;border-bottom:1px solid #21262d;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tr:hover{background:#1c2128}
+.btn{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s}
+.btn-primary{background:#238636;color:#fff}
+.btn-primary:hover{background:#2ea043}
+.btn-danger{background:#da3633;color:#fff}
+.btn-danger:hover{background:#f85149}
+.btn-outline{background:transparent;border:1px solid #30363d;color:#e1e4e8}
+.btn-outline:hover{background:#1c2128;border-color:#58a6ff}
+.actions{display:flex;gap:8px;padding:12px 24px;background:#161b22;border-bottom:1px solid #30363d;flex-wrap:wrap;align-items:center}
+.stats{color:#8b949e;font-size:13px;margin-left:auto}
+.restore-panel{display:none;padding:16px 24px;background:#1c2128;border-bottom:1px solid #30363d}
+.restore-panel label{display:flex;align-items:center;gap:8px;padding:6px 0;color:#e1e4e8;font-size:14px;cursor:pointer}
+.restore-panel input[type=checkbox]{width:16px;height:16px}
+.progress{display:none;padding:16px 24px;background:#161b22;border-bottom:1px solid #30363d}
+.progress-bar{height:6px;background:#30363d;border-radius:3px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:#238636;transition:width .3s;width:0}
+.progress-text{color:#8b949e;font-size:13px}
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;color:#fff;font-size:14px;z-index:1000;animation:slideIn .3s ease;max-width:400px}
+.toast-success{background:#238636}
+.toast-error{background:#da3633}
+.toast-info{background:#1f6feb}
+@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.empty{padding:60px;text-align:center;color:#8b949e}
+.badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px}
+.badge-rolling{background:#1f6feb33;color:#58a6ff}
+.badge-permanent{background:#23863633;color:#3fb950}
+.badge-cleanup{background:#da363333;color:#f85149}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;justify-content:center;align-items:center}
+.modal{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto}
+.modal h3{margin-bottom:16px;color:#e1e4e8}
+.modal p{color:#8b949e;margin-bottom:16px;font-size:14px}
+.modal .field{margin-bottom:12px}
+.modal .field label{display:block;color:#8b949e;font-size:12px;margin-bottom:4px}
+.modal .field input{width:100%;padding:8px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e1e4e8;font-size:14px}
+.modal .btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.cell-json{font-family:'SF Mono',Consolas,monospace;font-size:11px;color:#79c0ff;max-width:400px}
+.cell-id{color:#d2a8ff;font-family:monospace}
+.cell-date{color:#7ee787;font-family:monospace}
+.cell-num{color:#f0883e;text-align:right;font-family:monospace}
+.cell-bool-true{color:#3fb950}
+.cell-bool-false{color:#f85149}
+.cell-null{color:#484f58;font-style:italic}
+.cell-text{color:#e1e4e8}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>YARZ Backup Viewer & Restore</h1>
+    <div class="subtitle">Open your backup JSON file to view, search, and restore data</div>
+  </div>
+</div>
+
+<div class="upload-zone" id="uploadZone">
+  <h2>Drop your backup JSON file here</h2>
+  <p>or click to browse — supports yarz-backup-*.json files</p>
+  <input type="file" id="fileInput" accept=".json">
+</div>
+
+<div class="layout" id="layout">
+  <div class="sidebar">
+    <h3>Tables (<span id="tableCount">0</span>)</h3>
+    <ul class="table-list" id="tableList"></ul>
+  </div>
+  <div class="main">
+    <div class="main-header">
+      <h2 id="tableName">Select a table</h2>
+      <input type="text" class="search-box" id="searchBox" placeholder="Search rows...">
+    </div>
+    <div class="actions" id="actionsBar">
+      <button class="btn btn-primary" id="btnRestoreAll" onclick="restoreAll()">Restore All to Supabase</button>
+      <button class="btn btn-outline" id="btnRestoreTable" onclick="restoreTable()">Restore This Table</button>
+      <button class="btn btn-outline" onclick="exportCSV()">Export CSV</button>
+      <button class="btn btn-outline" onclick="exportTableJSON()">Export Table JSON</button>
+      <div class="stats" id="statsInfo"></div>
+    </div>
+    <div class="restore-panel" id="restorePanel">
+      <h3 style="margin-bottom:12px;color:#e1e4e8">Restore Configuration</h3>
+      <div class="field">
+        <label>Supabase Project URL</label>
+        <input type="text" id="supaUrl" placeholder="https://xxxxx.supabase.co" value="https://xdzduowhwubogaavraap.supabase.co">
+      </div>
+      <div class="field">
+        <label>Supabase Service Role Key</label>
+        <input type="password" id="supaKey" placeholder="eyJ... (service_role key)">
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="confirmRestore()">Confirm Restore</button>
+        <button class="btn btn-outline" onclick="cancelRestore()">Cancel</button>
+      </div>
+    </div>
+    <div class="progress" id="progressPanel">
+      <div class="progress-text" id="progressText">Preparing...</div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="table-wrapper" id="tableWrapper">
+      <table id="dataTable"><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table>
+    </div>
+    <div class="empty" id="emptyState">
+      <h3>No data loaded</h3>
+      <p>Drop a backup JSON file to get started</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<script>
+let backupData = {};
+let currentTable = '';
+let currentRows = [];
+let sortCol = -1;
+let sortDir = 1;
+let restoreMode = '';
+
+// File upload
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = '#58a6ff'; });
+uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = '#30363d'; });
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.style.borderColor = '#30363d';
+  const file = e.dataTransfer.files[0];
+  if (file) loadFile(file);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      backupData = JSON.parse(e.target.result);
+      renderSidebar();
+      uploadZone.style.display = 'none';
+      document.getElementById('layout').style.display = 'flex';
+      toast(`Loaded: ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`, 'success');
+    } catch (err) {
+      toast('Invalid JSON file: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function renderSidebar() {
+  const list = document.getElementById('tableList');
+  list.innerHTML = '';
+  const tables = Object.keys(backupData);
+  document.getElementById('tableCount').textContent = tables.length;
+  tables.forEach(name => {
+    const entries = backupData[name];
+    let totalRows = 0;
+    if (Array.isArray(entries)) {
+      entries.forEach(entry => {
+        if (entry && entry.data && Array.isArray(entry.data.data)) {
+          totalRows += entry.data.data.length;
+        }
+      });
+    }
+    const li = document.createElement('li');
+    li.innerHTML = `<div><div class="tname">${name}</div><div class="taction">${getCategory(name)}</div></div><span class="tcount">${totalRows}</span>`;
+    li.onclick = () => selectTable(name, li);
+    list.appendChild(li);
+  });
+  // Auto-select first table
+  if (tables.length > 0) {
+    selectTable(tables[0], list.children[0]);
+  }
+}
+
+function getCategory(name) {
+  const rolling = ['orders','website_orders','transactions','customers','expenses','ad_tracker','delivery_charges'];
+  const permanent = ['inventory','settings','blocked_devices','admin_users','device_fingerprints','device_models','_draft_data','_archive_data'];
+  if (rolling.includes(name)) return '<span class="badge badge-rolling">ROLLING</span>';
+  if (permanent.includes(name)) return '<span class="badge badge-permanent">PERMANENT</span>';
+  return '<span class="badge badge-cleanup">CLEANUP</span>';
+}
+
+function selectTable(name, li) {
+  currentTable = name;
+  document.querySelectorAll('.table-list li').forEach(l => l.classList.remove('active'));
+  if (li) li.classList.add('active');
+  document.getElementById('tableName').textContent = name;
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('tableWrapper').style.display = 'block';
+  
+  // Extract rows
+  currentRows = [];
+  const entries = backupData[name];
+  if (Array.isArray(entries)) {
+    entries.forEach(entry => {
+      if (entry && entry.data && Array.isArray(entry.data.data)) {
+        currentRows = currentRows.concat(entry.data.data);
+      }
+    });
+  }
+  document.getElementById('statsInfo').textContent = `${currentRows.length} rows`;
+  sortCol = -1;
+  sortDir = 1;
+  renderTable(currentRows);
+}
+
+function renderTable(rows) {
+  if (!rows.length) {
+    document.getElementById('tableHead').innerHTML = '';
+    document.getElementById('tableBody').innerHTML = '<tr><td class="empty" style="padding:40px;text-align:center;color:#8b949e">No data in this table</td></tr>';
+    return;
+  }
+  // Get all unique keys
+  const keys = new Set();
+  rows.forEach(r => Object.keys(r).forEach(k => keys.add(k)));
+  const cols = Array.from(keys);
+  
+  // Header
+  document.getElementById('tableHead').innerHTML = '<tr>' + cols.map((c,i) => 
+    `<th onclick="sortTable(${i})" class="${sortCol===i?(sortDir===1?'sorted-asc':'sorted-desc'):''}">${esc(c)}</th>`
+  ).join('') + '</tr>';
+  
+  // Body (limit to 500 rows for performance)
+  const displayRows = rows.slice(0, 500);
+  document.getElementById('tableBody').innerHTML = displayRows.map(r => 
+    '<tr>' + cols.map(c => `<td>${formatCell(r[c])}</td>`).join('') + '</tr>'
+  ).join('');
+  
+  if (rows.length > 500) {
+    document.getElementById('tableBody').innerHTML += `<tr><td colspan="${cols.length}" style="text-align:center;color:#8b949e;padding:16px">Showing 500 of ${rows.length} rows. Use search to filter.</td></tr>`;
+  }
+}
+
+function formatCell(val) {
+  if (val === null || val === undefined) return '<span class="cell-null">null</span>';
+  if (typeof val === 'boolean') return `<span class="cell-bool-${val}">${val}</span>`;
+  if (typeof val === 'number') return `<span class="cell-num">${val}</span>`;
+  if (typeof val === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}/.test(val)) return `<span class="cell-date">${esc(val)}</span>`;
+    if (/^\d+$/.test(val) && val.length < 10) return `<span class="cell-num">${val}</span>`;
+    const str = String(val);
+    if (str.length > 100) return `<span class="cell-text" title="${esc(str)}">${esc(str.substring(0,100))}...</span>`;
+    return `<span class="cell-text">${esc(str)}</span>`;
+  }
+  // Objects/arrays
+  const s = JSON.stringify(val);
+  if (s.length > 200) return `<span class="cell-json" title="${esc(s)}">${esc(s.substring(0,200))}...</span>`;
+  return `<span class="cell-json">${esc(s)}</span>`;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function sortTable(col) {
+  const keys = Object.keys(currentRows[0] || {});
+  const key = keys[col];
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+  currentRows.sort((a, b) => {
+    let va = a[key], vb = b[key];
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * sortDir;
+    return String(va).localeCompare(String(vb)) * sortDir;
+  });
+  renderTable(currentRows);
+}
+
+// Search
+document.getElementById('searchBox').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  if (!q) { renderTable(currentRows); return; }
+  const filtered = currentRows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
+  renderTable(filtered);
+  document.getElementById('statsInfo').textContent = `${filtered.length} / ${currentRows.length} rows`;
+});
+
+// Export CSV
+function exportCSV() {
+  if (!currentRows.length) return;
+  const keys = Object.keys(currentRows[0]);
+  const csv = [keys.join(',')].concat(currentRows.map(r => keys.map(k => {
+    let v = r[k];
+    if (v == null) return '';
+    v = String(v).replace(/"/g, '""');
+    if (v.includes(',') || v.includes('"') || v.includes('\n')) v = '"' + v + '"';
+    return v;
+  }).join(','))).join('\n');
+  download(csv, `${currentTable}.csv`, 'text/csv');
+  toast(`Exported ${currentTable}.csv`, 'success');
+}
+
+function exportTableJSON() {
+  download(JSON.stringify(currentRows, null, 2), `${currentTable}.json`, 'application/json');
+  toast(`Exported ${currentTable}.json`, 'success');
+}
+
+function download(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Restore
+function restoreAll() {
+  restoreMode = 'all';
+  document.getElementById('restorePanel').style.display = 'block';
+  document.getElementById('restorePanel').querySelector('h3').textContent = 'Restore ALL tables to Supabase';
+}
+
+function restoreTable() {
+  restoreMode = 'single';
+  document.getElementById('restorePanel').style.display = 'block';
+  document.getElementById('restorePanel').querySelector('h3').textContent = `Restore "${currentTable}" to Supabase`;
+}
+
+function cancelRestore() {
+  document.getElementById('restorePanel').style.display = 'none';
+}
+
+async function confirmRestore() {
+  const url = document.getElementById('supaUrl').value.trim();
+  const key = document.getElementById('supaKey').value.trim();
+  if (!url || !key) { toast('Fill in Supabase URL and Service Role Key', 'error'); return; }
+  
+  document.getElementById('restorePanel').style.display = 'none';
+  document.getElementById('progressPanel').style.display = 'block';
+  
+  const tables = restoreMode === 'all' ? Object.keys(backupData) : [currentTable];
+  let done = 0;
+  let errors = 0;
+  
+  for (const table of tables) {
+    document.getElementById('progressText').textContent = `Restoring ${table}... (${done+1}/${tables.length})`;
+    document.getElementById('progressFill').style.width = `${(done/tables.length)*100}%`;
+    
+    try {
+      const entries = backupData[table];
+      let allRows = [];
+      if (Array.isArray(entries)) {
+        entries.forEach(entry => {
+          if (entry && entry.data && Array.isArray(entry.data.data)) {
+            allRows = allRows.concat(entry.data.data);
+          }
+        });
+      }
+      if (allRows.length === 0) { done++; continue; }
+      
+      // Batch insert (500 rows at a time)
+      for (let i = 0; i < allRows.length; i += 500) {
+        const batch = allRows.slice(i, i + 500);
+        // Remove generated columns that Supabase auto-calculates
+        const cleaned = batch.map(r => {
+          const c = Object.assign({}, r);
+          delete c.id; // let Supabase auto-generate
+          delete c.profit; // generated column
+          delete c.tot_sold; delete c.tot_stock; delete c.remaining; // inventory generated
+          return c;
+        });
+        
+        const resp = await fetch(`${url}/rest/v1/${table}`, {
+          method: 'POST',
+          headers: {
+            'apikey': key,
+            'Authorization': `Bearer ${key}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify(cleaned)
+        });
+        
+        if (!resp.ok) {
+          const err = await resp.text();
+          console.error(`[${table}] batch ${i}:`, err);
+          errors++;
+        }
+      }
+    } catch (e) {
+      console.error(`[${table}] error:`, e.message);
+      errors++;
+    }
+    done++;
+  }
+  
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressText').textContent = `Done! ${done} tables processed, ${errors} errors.`;
+  toast(`Restore complete! ${done} tables, ${errors} errors.`, errors > 0 ? 'error' : 'success');
+  
+  setTimeout(() => { document.getElementById('progressPanel').style.display = 'none'; }, 5000);
+}
+
+function toast(msg, type) {
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+</script>
+</body>
+</html>
