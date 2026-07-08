@@ -13979,20 +13979,7 @@ YARZ.settings = {
      const viewerRes = await fetch('https://ixmaruf.github.io/Yarz-Pro/backup-viewer.html');
      let viewerHtml = await viewerRes.text();
      const jsonStr = JSON.stringify(allData, null, 2);
-     const autoLoad = 'document.addEventListener("DOMContentLoaded",function(){' +
-       'if(window.BACKUP_DATA&&Object.keys(window.BACKUP_DATA).length>0){' +
-       'DATA=window.BACKUP_DATA;' +
-       'document.getElementById("uploadWrap").style.display="none";' +
-       'document.getElementById("layout").style.display="flex";' +
-       'document.getElementById("hRight").style.display="flex";' +
-       'var total=0,bdate="";' +
-       'Object.keys(DATA).forEach(function(t){var e=DATA[t];if(Array.isArray(e))e.forEach(function(en){if(en&&en.data&&Array.isArray(en.data.data))total+=en.data.data.length;if(en&&en.date)bdate=en.date})});' +
-       'document.getElementById("hTables").textContent=Object.keys(DATA).length;' +
-       'document.getElementById("hRows").textContent=total.toLocaleString();' +
-       'document.getElementById("hSize").textContent=(new Blob([JSON.stringify(DATA)]).size/1024/1024).toFixed(1)+" MB";' +
-       'document.getElementById("hDate").textContent=bdate?fmtDate(bdate):"—";' +
-       'renderSide();' +
-       '}});';
+     const autoLoad = 'function __autoLoad(){if(window.BACKUP_DATA&&Object.keys(window.BACKUP_DATA).length>0){DATA=window.BACKUP_DATA;document.getElementById("uploadWrap").style.display="none";document.getElementById("layout").style.display="flex";document.getElementById("hRight").style.display="flex";var total=0,bdate="";Object.keys(DATA).forEach(function(t){var e=DATA[t];if(Array.isArray(e))e.forEach(function(en){if(en&&en.data&&Array.isArray(en.data.data))total+=en.data.data.length;if(en&&en.date)bdate=en.date})});document.getElementById("hTables").textContent=Object.keys(DATA).length;document.getElementById("hRows").textContent=total.toLocaleString();document.getElementById("hSize").textContent=(new Blob([JSON.stringify(DATA)]).size/1024/1024).toFixed(1)+" MB";document.getElementById("hDate").textContent=bdate?fmtDate(bdate):"—";renderSide();}}if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",__autoLoad)}else{__autoLoad()}';
      const injectScript = '<scr' + 'ipt>window.BACKUP_DATA=' + jsonStr + ';</scr' + 'ipt>\n<scr' + 'ipt>' + autoLoad + '</scr' + 'ipt>';
      viewerHtml = viewerHtml.replace('</body>', injectScript + '\n</body>');
 
