@@ -13983,7 +13983,12 @@ YARZ.settings = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `yarz-backup-${new Date().toISOString().slice(0,10)}.json`;
+     const now = new Date();
+     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+     const monthName = months[now.getMonth()];
+     const year = now.getFullYear();
+     const day = String(now.getDate()).padStart(2,'0');
+     a.download = `YARZ_Backup_${monthName}_${year}_${day}.json`;
     a.click();
     URL.revokeObjectURL(url);
 
