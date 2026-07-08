@@ -1117,6 +1117,233 @@ async function handleTelegramWebhook(request, env) {
 }
 
 // ----------------------- ENTRY -----------------------
+// ---- R2 BACKUP SYSTEM ----
+// Rolling window backup + cleanup for Supabase tables
+// CRON: runs daily at midnight UTC via wrangler cron trigger
+// Storage: Cloudflare R2 bucket (yarz-backups)
+// -------------------------------------------------------
+
+const BACKUP_TABLES = {
+  // Rolling window: backup THEN delete old rows
+  orders:           { days: 60,  dateCol: "created_at" },
+  website_orders:   { days: 60,  dateCol: "created_at" },
+  transactions:     { days: 60,  dateCol: "created_at" },
+  customers:        { days: 180, dateCol: "created_at" },
+  expenses:         { days: 180, dateCol: "created_at" },
+  ad_tracker:       { days: 180, dateCol: "created_at" },
+  delivery_charges: { days: 365, dateCol: null }, // yearly full backup only
+};
+
+const CLEANUP_TABLES = {
+  // Cleanup only (no backup needed)
+  admin_sessions:       { days: 10,  dateCol: "created_at" },
+  admin_login_attempts: { days: 10,  dateCol: "created_at" },
+  rate_limit_log:       { days: 10,  dateCol: "created_at" },
+  audit_log:            { days: 10,  dateCol: "created_at" },
+  _activity:            { days: 10,  dateCol: "created_at" },
+  steadfast_balance_cache: { days: 7, dateCol: "updated_at" },
+  steadfast_consignments:  { days: 90, dateCol: "created_at" },
+};
+
+// Yearly backup (January only) — never delete
+const YEARLY_TABLES = ["inventory", "delivery_charges"];
+
+async function runDailyBackup(env) {
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
+  const month = now.getMonth() + 1;
+  const results = [];
+
+  // ---- Step 1: Backup rolling window tables ----
+  for (const [table, cfg] of Object.entries(BACKUP_TABLES)) {
+    try {
+      const rows = await supaQueryAll(env, table);
+      if (!rows.length) { results.push({ table, action: "skip", reason: "no rows" }); continue; }
+
+      // Upload to R2
+      const key = `rolling/${table}/${dateStr}.json`;
+      await r2Put(env, key, JSON.stringify(rows));
+
+      // Delete rows older than window
+      if (cfg.dateCol) {
+        const cutoff = new Date(now.getTime() - cfg.days * 86400000).toISOString();
+        await supaDelete(env, table, cfg.dateCol, "lt", cutoff);
+      }
+
+      results.push({ table, action: "backup+cleanup", rows: rows.length, key });
+    } catch (e) {
+      results.push({ table, action: "error", msg: e.message });
+    }
+  }
+
+  // ---- Step 2: Cleanup-only tables ----
+  for (const [table, cfg] of Object.entries(CLEANUP_TABLES)) {
+    try {
+      const cutoff = new Date(now.getTime() - cfg.days * 86400000).toISOString();
+      const deleted = await supaDelete(env, table, cfg.dateCol, "lt", cutoff);
+      results.push({ table, action: "cleanup", deleted });
+    } catch (e) {
+      results.push({ table, action: "error", msg: e.message });
+    }
+  }
+
+  // ---- Step 3: Yearly backup (January only) ----
+  if (month === 1) {
+    for (const table of YEARLY_TABLES) {
+      try {
+        const rows = await supaQueryAll(env, table);
+        const key = `yearly/${table}/${dateStr}.json`;
+        await r2Put(env, key, JSON.stringify(rows));
+        results.push({ table, action: "yearly-backup", rows: rows.length, key });
+      } catch (e) {
+        results.push({ table, action: "error", msg: e.message });
+      }
+    }
+  }
+
+  console.log("[BACKUP]", dateStr, JSON.stringify(results));
+  return results;
+}
+
+async function handleBackupDownload(request, env) {
+  // Auth check
+  const auth = request.headers.get("Authorization");
+  if (auth !== "Bearer yarz-admin-2026") {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
+
+  const url = new URL(request.url);
+  const key = url.searchParams.get("key");
+
+  // If key is provided, download that specific file
+  if (key) {
+    const data = await env.YARZ_BACKUPS.get(key);
+    if (!data) {
+      return jsonResponse({ error: "File not found" }, 404);
+    }
+    const json = await data.json();
+    return jsonResponse({ success: true, key, data: json });
+  }
+
+  // Otherwise list all files grouped by table
+  const listed = await env.YARZ_BACKUPS.list();
+  if (!listed.objects.length) {
+    return jsonResponse({ error: "No backups found" }, 404);
+  }
+
+  const byTable = {};
+  for (const obj of listed.objects) {
+    const parts = obj.key.split("/"); // rolling/table/date.json
+    const table = parts[1] || parts[0];
+    if (!byTable[table]) byTable[table] = [];
+    byTable[table].push({ key: obj.key, size: obj.size, uploaded: obj.uploaded });
+  }
+
+  return jsonResponse({ success: true, backups: byTable, totalFiles: listed.objects.length });
+}
+
+async function handleBackupList(request, env) {
+  const auth = request.headers.get("Authorization");
+  if (auth !== "Bearer yarz-admin-2026") {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
+
+  const listed = await env.YARZ_BACKUPS.list();
+  const files = listed.objects.map(o => ({ key: o.key, size: o.size, uploaded: o.uploaded }));
+  return jsonResponse({ success: true, files, totalSize: files.reduce((a, f) => a + f.size, 0) });
+}
+
+async function handleBackupRun(request, env) {
+  const auth = request.headers.get("Authorization");
+  if (auth !== "Bearer yarz-admin-2026") {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
+  try {
+    const results = await runDailyBackup(env);
+    return jsonResponse({ success: true, results });
+  } catch (e) {
+    return jsonResponse({ success: false, error: e.message }, 500);
+  }
+}
+
+async function handleBackupClear(request, env) {
+  const auth = request.headers.get("Authorization");
+  if (auth !== "Bearer yarz-admin-2026") {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
+  try {
+    const count = await r2DeleteAll(env, "rolling/");
+    const yearlyCount = await r2DeleteAll(env, "yearly/");
+    return jsonResponse({ success: true, deleted: count + yearlyCount });
+  } catch (e) {
+    return jsonResponse({ success: false, error: e.message }, 500);
+  }
+}
+
+// ---- Supabase helpers for backup ----
+async function supaQueryAll(env, table, limit = 10000) {
+  const url = `${env.SUPABASE_URL}/rest/v1/${table}?select=*&limit=${limit}`;
+  const resp = await fetch(url, {
+    headers: {
+      "apikey": env.SUPABASE_SERVICE_ROLE_KEY,
+      "Authorization": `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      "Prefer": "return=representation"
+    }
+  });
+  if (!resp.ok) throw new Error(`Supabase ${table} query failed: ${resp.status}`);
+  return resp.json();
+}
+
+async function supaDelete(env, table, dateCol, op, cutoff) {
+  const filter = `?${dateCol}=${op}.${encodeURIComponent(cutoff)}`;
+  const url = `${env.SUPABASE_URL}/rest/v1/${table}${filter}`;
+  const resp = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      "apikey": env.SUPABASE_SERVICE_ROLE_KEY,
+      "Authorization": `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      "Prefer": "return=minimal"
+    }
+  });
+  if (!resp.ok) throw new Error(`Supabase ${table} delete failed: ${resp.status}`);
+  return 0; // Supabase doesn't return count with Prefer=minimal
+}
+
+async function r2Put(env, key, value) {
+  await env.YARZ_BACKUPS.put(key, value, {
+    httpMetadata: { contentType: "application/json" }
+  });
+}
+
+async function r2Get(env, key) {
+  return env.YARZ_BACKUPS.get(key);
+}
+
+async function r2List(env, prefix) {
+  return env.YARZ_BACKUPS.list({ prefix });
+}
+
+async function r2DeleteAll(env, prefix) {
+  const listed = await env.YARZ_BACKUPS.list({ prefix });
+  for (const obj of listed.objects) {
+    await env.YARZ_BACKUPS.delete(obj.key);
+  }
+  return listed.objects.length;
+}
+
+// ---- Download as ZIP helper ----
+async function r2DownloadZip(env, table) {
+  const prefix = `rolling/${table}/`;
+  const listed = await env.YARZ_BACKUPS.list({ prefix });
+  if (!listed.objects.length) return null;
+
+  // For simplicity, return the latest file as JSON
+  const latest = listed.objects.sort((a, b) => b.uploaded - a.uploaded)[0];
+  const data = await env.YARZ_BACKUPS.get(latest.key);
+  return { key: latest.key, data: await data.text(), size: latest.size };
+}
+
+// ----------------------- ENTRY -----------------------
 // Modern fetch handler (wrangler 4.x: env passed as 2nd arg)
 export default {
   async fetch(request, env, ctx) {
@@ -1154,10 +1381,27 @@ export default {
     if (url.pathname.startsWith("/agent/")) {
       return handleAgentRoute(request, env, ctx);
     }
+    // ---- R2 Backup routes ----
+    if (url.pathname === "/backup/download") {
+      return handleBackupDownload(request, env);
+    }
+    if (url.pathname === "/backup/list") {
+      return handleBackupList(request, env);
+    }
+    if (url.pathname === "/backup/run" && request.method === "POST") {
+      return handleBackupRun(request, env);
+    }
+    if (url.pathname === "/backup/clear" && request.method === "POST") {
+      return handleBackupClear(request, env);
+    }
     if (request.method === "GET" && isStaticRequest(url)) {
       return await fetchFromGitHubPages(request);
     }
     return handle(request, env, ctx);
+  },
+  // ---- CRON: Daily backup at midnight UTC ----
+  async scheduled(event, env, ctx) {
+    await runDailyBackup(env);
   }
 };
 

@@ -5423,7 +5423,26 @@ body.dark *{ scrollbar-color:rgba(255,255,255,0.2) rgba(255,255,255,0.06); }
    <div style="font-size:12px;color:var(--ink-3);margin-bottom:12px">Everything will be deleted — Products, Inventory, Orders, Finances — All. It will be like a new website.</div>
    <button class="btn btn-red btn-sm" onclick="YARZ.settings.confirmFullReset()"><i class="ri-delete-bin-6-fill"></i> Full Reset</button>
   </div>
+   </div>
   </div>
+
+  <!-- BACKUP MANAGEMENT SECTION -->
+  <div class="card" style="padding:22px;margin-bottom:14px;border:1px solid rgba(16,185,129,0.25)">
+   <div class="section-title"><h2><i class="ri-cloud-line" style="color:var(--success)"></i> Backup Management</h2></div>
+   <p style="font-size:12.5px;color:var(--ink-3);margin-bottom:18px;line-height:1.7">
+     📦 <b>Auto Backup:</b> Daily at midnight UTC → Cloudflare R2 storage<br>
+     🗑️ <b>Auto Cleanup:</b> Old data removed from Supabase (60/180 day windows)<br>
+     💾 <b>Manual:</b> Download all backups as ZIP, then clear R2 storage
+   </p>
+   <div id="backup-status" style="font-size:12px;color:var(--ink-3);margin-bottom:12px;min-height:20px"></div>
+   <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn btn-blue btn-sm" onclick="YARZ.settings.listBackups()"><i class="ri-refresh-line"></i> Check Backups</button>
+    <button class="btn btn-green btn-sm" onclick="YARZ.settings.downloadBackups()"><i class="ri-download-2-line"></i> Download & Clear Backup</button>
+    <button class="btn btn-ghost btn-sm" onclick="YARZ.settings.testBackupNow()"><i class="ri-play-circle-line"></i> Run Backup Now</button>
+   </div>
+   <div style="font-size:11.5px;opacity:0.7;margin-top:12px;line-height:1.6">
+    💡 <b>Tip:</b> Click "Run Backup Now" to test the backup system. Backups are stored in Cloudflare R2 (free tier: 10GB).
+   </div>
   </div>
 
   <div class="card" style="padding:22px;margin-bottom:14px">
@@ -13337,6 +13356,7 @@ YARZ.pixelToggles = {
 ============================================================ */
 const DEFAULT_SUPABASE_URL = 'https://xdzduowhwubogaavraap.supabase.co';
 const DEFAULT_SUPABASE_ANON = 'sb_publishable_YTtKhrKYLm3UPgyZ_W6-rg_BuryhBsA';
+const WORKER_URL = 'https://yarz-api.marufhasan80009.workers.dev';
 YARZ.settings = {
   // Read current Supabase creds (saved > defaults)
   _readCreds(){
@@ -13896,6 +13916,107 @@ YARZ.settings = {
    } catch(e){
     this._setPinMsg('❌ ' + (e.message || 'Failed to remove PIN'), 'error');
     toast(e.message || 'Failed to remove PIN', 'error');
+   } finally { hideLoader(); }
+   }
+  },
+
+  // ---- Backup Management ----
+  async listBackups(){
+   const el = $('backup-status');
+   if(el) el.innerHTML = '<i class="ri-loader-4-line"></i> Checking backups...';
+   try {
+    const res = await fetch(WORKER_URL + '/backup/list', {
+     headers: { 'Authorization': 'Bearer yarz-admin-2026' }
+    });
+    const data = await res.json();
+    if(!data.success) throw new Error(data.error || 'Failed');
+    const files = data.files || [];
+    if(!files.length){
+     if(el) el.innerHTML = '<span style="color:var(--warn)"><i class="ri-cloud-off-line"></i> No backups yet. First backup runs at midnight UTC.</span>';
+     return;
+    }
+    const totalKB = (data.totalSize / 1024).toFixed(1);
+    const tables = {};
+    files.forEach(f => {
+     const parts = f.key.split('/');
+     const table = parts[1] || parts[0];
+     if(!tables[table]) tables[table] = 0;
+     tables[table]++;
+    });
+    const tableList = Object.entries(tables).map(([t,c]) => `${t}(${c})`).join(', ');
+    if(el) el.innerHTML = `<span style="color:var(--success)"><i class="ri-cloud-line"></i> ${files.length} backup files (${totalKB} KB) — Tables: ${tableList}</span>`;
+   } catch(e){
+    if(el) el.innerHTML = `<span style="color:var(--danger)"><i class="ri-error-warning-line"></i> ${e.message}</span>`;
+   }
+  },
+
+  async downloadBackups(){
+   if(!confirm('Download all backups from R2 and clear storage?\n\nThis will:\n1. Download all backup files as JSON\n2. Clear R2 storage\n3. New backups will start accumulating from tonight')) return;
+   showLoader('Preparing backup download...');
+   try {
+    // Step 1: List all files
+    const listRes = await fetch(WORKER_URL + '/backup/list', {
+     headers: { 'Authorization': 'Bearer yarz-admin-2026' }
+    });
+    const listData = await listRes.json();
+    if(!listData.success) throw new Error(listData.error || 'Failed to list backups');
+    const files = listData.files || [];
+    if(!files.length){ toast('No backups to download', 'warn'); hideLoader(); return; }
+
+    // Step 2: Download each file
+    const allData = {};
+    for(const file of files){
+     const parts = file.key.split('/');
+     const table = parts[1] || parts[0];
+     const date = parts[2] || 'unknown';
+     const downloadRes = await fetch(WORKER_URL + '/backup/download?key=' + encodeURIComponent(file.key), {
+      headers: { 'Authorization': 'Bearer yarz-admin-2026' }
+     });
+     if(downloadRes.ok){
+      const jsonData = await downloadRes.json();
+      if(!allData[table]) allData[table] = [];
+      allData[table].push({ date, data: jsonData });
+     }
+    }
+
+    // Step 3: Create and download ZIP-like JSON file
+    const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `yarz-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    // Step 4: Clear R2 storage
+    const clearRes = await fetch(WORKER_URL + '/backup/clear', {
+     method: 'POST',
+     headers: { 'Authorization': 'Bearer yarz-admin-2026' }
+    });
+
+    toast('Backup downloaded and R2 cleared!', 'success');
+    const el = $('backup-status');
+    if(el) el.innerHTML = '<span style="color:var(--success)"><i class="ri-check-line"></i> Downloaded & cleared. New backups start tonight.</span>';
+   } catch(e){
+    toast('Download failed: ' + e.message, 'error');
+   } finally { hideLoader(); }
+  },
+
+  async testBackupNow(){
+   showLoader('Running backup now...');
+   try {
+    // Trigger a manual backup via the Worker's backup endpoint
+    const res = await fetch(WORKER_URL + '/backup/run', {
+     method: 'POST',
+     headers: { 'Authorization': 'Bearer yarz-admin-2026' }
+    });
+    const data = await res.json();
+    if(!data.success) throw new Error(data.error || 'Backup failed');
+    toast('Backup completed! ' + (data.results ? data.results.length + ' tables processed' : ''), 'success');
+    // Refresh the list
+    await this.listBackups();
+   } catch(e){
+    toast('Backup failed: ' + e.message, 'error');
    } finally { hideLoader(); }
   }
 };
