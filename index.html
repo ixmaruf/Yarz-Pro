@@ -14114,6 +14114,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     <div class="status"><span id="sText">Ready</span><div class="sep"></div><span id="sRows">0 rows</span><div class="sep"></div><span id="sFiltered"></span></div>
   </div>
 </div>
+<script>window.BACKUP_DATA=` + jsonStr + `</` + `script` + `>
 <script>
 let DATA={},CURR='',ALL=[],ROWS=[],SCOL=-1,SDIR=1,PAGE=0,PP=100;
 const CATS={perm:new Set(['inventory','settings','blocked_devices','admin_users','_draft_data','_archive_data']),roll:new Set(['orders','website_orders','transactions','customers','expenses','ad_tracker','delivery_charges','device_fingerprints','device_models'])};
@@ -14138,15 +14139,12 @@ function expCSV(){if(!ROWS.length)return;const keys=Object.keys(ROWS[0]);const c
 function expJSON(){dl(JSON.stringify(ROWS,null,2),CURR+'.json','application/json');toast('Exported '+CURR+'.json','ok')}
 function dl(c,n,t){const b=new Blob([c],{type:t});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u)}
 function toast(m,t){const d=document.createElement('div');d.className='toast toast-'+t;d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),3000)}
-// Auto-load embedded data
-DATA=JSON.parse(document.getElementById('backupData').textContent);
-let total=0;Object.keys(DATA).forEach(t=>{const entries=DATA[t];if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))total+=en.data.data.length})});
+DATA=window.BACKUP_DATA||{};let total=0;Object.keys(DATA).forEach(t=>{const entries=DATA[t];if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))total+=en.data.data.length})});
 document.getElementById('hTables').textContent=Object.keys(DATA).length;
 document.getElementById('hRows').textContent=total.toLocaleString();
 document.getElementById('hSize').textContent='${(jsonStr.length/1024/1024).toFixed(1)} MB';
 renderSide();
-<\/script>
-<script type="application/json" id="backupData">${jsonStr}<\/script>
+</` + `script` + `>
 </body>
 </html>`;
     const blob = new Blob([htmlContent], { type: 'text/html' });
