@@ -314,6 +314,24 @@ ub.ondragleave=()=>ub.style.borderColor='';
 ub.ondrop=e=>{e.preventDefault();ub.style.borderColor='';if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])};
 fi.onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0])};
 
+// Auto-load embedded data (for standalone HTML backup)
+if(window.BACKUP_DATA && Object.keys(window.BACKUP_DATA).length > 0){
+  DATA = window.BACKUP_DATA;
+  document.getElementById('uploadWrap').style.display='none';
+  document.getElementById('layout').style.display='flex';
+  document.getElementById('hRight').style.display='flex';
+  let total=0,bdate='';
+  Object.keys(DATA).forEach(t=>{
+    const entries=DATA[t];
+    if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))total+=en.data.data.length;if(en&&en.date)bdate=en.date});
+  });
+  document.getElementById('hTables').textContent=Object.keys(DATA).length;
+  document.getElementById('hRows').textContent=total.toLocaleString();
+  document.getElementById('hSize').textContent=(new Blob([JSON.stringify(DATA)]).size/1024/1024).toFixed(1)+' MB';
+  document.getElementById('hDate').textContent=bdate?fmtDate(bdate):'—';
+  renderSide();
+}
+
 function loadFile(f){
   const r=new FileReader();
   r.onload=e=>{
