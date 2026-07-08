@@ -13978,17 +13978,182 @@ YARZ.settings = {
      }
     }
 
-    // Step 3: Create and download ZIP-like JSON file
-    const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+    // Step 3: Create self-contained HTML backup file (double-click to open)
+    const now = new Date();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const monthName = months[now.getMonth()];
+    const year = now.getFullYear();
+    const day = String(now.getDate()).padStart(2,'0');
+    const backupDate = `${day} ${monthName} ${year}`;
+    const totalRows = Object.values(allData).reduce((s,t)=>s+(Array.isArray(t)?t.reduce((a,e)=>a+(e&&e.data&&Array.isArray(e.data.data)?e.data.data.length:0),0):0),0);
+    const jsonStr = JSON.stringify(allData);
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YARZ Backup - ${backupDate}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#09090b;--bg2:#111113;--bg3:#18181b;--bg4:#1f1f23;--border:#27272a;--border2:#3f3f46;--text:#fafafa;--text2:#a1a1aa;--text3:#71717a;--text4:#52525b;--brand:#C8102E;--brand-light:#E63946;--green:#22c55e;--green-bg:rgba(34,197,94,.08);--red:#ef4444;--red-bg:rgba(239,68,68,.08);--blue:#3b82f6;--blue-bg:rgba(59,130,246,.08);--amber:#f59e0b;--amber-bg:rgba(245,158,11,.08);--purple:#a855f7;--purple-bg:rgba(168,85,247,.08);--cyan:#06b6d4;--cyan-bg:rgba(6,182,212,.08);--radius:12px;--radius-sm:8px}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.header{height:60px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo svg{width:32px;height:32px;flex-shrink:0}
+.logo-text h1{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.3px;line-height:1.2}
+.logo-text span{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:2px;font-weight:500}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:24px}
+.stat-group{display:flex;gap:20px}
+.stat-item{text-align:right}
+.stat-item .val{font-size:18px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.stat-item .lbl{font-size:9px;color:var(--text4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500}
+.layout{display:flex;height:calc(100vh - 60px)}
+.sidebar{width:260px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-head{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-head h3{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text4);font-weight:600;margin-bottom:10px}
+.sidebar-search{width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;font-family:inherit;transition:border .15s}
+.sidebar-search:focus{border-color:var(--brand)}
+.table-list{list-style:none;overflow-y:auto;flex:1;padding:6px}
+.ti{padding:10px 12px;cursor:pointer;border-radius:var(--radius-sm);margin-bottom:1px;transition:all .12s;display:flex;justify-content:space-between;align-items:center;border:1px solid transparent}
+.ti:hover{background:var(--bg3)}
+.ti.active{background:var(--bg3);border-color:var(--brand)}
+.ti-left{display:flex;flex-direction:column;gap:1px;min-width:0}
+.ti-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ti-meta{display:flex;gap:6px;align-items:center}
+.ti-badge{font-size:8px;padding:1px 5px;border-radius:3px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.ti-badge.perm{background:var(--green-bg);color:var(--green)}
+.ti-badge.roll{background:var(--cyan-bg);color:var(--cyan)}
+.ti-date{font-size:9px;color:var(--text4)}
+.ti-count{font-size:11px;font-weight:600;color:var(--text3);background:var(--bg);padding:2px 7px;border-radius:6px;flex-shrink:0}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.main-head{padding:12px 20px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.main-head h2{font-size:16px;font-weight:600;min-width:140px}
+.search-wrap{flex:1;max-width:360px;position:relative}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text4);width:14px;height:14px}
+.search-input{width:100%;padding:7px 10px 7px 32px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;font-family:inherit}
+.search-input:focus{border-color:var(--brand)}
+.main-btns{display:flex;gap:6px;margin-left:auto}
+.btn{padding:6px 14px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:11px;font-weight:500;font-family:inherit;transition:all .12s;display:inline-flex;align-items:center;gap:5px}
+.btn-brand{background:var(--brand);color:#fff}.btn-brand:hover{background:var(--brand-light)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#16a34a}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text3)}.btn-outline:hover{border-color:var(--brand);color:var(--text)}
+.table-info{padding:12px 20px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;flex-shrink:0}
+.info-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px}
+.info-chip .ic-label{color:var(--text4);font-weight:500}
+.info-chip .ic-value{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.info-chip.green .ic-value{color:var(--green)}
+.info-chip.blue .ic-value{color:var(--blue)}
+.info-chip.amber .ic-value{color:var(--amber)}
+.info-chip.purple .ic-value{color:var(--purple)}
+.table-wrap{flex:1;overflow:auto;position:relative}
+.dtable{width:100%;border-collapse:collapse;font-size:11px}
+.dtable thead{position:sticky;top:0;z-index:10}
+.dtable th{background:var(--bg2);color:var(--text4);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;white-space:nowrap;user-select:none}
+.dtable th:hover{color:var(--brand)}
+.dtable th.sa::after{content:' \\25B2';font-size:8px}
+.dtable th.sd::after{content:' \\25BC';font-size:8px}
+.dtable td{padding:6px 12px;border-bottom:1px solid var(--border);white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;color:var(--text2);transition:background .08s}
+.dtable tr:hover td{background:var(--bg3);color:var(--text)}
+.v-num{color:var(--amber);font-variant-numeric:tabular-nums;font-weight:500;text-align:right}
+.v-date{color:var(--green);font-size:10px}
+.v-bool-t{color:var(--green)}.v-bool-f{color:var(--red)}
+.v-null{color:var(--text4);font-style:italic;opacity:.4}
+.v-json{color:var(--cyan);font-size:10px}
+.v-text{color:var(--text2)}
+.pagination{display:flex;align-items:center;gap:6px;padding:8px 20px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0}
+.pagination button{padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s}
+.pagination button:hover:not(:disabled){border-color:var(--brand);color:var(--text)}
+.pagination button:disabled{opacity:.25;cursor:not-allowed}
+.pagination button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.pagination .pinfo{color:var(--text4);font-size:11px;margin:0 6px}
+.status{padding:6px 20px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;font-size:11px;color:var(--text4);flex-shrink:0}
+.status .sep{width:1px;height:12px;background:var(--border)}
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:var(--radius-sm);color:#fff;font-size:12px;font-weight:500;z-index:1000;animation:tin .25s;display:flex;align-items:center;gap:6px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.toast-ok{background:var(--green)}.toast-err{background:var(--red)}
+@keyframes tin{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text4)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" width="32" height="32"><circle cx="12" cy="12" r="10" fill="#C8102E" stroke="#E8D9B8" stroke-width=".6"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#FBF8F1" stroke-width=".7" opacity=".85"/><circle cx="9.8" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="9.8" cy="14.2" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="14.2" r="1.2" fill="#FBF8F1"/></svg>
+    <div class="logo-text">
+      <h1>YARZ Backup</h1>
+      <span>${backupDate}</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="stat-group">
+      <div class="stat-item"><div class="val" id="hTables">0</div><div class="lbl">Tables</div></div>
+      <div class="stat-item"><div class="val" id="hRows">0</div><div class="lbl">Total Rows</div></div>
+      <div class="stat-item"><div class="val" id="hSize">0</div><div class="lbl">Size</div></div>
+      <div class="stat-item"><div class="val" id="hDate">${backupDate}</div><div class="lbl">Backup Date</div></div>
+    </div>
+  </div>
+</div>
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-head"><h3>Tables</h3><input type="text" class="sidebar-search" id="sideSearch" placeholder="Filter..."></div>
+    <ul class="table-list" id="tableList"></ul>
+  </div>
+  <div class="main">
+    <div class="main-head">
+      <h2 id="tName">—</h2>
+      <div class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" class="search-input" id="searchInput" placeholder="Search..."></div>
+      <div class="main-btns"><button class="btn btn-outline" onclick="expCSV()">↓ CSV</button><button class="btn btn-outline" onclick="expJSON()">↓ JSON</button></div>
+    </div>
+    <div class="table-info" id="tableInfo"></div>
+    <div class="table-wrap" id="tableWrap"><table class="dtable"><thead id="tHead"></thead><tbody id="tBody"></tbody></table></div>
+    <div class="pagination" id="pagination"></div>
+    <div class="status"><span id="sText">Ready</span><div class="sep"></div><span id="sRows">0 rows</span><div class="sep"></div><span id="sFiltered"></span></div>
+  </div>
+</div>
+<script>
+let DATA={},CURR='',ALL=[],ROWS=[],SCOL=-1,SDIR=1,PAGE=0,PP=100;
+const CATS={perm:new Set(['inventory','settings','blocked_devices','admin_users','_draft_data','_archive_data']),roll:new Set(['orders','website_orders','transactions','customers','expenses','ad_tracker','delivery_charges','device_fingerprints','device_models'])};
+const FIN_TABLES=new Set(['orders','website_orders','transactions','expenses','ad_tracker']);
+function gc(n){return CATS.perm.has(n)?'perm':CATS.roll.has(n)?'roll':'clean'}
+function analyzeTable(n,rows){const r={min:null,max:null,months:new Set(),totalAmt:0,totalCost:0,totalProfit:0,cnt:0};const dk=['created_at','date','updated_at','ts','first_order_at','last_order_at'];const ak=['amount','revenue','total_spent','regular','sale','price'];const ck=['cost','total_cost'];const pk=['profit'];rows.forEach(row=>{for(const d of dk){if(row[d]&&typeof row[d]==='string'&&/^\\d{4}-\\d{2}/.test(row[d])){const v=row[d].split('T')[0];if(!r.min||v<r.min)r.min=v;if(!r.max||v>r.max)r.max=v;r.months.add(v.substring(0,7));break}}for(const a of ak){if(typeof row[a]==='number')r.totalAmt+=row[a]}for(const c of ck){if(typeof row[c]==='number')r.totalCost+=row[c]}for(const p of pk){if(typeof row[p]==='number')r.totalProfit+=row[p]}r.cnt++});r.months=Array.from(r.months).sort();return r}
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function fmtDate(d){if(!d||typeof d!=='string')return d;const m=d.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);if(!m)return d;return parseInt(m[3])+' '+MONTHS[parseInt(m[2])-1]+' '+m[1]}
+function fmtMonth(m){if(!m||typeof m!=='string')return m;const p=m.match(/^(\\d{4})-(\\d{2})$/);if(!p)return m;return MONTHS[parseInt(p[2])-1]+' '+p[1]}
+function renderSide(q=''){const list=document.getElementById('tableList');list.innerHTML='';const tables=Object.keys(DATA).filter(t=>!q||t.toLowerCase().includes(q.toLowerCase()));tables.forEach(name=>{const entries=DATA[name];let total=0,bdate='';if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))total+=en.data.data.length;if(en&&en.date)bdate=en.date});const c=gc(name);const li=document.createElement('li');li.className='ti';li.innerHTML=\`<div class="ti-left"><div class="ti-name">\${name}</div><div class="ti-meta"><span class="ti-badge \${c}">\${c==='perm'?'permanent':c}</span>\${bdate?\`<span class="ti-date">\${fmtDate(bdate)}</span>\`:''}</div></div><span class="ti-count">\${total.toLocaleString()}</span>\`;li.onclick=()=>selectTable(name,li);list.appendChild(li)});if(tables.length)selectTable(tables[0],list.children[0])}
+document.getElementById('sideSearch').oninput=e=>renderSide(e.target.value);
+function selectTable(name,li){CURR=name;PAGE=0;SCOL=-1;SDIR=1;document.querySelectorAll('.ti').forEach(l=>l.classList.remove('active'));if(li)li.classList.add('active');document.getElementById('tName').textContent=name;ALL=[];const entries=DATA[name];if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))ALL=ALL.concat(en.data.data)});ROWS=[...ALL];document.getElementById('searchInput').value='';document.getElementById('sText').textContent=name;document.getElementById('sRows').textContent=ALL.length.toLocaleString()+' rows';document.getElementById('sFiltered').textContent='';const info=analyzeTable(name,ALL);renderInfo(name,info,ALL.length);renderTable()}
+function renderInfo(name,info,cnt){const el=document.getElementById('tableInfo');const fmt=n=>'BDT '+n.toLocaleString();let h=\`<div class="info-chip"><span class="ic-label">Rows</span><span class="ic-value">\${cnt.toLocaleString()}</span></div>\`;if(info.min)h+=\`<div class="info-chip green"><span class="ic-label">From</span><span class="ic-value">\${fmtDate(info.min)}</span></div>\`;if(info.max)h+=\`<div class="info-chip green"><span class="ic-label">To</span><span class="ic-value">\${fmtDate(info.max)}</span></div>\`;if(info.months.length)h+=\`<div class="info-chip blue"><span class="ic-label">Months</span><span class="ic-value">\${info.months.length} (\${fmtMonth(info.months[0])}\${info.months.length>1?' → '+fmtMonth(info.months[info.months.length-1]):''})</span></div>\`;if(FIN_TABLES.has(name)&&info.totalAmt)h+=\`<div class="info-chip amber"><span class="ic-label">Total Amount</span><span class="ic-value">\${fmt(info.totalAmt)}</span></div>\`;if(FIN_TABLES.has(name)&&info.totalCost)h+=\`<div class="info-chip purple"><span class="ic-label">Total Cost</span><span class="ic-value">\${fmt(info.totalCost)}</span></div>\`;if(FIN_TABLES.has(name)&&info.totalProfit)h+=\`<div class="info-chip green"><span class="ic-label">Total Profit</span><span class="ic-value">\${fmt(info.totalProfit)}</span></div>\`;el.innerHTML=h}
+function renderTable(){const rows=ROWS;const s=PAGE*PP;const e=Math.min(s+PP,rows.length);const page=rows.slice(s,e);if(!page.length){document.getElementById('tHead').innerHTML='';document.getElementById('tBody').innerHTML='<tr><td colspan="100" style="text-align:center;padding:40px;color:var(--text4)">No data</td></tr>';renderPag(rows.length);return}const keys=new Set();page.forEach(r=>Object.keys(r).forEach(k=>keys.add(k)));const cols=Array.from(keys);document.getElementById('tHead').innerHTML='<tr>'+cols.map((c,i)=>\`<th onclick="sortT(\${i})" class="\${SCOL===i?(SDIR===1?'sa':'sd'):''}">\${esc(c)}</th>\`).join('')+'</tr>';document.getElementById('tBody').innerHTML=page.map(r=>'<tr>'+cols.map(c=>\`<td>\${fc(r[c])}</td>\`).join('')+'</tr>').join('');renderPag(rows.length)}
+function renderPag(total){const pg=Math.ceil(total/PP);const el=document.getElementById('pagination');if(pg<=1){el.innerHTML='';return}let h=\`<button onclick="goP(0)" \${PAGE===0?'disabled':''}>«</button>\`;h+=\`<button onclick="goP(\${PAGE-1})" \${PAGE===0?'disabled':''}>‹</button>\`;let pgs=[];if(pg<=7){for(let i=0;i<pg;i++)pgs.push(i)}else{pgs.push(0);if(PAGE>2)pgs.push('…');for(let i=Math.max(1,PAGE-1);i<=Math.min(pg-2,PAGE+1);i++)pgs.push(i);if(PAGE<pg-3)pgs.push('…');pgs.push(pg-1)}pgs.forEach(p=>{if(p==='…')h+=\`<span class="pinfo">…</span>\`;else h+=\`<button class="\${PAGE===p?'on':''}" onclick="goP(\${p})">\${p+1}</button>\`});h+=\`<button onclick="goP(\${PAGE+1})" \${PAGE>=pg-1?'disabled':''}>›</button>\`;h+=\`<button onclick="goP(\${pg-1})" \${PAGE>=pg-1?'disabled':''}>»</button>\`;const ss=PAGE*PP;const ee=Math.min(ss+PP,total);h+=\`<span class="pinfo">\${(ss+1).toLocaleString()}-\${ee.toLocaleString()} of \${total.toLocaleString()}</span>\`;el.innerHTML=h}
+function goP(p){const pg=Math.ceil(ROWS.length/PP);PAGE=Math.max(0,Math.min(p,pg-1));renderTable();document.getElementById('tableWrap').scrollTop=0}
+function fc(v){if(v===null||v===undefined)return'<span class="v-null">—</span>';if(typeof v==='boolean')return\`<span class="v-bool-\${v}">\${v}</span>\`;if(typeof v==='number')return\`<span class="v-num">\${v.toLocaleString()}</span>\`;if(typeof v==='string'){if(/^\\d{4}-\\d{2}-\\d{2}/.test(v))return\`<span class="v-date">\${esc(fmtDate(v.split('T')[0]))}</span>\`;if(/^\\d+\$/.test(v)&&v.length<10)return\`<span class="v-num">\${parseInt(v).toLocaleString()}</span>\`;const s=String(v);return\`<span class="v-text" title="\${esc(s)}">\${esc(s.length>60?s.substring(0,60)+'…':s)}</span>\`}const s=JSON.stringify(v);return\`<span class="v-json" title="\${esc(s)}">\${esc(s.length>100?s.substring(0,100)+'…':s)}</span>\`}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function sortT(col){const keys=Object.keys(ROWS[0]||{});const key=keys[col];if(SCOL===col)SDIR*=-1;else{SCOL=col;SDIR=1}ROWS.sort((a,b)=>{let va=a[key],vb=b[key];if(va==null)return 1;if(vb==null)return-1;if(typeof va==='number'&&typeof vb==='number')return(va-vb)*SDIR;return String(va).localeCompare(String(vb))*SDIR});PAGE=0;renderTable()}
+document.getElementById('searchInput').oninput=e=>{const q=e.target.value.toLowerCase();ROWS=q?ALL.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(q))):[...ALL];PAGE=0;renderTable();document.getElementById('sFiltered').textContent=q?\`Filtered: \${ROWS.length.toLocaleString()}\`:''};
+function expCSV(){if(!ROWS.length)return;const keys=Object.keys(ROWS[0]);const csv=[keys.join(',')].concat(ROWS.map(r=>keys.map(k=>{let v=r[k];if(v==null)return'';v=String(v).replace(/"/g,'""');return(v.includes(',')||v.includes('"')||v.includes('\\n'))?'"'+v+'"':v}).join(','))).join('\\n');dl(csv,CURR+'.csv','text/csv');toast('Exported '+CURR+'.csv','ok')}
+function expJSON(){dl(JSON.stringify(ROWS,null,2),CURR+'.json','application/json');toast('Exported '+CURR+'.json','ok')}
+function dl(c,n,t){const b=new Blob([c],{type:t});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u)}
+function toast(m,t){const d=document.createElement('div');d.className='toast toast-'+t;d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),3000)}
+// Auto-load embedded data
+DATA=JSON.parse(document.getElementById('backupData').textContent);
+let total=0;Object.keys(DATA).forEach(t=>{const entries=DATA[t];if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))total+=en.data.data.length})});
+document.getElementById('hTables').textContent=Object.keys(DATA).length;
+document.getElementById('hRows').textContent=total.toLocaleString();
+document.getElementById('hSize').textContent='${(jsonStr.length/1024/1024).toFixed(1)} MB';
+renderSide();
+</script>
+<script type="application/json" id="backupData">${jsonStr}</script>
+</body>
+</html>`;
+    const blob = new Blob([htmlContent], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-     const now = new Date();
-     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-     const monthName = months[now.getMonth()];
-     const year = now.getFullYear();
-     const day = String(now.getDate()).padStart(2,'0');
-     a.download = `YARZ_Backup_${monthName}_${year}_${day}.json`;
+    a.download = `YARZ_Backup_${monthName}_${year}_${day}.html`;
     a.click();
     URL.revokeObjectURL(url);
 
