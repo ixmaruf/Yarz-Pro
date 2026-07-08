@@ -5,283 +5,288 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YARZ Backup Studio</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg-primary:#0a0e17;--bg-secondary:#111827;--bg-card:#1a2332;--bg-hover:#1e293b;
-  --border:#1e293b;--border-light:#334155;
-  --text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;
-  --accent:#3b82f6;--accent-hover:#2563eb;--accent-glow:rgba(59,130,246,.15);
-  --green:#10b981;--green-bg:rgba(16,185,129,.1);
-  --red:#ef4444;--red-bg:rgba(239,68,68,.1);
-  --orange:#f59e0b;--orange-bg:rgba(245,158,11,.1);
-  --purple:#8b5cf6;--purple-bg:rgba(139,92,246,.1);
-  --cyan:#06b6d4;--cyan-bg:rgba(6,182,212,.1);
-  --shadow:0 4px 24px rgba(0,0,0,.3);
-  --radius:10px;--radius-sm:6px;
+  --bg:#09090b;--bg2:#111113;--bg3:#18181b;--bg4:#1f1f23;
+  --border:#27272a;--border2:#3f3f46;
+  --text:#fafafa;--text2:#a1a1aa;--text3:#71717a;--text4:#52525b;
+  --brand:#C8102E;--brand-light:#E63946;
+  --green:#22c55e;--green-bg:rgba(34,197,94,.08);
+  --red:#ef4444;--red-bg:rgba(239,68,68,.08);
+  --blue:#3b82f6;--blue-bg:rgba(59,130,246,.08);
+  --amber:#f59e0b;--amber-bg:rgba(245,158,11,.08);
+  --purple:#a855f7;--purple-bg:rgba(168,85,247,.08);
+  --cyan:#06b6d4;--cyan-bg:rgba(6,182,212,.08);
+  --radius:12px;--radius-sm:8px;
 }
 html,body{height:100%;overflow:hidden}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg-primary);color:var(--text-primary)}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 
 /* Header */
-.header{background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 100%);border-bottom:1px solid var(--border);padding:0 32px;height:64px;display:flex;align-items:center;gap:16px;position:relative;z-index:100}
-.header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.header{height:60px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;position:relative;z-index:100}
 .logo{display:flex;align-items:center;gap:12px}
-.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff}
-.logo-text h1{font-size:18px;font-weight:700;color:var(--text-primary);letter-spacing:-.5px}
-.logo-text span{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px}
-.header-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
-.header-stats{display:flex;gap:20px;margin-right:24px}
-.header-stat{text-align:center}
-.header-stat .val{font-size:20px;font-weight:700;color:var(--accent)}
-.header-stat .lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px}
+.logo svg{width:32px;height:32px;flex-shrink:0}
+.logo-text{display:flex;flex-direction:column}
+.logo-text h1{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.3px;line-height:1.2}
+.logo-text span{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:2px;font-weight:500}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:24px}
+.stat-group{display:flex;gap:20px}
+.stat-item{text-align:right}
+.stat-item .val{font-size:18px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.stat-item .lbl{font-size:9px;color:var(--text4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500}
 
-/* Upload Zone */
-.upload-wrapper{display:flex;align-items:center;justify-content:center;height:calc(100vh - 64px);padding:40px}
-.upload-zone{border:2px dashed var(--border-light);border-radius:20px;padding:80px 60px;text-align:center;cursor:pointer;transition:all .3s;max-width:600px;width:100%;position:relative;overflow:hidden}
-.upload-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,var(--accent-glow),transparent 70%);opacity:0;transition:opacity .3s}
-.upload-zone:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 32px rgba(59,130,246,.1)}
-.upload-zone:hover::before{opacity:1}
-.upload-icon{font-size:56px;margin-bottom:20px;opacity:.7}
-.upload-zone h2{font-size:24px;font-weight:600;margin-bottom:8px;color:var(--text-primary)}
-.upload-zone p{color:var(--text-secondary);font-size:14px;line-height:1.6}
-.upload-zone input{display:none}
-.upload-formats{display:flex;gap:8px;justify-content:center;margin-top:20px}
-.upload-formats span{background:var(--bg-card);padding:4px 12px;border-radius:20px;font-size:11px;color:var(--text-muted);border:1px solid var(--border)}
+/* Upload */
+.upload-wrap{display:flex;align-items:center;justify-content:center;height:calc(100vh - 60px);padding:40px}
+.upload-box{border:1.5px dashed var(--border2);border-radius:20px;padding:60px 48px;text-align:center;cursor:pointer;transition:all .3s;max-width:520px;width:100%;position:relative;background:var(--bg2)}
+.upload-box:hover{border-color:var(--brand);background:var(--bg3)}
+.upload-box svg{width:48px;height:48px;margin-bottom:20px;opacity:.4}
+.upload-box h2{font-size:22px;font-weight:600;margin-bottom:8px}
+.upload-box p{color:var(--text3);font-size:13px;line-height:1.6}
+.upload-box input{display:none}
+.tags{display:flex;gap:6px;justify-content:center;margin-top:16px}
+.tags span{background:var(--bg3);padding:4px 10px;border-radius:6px;font-size:10px;color:var(--text4);font-weight:500;border:1px solid var(--border)}
 
 /* Layout */
-.layout{display:none;height:calc(100vh - 64px)}
+.layout{display:none;height:calc(100vh - 60px)}
 
 /* Sidebar */
-.sidebar{width:280px;background:var(--bg-secondary);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
-.sidebar-header{padding:20px;border-bottom:1px solid var(--border)}
-.sidebar-header h3{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-bottom:12px}
-.sidebar-search{width:100%;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;font-family:inherit}
-.sidebar-search:focus{border-color:var(--accent)}
-.table-list{list-style:none;overflow-y:auto;flex:1;padding:8px}
-.table-item{padding:12px 16px;cursor:pointer;border-radius:var(--radius-sm);margin-bottom:2px;transition:all .15s;display:flex;justify-content:space-between;align-items:center;border:1px solid transparent}
-.table-item:hover{background:var(--bg-hover);border-color:var(--border)}
-.table-item.active{background:var(--accent-glow);border-color:var(--accent)}
-.table-item .info{display:flex;flex-direction:column;gap:2px}
-.table-item .name{font-size:13px;font-weight:500;color:var(--text-primary)}
-.table-item .meta{font-size:11px;color:var(--text-muted)}
-.table-item .badge{font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.badge-permanent{background:var(--green-bg);color:var(--green)}
-.badge-rolling{background:var(--cyan-bg);color:var(--cyan)}
-.badge-cleanup{background:var(--red-bg);color:var(--red)}
-.table-item .count{font-size:12px;font-weight:600;color:var(--text-secondary);background:var(--bg-card);padding:2px 8px;border-radius:10px;min-width:40px;text-align:center}
+.sidebar{width:260px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-head{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-head h3{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text4);font-weight:600;margin-bottom:10px}
+.sidebar-search{width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;font-family:inherit;transition:border .15s}
+.sidebar-search:focus{border-color:var(--brand)}
+.table-list{list-style:none;overflow-y:auto;flex:1;padding:6px}
+.ti{padding:10px 12px;cursor:pointer;border-radius:var(--radius-sm);margin-bottom:1px;transition:all .12s;display:flex;justify-content:space-between;align-items:center;border:1px solid transparent}
+.ti:hover{background:var(--bg3)}
+.ti.active{background:var(--bg3);border-color:var(--brand)}
+.ti-left{display:flex;flex-direction:column;gap:1px;min-width:0}
+.ti-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ti-meta{display:flex;gap:6px;align-items:center}
+.ti-badge{font-size:8px;padding:1px 5px;border-radius:3px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.ti-badge.perm{background:var(--green-bg);color:var(--green)}
+.ti-badge.roll{background:var(--cyan-bg);color:var(--cyan)}
+.ti-badge.clean{background:var(--red-bg);color:var(--red)}
+.ti-date{font-size:9px;color:var(--text4)}
+.ti-count{font-size:11px;font-weight:600;color:var(--text3);background:var(--bg);padding:2px 7px;border-radius:6px;flex-shrink:0}
 
-/* Main Content */
+/* Main */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.main-header{padding:16px 24px;border-bottom:1px solid var(--border);background:var(--bg-secondary);display:flex;align-items:center;gap:16px;flex-shrink:0}
-.main-header h2{font-size:20px;font-weight:600;color:var(--text-primary);min-width:200px}
-.search-wrapper{flex:1;max-width:400px;position:relative}
-.search-wrapper svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);width:16px;height:16px}
-.search-input{width:100%;padding:8px 12px 8px 36px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;font-family:inherit}
-.search-input:focus{border-color:var(--accent)}
-.main-actions{display:flex;gap:8px;margin-left:auto}
+.main-head{padding:12px 20px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.main-head h2{font-size:16px;font-weight:600;min-width:140px}
+.search-wrap{flex:1;max-width:360px;position:relative}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text4);width:14px;height:14px}
+.search-input{width:100%;padding:7px 10px 7px 32px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;font-family:inherit}
+.search-input:focus{border-color:var(--brand)}
+.main-btns{display:flex;gap:6px;margin-left:auto}
 
 /* Buttons */
-.btn{padding:8px 16px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:12px;font-weight:500;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:var(--accent-hover);box-shadow:0 4px 12px rgba(59,130,246,.3)}
-.btn-green{background:var(--green);color:#fff}
-.btn-green:hover{background:#059669}
-.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text-secondary)}
-.btn-outline:hover{border-color:var(--accent);color:var(--text-primary);background:var(--accent-glow)}
-.btn-danger{background:var(--red);color:#fff}
-.btn-danger:hover{background:#dc2626}
-.btn-icon{width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;transition:all .15s}
-.btn-icon:hover{border-color:var(--accent);color:var(--text-primary)}
+.btn{padding:6px 14px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:11px;font-weight:500;font-family:inherit;transition:all .12s;display:inline-flex;align-items:center;gap:5px}
+.btn-brand{background:var(--brand);color:#fff}.btn-brand:hover{background:var(--brand-light)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#16a34a}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text3)}.btn-outline:hover{border-color:var(--brand);color:var(--text)}
+
+/* Table Info Bar */
+.table-info{padding:12px 20px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;flex-shrink:0}
+.info-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px}
+.info-chip .ic-label{color:var(--text4);font-weight:500}
+.info-chip .ic-value{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.info-chip.green .ic-value{color:var(--green)}
+.info-chip.blue .ic-value{color:var(--blue)}
+.info-chip.amber .ic-value{color:var(--amber)}
+.info-chip.purple .ic-value{color:var(--purple)}
 
 /* Table */
-.table-container{flex:1;overflow:auto;position:relative}
-.data-table{width:100%;border-collapse:collapse;font-size:12px}
-.data-table thead{position:sticky;top:0;z-index:10}
-.data-table th{background:var(--bg-secondary);color:var(--text-muted);padding:10px 14px;text-align:left;border-bottom:2px solid var(--border);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;white-space:nowrap;user-select:none;transition:color .15s}
-.data-table th:hover{color:var(--accent)}
-.data-table th.sorted-asc{color:var(--accent)}
-.data-table th.sorted-asc::after{content:' ▲';font-size:9px}
-.data-table th.sorted-desc{color:var(--accent)}
-.data-table th.sorted-desc::after{content:' ▼';font-size:9px}
-.data-table td{padding:8px 14px;border-bottom:1px solid var(--border);white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis;color:var(--text-secondary);transition:background .1s}
-.data-table tr:hover td{background:var(--bg-hover);color:var(--text-primary)}
-.data-table td:first-child{color:var(--text-muted);font-family:'SF Mono',Consolas,monospace;font-size:11px}
-.cell-date{color:var(--green);font-family:'SF Mono',Consolas,monospace;font-size:11px}
-.cell-num{color:var(--orange);font-family:'SF Mono',Consolas,monospace;font-weight:500;text-align:right}
-.cell-id{color:var(--purple);font-family:'SF Mono',Consolas,monospace;font-size:11px}
-.cell-bool-true{color:var(--green)}
-.cell-bool-false{color:var(--red)}
-.cell-null{color:var(--text-muted);font-style:italic;opacity:.5}
-.cell-json{color:var(--cyan);font-family:'SF Mono',Consolas,monospace;font-size:10px;max-width:200px;overflow:hidden;text-overflow:ellipsis}
-.cell-text{color:var(--text-secondary)}
-
-/* Status Bar */
-.status-bar{padding:8px 24px;background:var(--bg-secondary);border-top:1px solid var(--border);display:flex;align-items:center;gap:16px;font-size:12px;color:var(--text-muted);flex-shrink:0}
-.status-bar .sep{width:1px;height:16px;background:var(--border)}
-.status-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}
-.status-pill.green{background:var(--green-bg);color:var(--green)}
-.status-pill.blue{background:var(--accent-glow);color:var(--accent)}
-.status-pill.orange{background:var(--orange-bg);color:var(--orange)}
-
-/* Restore Panel */
-.restore-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;justify-content:center;align-items:center;backdrop-filter:blur(4px)}
-.restore-modal{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:480px;width:90%;box-shadow:var(--shadow)}
-.restore-modal h3{font-size:18px;font-weight:600;margin-bottom:4px}
-.restore-modal .subtitle{color:var(--text-muted);font-size:13px;margin-bottom:20px}
-.restore-modal .field{margin-bottom:16px}
-.restore-modal .field label{display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:6px}
-.restore-modal .field input{width:100%;padding:10px 14px;background:var(--bg-primary);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:13px;outline:none;font-family:inherit}
-.restore-modal .field input:focus{border-color:var(--accent)}
-.restore-modal .btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:24px}
-
-/* Progress */
-.progress-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;justify-content:center;align-items:center;backdrop-filter:blur(4px)}
-.progress-modal{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:480px;width:90%;box-shadow:var(--shadow);text-align:center}
-.progress-modal h3{font-size:18px;font-weight:600;margin-bottom:16px}
-.progress-bar{height:8px;background:var(--bg-primary);border-radius:4px;overflow:hidden;margin:16px 0}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--purple));border-radius:4px;transition:width .3s;width:0}
-.progress-text{color:var(--text-muted);font-size:13px}
-.progress-status{margin-top:12px;font-size:14px;font-weight:500}
-
-/* Toast */
-.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:var(--radius);color:#fff;font-size:13px;font-weight:500;z-index:1000;animation:toastIn .3s ease;display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
-.toast-success{background:linear-gradient(135deg,#059669,#10b981)}
-.toast-error{background:linear-gradient(135deg,#dc2626,#ef4444)}
-.toast-info{background:linear-gradient(135deg,#2563eb,#3b82f6)}
-@keyframes toastIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-
-/* Empty */
-.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-muted)}
-.empty-state svg{width:64px;height:64px;margin-bottom:16px;opacity:.3}
-.empty-state h3{font-size:18px;color:var(--text-secondary);margin-bottom:4px}
-.empty-state p{font-size:13px}
-
-/* Scrollbar */
-::-webkit-scrollbar{width:8px;height:8px}
-::-webkit-scrollbar-track{background:var(--bg-primary)}
-::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:4px}
-::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+.table-wrap{flex:1;overflow:auto;position:relative}
+.dtable{width:100%;border-collapse:collapse;font-size:11px}
+.dtable thead{position:sticky;top:0;z-index:10}
+.dtable th{background:var(--bg2);color:var(--text4);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;white-space:nowrap;user-select:none}
+.dtable th:hover{color:var(--brand)}
+.dtable th.sa::after{content:' ▲';font-size:8px}
+.dtable th.sd::after{content:' ▼';font-size:8px}
+.dtable td{padding:6px 12px;border-bottom:1px solid var(--border);white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;color:var(--text2);transition:background .08s}
+.dtable tr:hover td{background:var(--bg3);color:var(--text)}
+.v-num{color:var(--amber);font-variant-numeric:tabular-nums;font-weight:500;text-align:right}
+.v-date{color:var(--green);font-size:10px}
+.v-id{color:var(--purple);font-size:10px}
+.v-bool-t{color:var(--green)}.v-bool-f{color:var(--red)}
+.v-null{color:var(--text4);font-style:italic;opacity:.4}
+.v-json{color:var(--cyan);font-size:10px}
+.v-text{color:var(--text2)}
 
 /* Pagination */
-.pagination{display:flex;align-items:center;gap:8px;padding:8px 24px;background:var(--bg-secondary);border-top:1px solid var(--border);flex-shrink:0}
-.pagination button{padding:4px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-secondary);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s}
-.pagination button:hover:not(:disabled){border-color:var(--accent);color:var(--text-primary)}
-.pagination button:disabled{opacity:.3;cursor:not-allowed}
-.pagination button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.pagination .info{color:var(--text-muted);font-size:12px;margin:0 8px}
-.pagination .page-jump{width:60px;padding:4px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:12px;text-align:center;font-family:inherit}
+.pagination{display:flex;align-items:center;gap:6px;padding:8px 20px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0}
+.pagination button{padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s}
+.pagination button:hover:not(:disabled){border-color:var(--brand);color:var(--text)}
+.pagination button:disabled{opacity:.25;cursor:not-allowed}
+.pagination button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.pagination .pinfo{color:var(--text4);font-size:11px;margin:0 6px}
+
+/* Status */
+.status{padding:6px 20px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;font-size:11px;color:var(--text4);flex-shrink:0}
+.status .sep{width:1px;height:12px;background:var(--border)}
+
+/* Restore */
+.roverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;justify-content:center;align-items:center;backdrop-filter:blur(4px)}
+.rmodal{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:440px;width:90%}
+.rmodal h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.rmodal .sub{color:var(--text4);font-size:12px;margin-bottom:16px}
+.rmodal .field{margin-bottom:12px}
+.rmodal .field label{display:block;font-size:11px;font-weight:500;color:var(--text3);margin-bottom:4px}
+.rmodal .field input{width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;font-family:inherit}
+.rmodal .field input:focus{border-color:var(--brand)}
+.rmodal .btnrow{display:flex;gap:6px;justify-content:flex-end;margin-top:16px}
+
+/* Progress */
+.poverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;justify-content:center;align-items:center;backdrop-filter:blur(4px)}
+.pmodal{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:440px;width:90%;text-align:center}
+.pmodal h3{font-size:16px;font-weight:600;margin-bottom:12px}
+.pbar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin:12px 0}
+.pfill{height:100%;background:linear-gradient(90deg,var(--brand),var(--purple));border-radius:3px;transition:width .3s;width:0}
+.ptext{color:var(--text4);font-size:12px}
+.pstatus{margin-top:10px;font-size:13px;font-weight:500}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:var(--radius-sm);color:#fff;font-size:12px;font-weight:500;z-index:1000;animation:tin .25s;display:flex;align-items:center;gap:6px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.toast-ok{background:var(--green)}.toast-err{background:var(--red)}.toast-info{background:var(--blue)}
+@keyframes tin{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text4)}
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="logo">
-    <div class="logo-icon">Y</div>
+    <svg viewBox="0 0 24 24" width="32" height="32"><circle cx="12" cy="12" r="10" fill="#C8102E" stroke="#E8D9B8" stroke-width=".6"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#FBF8F1" stroke-width=".7" opacity=".85"/><circle cx="9.8" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="9.8" cy="14.2" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="14.2" r="1.2" fill="#FBF8F1"/></svg>
     <div class="logo-text">
       <h1>Backup Studio</h1>
       <span>YARZ Business Data</span>
     </div>
   </div>
-  <div class="header-actions" id="headerActions" style="display:none">
-    <div class="header-stats">
-      <div class="header-stat"><div class="val" id="hTables">0</div><div class="lbl">Tables</div></div>
-      <div class="header-stat"><div class="val" id="hRows">0</div><div class="lbl">Total Rows</div></div>
-      <div class="header-stat"><div class="val" id="hSize">0</div><div class="lbl">MB</div></div>
+  <div class="header-right" id="hRight" style="display:none">
+    <div class="stat-group">
+      <div class="stat-item"><div class="val" id="hTables">0</div><div class="lbl">Tables</div></div>
+      <div class="stat-item"><div class="val" id="hRows">0</div><div class="lbl">Total Rows</div></div>
+      <div class="stat-item"><div class="val" id="hSize">0</div><div class="lbl">Size</div></div>
+      <div class="stat-item"><div class="val" id="hDate">—</div><div class="lbl">Backup Date</div></div>
     </div>
   </div>
 </div>
 
-<div class="upload-wrapper" id="uploadWrapper">
-  <div class="upload-zone" id="uploadZone">
-    <div class="upload-icon">📦</div>
-    <h2>Drop your backup file here</h2>
-    <p>Open <strong>yarz-backup-*.json</strong> files to view, search, and restore your business data</p>
+<div class="upload-wrap" id="uploadWrap">
+  <div class="upload-box" id="uploadBox">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+    <h2>Drop your backup file</h2>
+    <p>Open <strong>yarz-backup-*.json</strong> to view, search & restore all business data</p>
     <input type="file" id="fileInput" accept=".json">
-    <div class="upload-formats">
-      <span>JSON</span>
-      <span>15 Tables</span>
-      <span>All Data</span>
-    </div>
+    <div class="tags"><span>JSON</span><span>15 Tables</span><span>Full Restore</span></div>
   </div>
 </div>
 
 <div class="layout" id="layout">
   <div class="sidebar">
-    <div class="sidebar-header">
-      <h3>Database Tables</h3>
-      <input type="text" class="sidebar-search" id="sidebarSearch" placeholder="Filter tables...">
+    <div class="sidebar-head">
+      <h3>Tables</h3>
+      <input type="text" class="sidebar-search" id="sideSearch" placeholder="Filter...">
     </div>
     <ul class="table-list" id="tableList"></ul>
   </div>
   <div class="main">
-    <div class="main-header">
-      <h2 id="tableName">—</h2>
-      <div class="search-wrapper">
+    <div class="main-head">
+      <h2 id="tName">—</h2>
+      <div class="search-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input type="text" class="search-input" id="searchInput" placeholder="Search in table data...">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search...">
       </div>
-      <div class="main-actions">
-        <button class="btn btn-green" onclick="restoreAll()">⟳ Restore All</button>
-        <button class="btn btn-outline" onclick="restoreTable()">⟳ Restore Table</button>
-        <button class="btn btn-outline" onclick="exportCSV()">↓ CSV</button>
-        <button class="btn btn-outline" onclick="exportJSON()">↓ JSON</button>
+      <div class="main-btns">
+        <button class="btn btn-green" onclick="restoreAll()">Restore All</button>
+        <button class="btn btn-outline" onclick="restoreTable()">Restore Table</button>
+        <button class="btn btn-outline" onclick="expCSV()">↓ CSV</button>
+        <button class="btn btn-outline" onclick="expJSON()">↓ JSON</button>
       </div>
     </div>
-    <div class="table-container" id="tableContainer">
-      <table class="data-table"><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table>
+    <div class="table-info" id="tableInfo"></div>
+    <div class="table-wrap" id="tableWrap">
+      <table class="dtable"><thead id="tHead"></thead><tbody id="tBody"></tbody></table>
     </div>
     <div class="pagination" id="pagination"></div>
-    <div class="status-bar">
-      <span id="statusText">Ready</span>
-      <div class="sep"></div>
-      <span id="statusRows">0 rows</span>
-      <div class="sep"></div>
-      <span id="statusFiltered"></span>
+    <div class="status">
+      <span id="sText">Ready</span><div class="sep"></div>
+      <span id="sRows">0 rows</span><div class="sep"></div>
+      <span id="sFiltered"></span>
     </div>
   </div>
 </div>
 
-<div class="restore-overlay" id="restoreOverlay">
-  <div class="restore-modal">
-    <h3 id="restoreTitle">Restore to Supabase</h3>
-    <div class="subtitle" id="restoreSubtitle">Enter your Supabase credentials</div>
-    <div class="field">
-      <label>Project URL</label>
-      <input type="text" id="supaUrl" placeholder="https://xxxxx.supabase.co" value="https://xdzduowhwubogaavraap.supabase.co">
-    </div>
-    <div class="field">
-      <label>Service Role Key</label>
-      <input type="password" id="supaKey" placeholder="eyJ... (service_role key)">
-    </div>
-    <div class="btn-row">
+<div class="roverlay" id="rOverlay">
+  <div class="rmodal">
+    <h3 id="rTitle">Restore to Supabase</h3>
+    <div class="sub" id="rSub">Enter your Supabase credentials</div>
+    <div class="field"><label>Project URL</label><input type="text" id="supaUrl" placeholder="https://xxxxx.supabase.co" value="https://xdzduowhwubogaavraap.supabase.co"></div>
+    <div class="field"><label>Service Role Key</label><input type="password" id="supaKey" placeholder="eyJ... (service_role key)"></div>
+    <div class="btnrow">
       <button class="btn btn-outline" onclick="closeRestore()">Cancel</button>
       <button class="btn btn-green" onclick="confirmRestore()">Start Restore</button>
     </div>
   </div>
 </div>
 
-<div class="progress-overlay" id="progressOverlay">
-  <div class="progress-modal">
-    <h3 id="progressTitle">Restoring Data</h3>
-    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-    <div class="progress-text" id="progressText">Preparing...</div>
-    <div class="progress-status" id="progressStatus"></div>
+<div class="poverlay" id="pOverlay">
+  <div class="pmodal">
+    <h3 id="pTitle">Restoring Data</h3>
+    <div class="pbar"><div class="pfill" id="pFill"></div></div>
+    <div class="ptext" id="pText">Preparing...</div>
+    <div class="pstatus" id="pStatus"></div>
   </div>
 </div>
 
 <script>
-let DATA={}, CURR_TABLE='', CURR_ROWS=[], ALL_ROWS=[], SORT_COL=-1, SORT_DIR=1;
-let PAGE=0, PER_PAGE=100, RESTORE_MODE='';
-const CATS={rolling:['orders','website_orders','transactions','customers','expenses','ad_tracker','delivery_charges'],permanent:['inventory','settings','blocked_devices','admin_users','device_fingerprints','device_models','_draft_data','_archive_data']};
-function getCat(n){return CATS.permanent.includes(n)?'permanent':CATS.rolling.includes(n)?'rolling':'cleanup'}
+let DATA={},CURR='',ALL=[],ROWS=[],SCOL=-1,SDIR=1,PAGE=0,PP=100,RESTORE='';
+const CATS={perm:new Set(['inventory','settings','blocked_devices','admin_users','device_fingerprints','device_models','_draft_data','_archive_data']),roll:new Set(['orders','website_orders','transactions','customers','expenses','ad_tracker','delivery_charges'])};
+const FIN_TABLES=new Set(['orders','website_orders','transactions','expenses','ad_tracker']);
+function gc(n){return CATS.perm.has(n)?'perm':CATS.roll.has(n)?'roll':'clean'}
+
+// Date range & financial analysis for a table
+function analyzeTable(name,rows){
+  const r={min:null,max:null,months:new Set(),totalAmt:0,totalCost:0,totalProfit:0,cnt:0};
+  const dateKeys=['created_at','date','updated_at','ts','first_order_at','last_order_at'];
+  const amtKeys=['amount','revenue','total_spent','regular','sale','price'];
+  const costKeys=['cost','total_cost'];
+  const profitKeys=['profit'];
+
+  rows.forEach(row=>{
+    // Find date
+    for(const dk of dateKeys){
+      if(row[dk]&&typeof row[dk]==='string'&&/^\d{4}-\d{2}/.test(row[dk])){
+        const d=row[dk].split('T')[0];
+        if(!r.min||d<r.min)r.min=d;
+        if(!r.max||d>r.max)r.max=d;
+        r.months.add(d.substring(0,7));
+        break;
+      }
+    }
+    // Financial
+    for(const ak of amtKeys){if(typeof row[ak]==='number')r.totalAmt+=row[ak]}
+    for(const ck of costKeys){if(typeof row[ck]==='number')r.totalCost+=row[ck]}
+    for(const pk of profitKeys){if(typeof row[pk]==='number')r.totalProfit+=row[pk]}
+    r.cnt++;
+  });
+
+  r.months=Array.from(r.months).sort();
+  return r;
+}
 
 // Upload
-const uz=document.getElementById('uploadZone'),fi=document.getElementById('fileInput');
-uz.onclick=()=>fi.click();
-uz.ondragover=e=>{e.preventDefault();uz.style.borderColor='var(--accent)'};
-uz.ondragleave=()=>uz.style.borderColor='';
-uz.ondrop=e=>{e.preventDefault();uz.style.borderColor='';if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])};
+const ub=document.getElementById('uploadBox'),fi=document.getElementById('fileInput');
+ub.onclick=()=>fi.click();
+ub.ondragover=e=>{e.preventDefault();ub.style.borderColor='var(--brand)'};
+ub.ondragleave=()=>ub.style.borderColor='';
+ub.ondrop=e=>{e.preventDefault();ub.style.borderColor='';if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])};
 fi.onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0])};
 
 function loadFile(f){
@@ -289,203 +294,171 @@ function loadFile(f){
   r.onload=e=>{
     try{
       DATA=JSON.parse(e.target.result);
-      document.getElementById('uploadWrapper').style.display='none';
+      document.getElementById('uploadWrap').style.display='none';
       document.getElementById('layout').style.display='flex';
-      document.getElementById('headerActions').style.display='flex';
-      renderSidebar();
-      let totalRows=0;
+      document.getElementById('hRight').style.display='flex';
+
+      let total=0,bdate='';
       Object.keys(DATA).forEach(t=>{
         const entries=DATA[t];
-        if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))totalRows+=en.data.data.length});
+        if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))total+=en.data.data.length;if(en&&en.date)bdate=en.date});
       });
       document.getElementById('hTables').textContent=Object.keys(DATA).length;
-      document.getElementById('hRows').textContent=totalRows.toLocaleString();
-      document.getElementById('hSize').textContent=(f.size/1024/1024).toFixed(1);
-      toast(`Loaded ${f.name}`,'success');
-    }catch(err){toast('Invalid JSON: '+err.message,'error')}
+      document.getElementById('hRows').textContent=total.toLocaleString();
+      document.getElementById('hSize').textContent=(f.size/1024/1024).toFixed(1)+' MB';
+      document.getElementById('hDate').textContent=bdate||'—';
+      renderSide();
+      toast('Loaded '+f.name,'ok');
+    }catch(err){toast('Invalid JSON: '+err.message,'err')}
   };
   r.readAsText(f);
 }
 
 // Sidebar
-function renderSidebar(q=''){
+function renderSide(q=''){
   const list=document.getElementById('tableList');list.innerHTML='';
   const tables=Object.keys(DATA).filter(t=>!q||t.toLowerCase().includes(q.toLowerCase()));
   tables.forEach(name=>{
-    const entries=DATA[name];let total=0;
-    if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))total+=en.data.data.length});
-    const cat=getCat(name);
+    const entries=DATA[name];let total=0,bdate='';
+    if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))total+=en.data.data.length;if(en&&en.date)bdate=en.date});
+    const c=gc(name);
     const li=document.createElement('li');
-    li.className='table-item';
-    li.innerHTML=`<div class="info"><div class="name">${name}</div><div class="meta"><span class="badge badge-${cat}">${cat}</span></div></div><span class="count">${total.toLocaleString()}</span>`;
+    li.className='ti';
+    li.innerHTML=`<div class="ti-left"><div class="ti-name">${name}</div><div class="ti-meta"><span class="ti-badge ${c}">${c==='perm'?'permanent':c}</span>${bdate?`<span class="ti-date">${bdate}</span>`:''}</div></div><span class="ti-count">${total.toLocaleString()}</span>`;
     li.onclick=()=>selectTable(name,li);
     list.appendChild(li);
   });
-  if(tables.length&&!CURR_TABLE)selectTable(tables[0],list.children[0]);
+  if(tables.length&&!CURR)selectTable(tables[0],list.children[0]);
 }
-document.getElementById('sidebarSearch').oninput=e=>renderSidebar(e.target.value);
+document.getElementById('sideSearch').oninput=e=>renderSide(e.target.value);
 
-// Select Table
+// Select
 function selectTable(name,li){
-  CURR_TABLE=name;PAGE=0;SORT_COL=-1;SORT_DIR=1;
-  document.querySelectorAll('.table-item').forEach(l=>l.classList.remove('active'));
+  CURR=name;PAGE=0;SCOL=-1;SDIR=1;
+  document.querySelectorAll('.ti').forEach(l=>l.classList.remove('active'));
   if(li)li.classList.add('active');
-  document.getElementById('tableName').textContent=name;
-  ALL_ROWS=[];const entries=DATA[name];
-  if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))ALL_ROWS=ALL_ROWS.concat(en.data.data)});
-  CURR_ROWS=[...ALL_ROWS];
+  document.getElementById('tName').textContent=name;
+  ALL=[];const entries=DATA[name];
+  if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))ALL=ALL.concat(en.data.data)});
+  ROWS=[...ALL];
   document.getElementById('searchInput').value='';
-  document.getElementById('statusText').textContent=`${name}`;
-  document.getElementById('statusRows').textContent=`${ALL_ROWS.length.toLocaleString()} rows`;
-  document.getElementById('statusFiltered').textContent='';
+  document.getElementById('sText').textContent=name;
+  document.getElementById('sRows').textContent=ALL.length.toLocaleString()+' rows';
+  document.getElementById('sFiltered').textContent='';
+
+  // Analyze table
+  const info=analyzeTable(name,ALL);
+  renderInfo(name,info,ALL.length);
   renderTable();
+}
+
+function renderInfo(name,rows,cnt){
+  const el=document.getElementById('tableInfo');
+  const fmt=n=>{if(Math.abs(n)>=100000)return'BDT '+n.toLocaleString();return n.toLocaleString()};
+  let h=`<div class="info-chip"><span class="ic-label">Rows</span><span class="ic-value">${cnt.toLocaleString()}</span></div>`;
+  if(info.min)h+=`<div class="info-chip green"><span class="ic-label">From</span><span class="ic-value">${info.min}</span></div>`;
+  if(info.max)h+=`<div class="info-chip green"><span class="ic-label">To</span><span class="ic-value">${info.max}</span></div>`;
+  if(info.months.length)h+=`<div class="info-chip blue"><span class="ic-label">Months</span><span class="ic-value">${info.months.length} (${info.months[0]} → ${info.months[info.months.length-1]})</span></div>`;
+  if(FIN_TABLES.has(name)&&info.totalAmt)h+=`<div class="info-chip amber"><span class="ic-label">Total Amount</span><span class="ic-value">${fmt(info.totalAmt)}</span></div>`;
+  if(FIN_TABLES.has(name)&&info.totalCost)h+=`<div class="info-chip purple"><span class="ic-label">Total Cost</span><span class="ic-value">${fmt(info.totalCost)}</span></div>`;
+  if(FIN_TABLES.has(name)&&info.totalProfit)h+=`<div class="info-chip green"><span class="ic-label">Total Profit</span><span class="ic-value">${fmt(info.totalProfit)}</span></div>`;
+  el.innerHTML=h;
 }
 
 // Render
 function renderTable(){
-  const rows=CURR_ROWS;
-  const start=PAGE*PER_PAGE,end=Math.min(start+PER_PAGE,rows.length);
-  const pageRows=rows.slice(start,end);
-
-  if(!pageRows.length){
-    document.getElementById('tableHead').innerHTML='';
-    document.getElementById('tableBody').innerHTML='<tr><td colspan="100" style="text-align:center;padding:60px;color:var(--text-muted)">No data</td></tr>';
-    renderPagination(rows.length);
-    return;
-  }
-  const keys=new Set();
-  pageRows.forEach(r=>Object.keys(r).forEach(k=>keys.add(k)));
-  const cols=Array.from(keys);
-
-  document.getElementById('tableHead').innerHTML='<tr>'+cols.map((c,i)=>
-    `<th onclick="sortTable(${i})" class="${SORT_COL===i?(SORT_DIR===1?'sorted-asc':'sorted-desc'):''}">${esc(c)}</th>`
-  ).join('')+'</tr>';
-
-  document.getElementById('tableBody').innerHTML=pageRows.map(r=>
-    '<tr>'+cols.map(c=>`<td>${fmtCell(r[c])}</td>`).join('')+'</tr>'
-  ).join('');
-
-  renderPagination(rows.length);
+  const rows=ROWS;const s=PAGE*PP;const e=Math.min(s+PP,rows.length);const page=rows.slice(s,e);
+  if(!page.length){document.getElementById('tHead').innerHTML='';document.getElementById('tBody').innerHTML='<tr><td colspan="100" style="text-align:center;padding:40px;color:var(--text4)">No data</td></tr>';renderPag(rows.length);return}
+  const keys=new Set();page.forEach(r=>Object.keys(r).forEach(k=>keys.add(k)));const cols=Array.from(keys);
+  document.getElementById('tHead').innerHTML='<tr>'+cols.map((c,i)=>`<th onclick="sortT(${i})" class="${SCOL===i?(SDIR===1?'sa':'sd'):''}">${esc(c)}</th>`).join('')+'</tr>';
+  document.getElementById('tBody').innerHTML=page.map(r=>'<tr>'+cols.map(c=>`<td>${fc(r[c])}</td>`).join('')+'</tr>').join('');
+  renderPag(rows.length);
 }
 
-// Pagination
-function renderPagination(total){
-  const pages=Math.ceil(total/PER_PAGE);
-  const pg=document.getElementById('pagination');
-  if(pages<=1){pg.innerHTML='';return}
-  let h='';
-  h+=`<button onclick="goPage(0)" ${PAGE===0?'disabled':''}>⟨⟨</button>`;
-  h+=`<button onclick="goPage(${PAGE-1})" ${PAGE===0?'disabled':''}>⟨</button>`;
-
-  let pgs=[];
-  if(pages<=7){for(let i=0;i<pages;i++)pgs.push(i)}
-  else{
-    pgs.push(0);
-    if(PAGE>2)pgs.push('...');
-    for(let i=Math.max(1,PAGE-1);i<=Math.min(pages-2,PAGE+1);i++)pgs.push(i);
-    if(PAGE<pages-3)pgs.push('...');
-    pgs.push(pages-1);
-  }
-  pgs.forEach(p=>{
-    if(p==='...')h+=`<span class="info">…</span>`;
-    else h+=`<button class="${PAGE===p?'active':''}" onclick="goPage(${p})">${p+1}</button>`;
-  });
-
-  h+=`<button onclick="goPage(${PAGE+1})" ${PAGE>=pages-1?'disabled':''}>⟩</button>`;
-  h+=`<button onclick="goPage(${pages-1})" ${PAGE>=pages-1?'disabled':''}>⟩⟩</button>`;
-  h+=`<span class="info">${(PAGE*PER_PAGE+1).toLocaleString()}-${Math.min((PAGE+1)*PER_PAGE,total).toLocaleString()} of ${total.toLocaleString()}</span>`;
-  pg.innerHTML=h;
+function renderPag(total){
+  const pg=Math.ceil(total/PP);const el=document.getElementById('pagination');
+  if(pg<=1){el.innerHTML='';return}
+  let h=`<button onclick="goP(0)" ${PAGE===0?'disabled':''}>«</button>`;
+  h+=`<button onclick="goP(${PAGE-1})" ${PAGE===0?'disabled':''}>‹</button>`;
+  let pgs=[];if(pg<=7){for(let i=0;i<pg;i++)pgs.push(i)}else{pgs.push(0);if(PAGE>2)pgs.push('…');for(let i=Math.max(1,PAGE-1);i<=Math.min(pg-2,PAGE+1);i++)pgs.push(i);if(PAGE<pg-3)pgs.push('…');pgs.push(pg-1)}
+  pgs.forEach(p=>{if(p==='…')h+=`<span class="pinfo">…</span>`;else h+=`<button class="${PAGE===p?'on':''}" onclick="goP(${p})">${p+1}</button>`});
+  h+=`<button onclick="goP(${PAGE+1})" ${PAGE>=pg-1?'disabled':''}>›</button>`;
+  h+=`<button onclick="goP(${pg-1})" ${PAGE>=pg-1?'disabled':''}>»</button>`;
+  const ss=PAGE*PP;const ee=Math.min(ss+PP,total);
+  h+=`<span class="pinfo">${(ss+1).toLocaleString()}-${ee.toLocaleString()} of ${total.toLocaleString()}</span>`;
+  el.innerHTML=h;
 }
-function goPage(p){const pages=Math.ceil(CURR_ROWS.length/PER_PAGE);PAGE=Math.max(0,Math.min(p,pages-1));renderTable();document.getElementById('tableContainer').scrollTop=0}
+function goP(p){const pg=Math.ceil(ROWS.length/PP);PAGE=Math.max(0,Math.min(p,pg-1));renderTable();document.getElementById('tableWrap').scrollTop=0}
 
-// Format
-function fmtCell(v){
-  if(v===null||v===undefined)return'<span class="cell-null">—</span>';
-  if(typeof v==='boolean')return`<span class="cell-bool-${v}">${v}</span>`;
-  if(typeof v==='number')return`<span class="cell-num">${v.toLocaleString()}</span>`;
+function fc(v){
+  if(v===null||v===undefined)return'<span class="v-null">—</span>';
+  if(typeof v==='boolean')return`<span class="v-bool-${v}">${v}</span>`;
+  if(typeof v==='number')return`<span class="v-num">${v.toLocaleString()}</span>`;
   if(typeof v==='string'){
-    if(/^\d{4}-\d{2}-\d{2}/.test(v))return`<span class="cell-date">${esc(v.split('T')[0])}</span>`;
-    if(/^\d+$/.test(v)&&v.length<10)return`<span class="cell-num">${parseInt(v).toLocaleString()}</span>`;
-    const s=String(v);
-    return`<span class="cell-text" title="${esc(s)}">${esc(s.length>80?s.substring(0,80)+'…':s)}</span>`;
+    if(/^\d{4}-\d{2}-\d{2}/.test(v))return`<span class="v-date">${esc(v.split('T')[0])}</span>`;
+    if(/^\d+$/.test(v)&&v.length<10)return`<span class="v-num">${parseInt(v).toLocaleString()}</span>`;
+    const s=String(v);return`<span class="v-text" title="${esc(s)}">${esc(s.length>60?s.substring(0,60)+'…':s)}</span>`;
   }
-  const s=JSON.stringify(v);
-  return`<span class="cell-json" title="${esc(s)}">${esc(s.length>120?s.substring(0,120)+'…':s)}</span>`;
+  const s=JSON.stringify(v);return`<span class="v-json" title="${esc(s)}">${esc(s.length>100?s.substring(0,100)+'…':s)}</span>`;
 }
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
-// Sort
-function sortTable(col){
-  const keys=Object.keys(CURR_ROWS[0]||{});const key=keys[col];
-  if(SORT_COL===col)SORT_DIR*=-1;else{SORT_COL=col;SORT_DIR=1}
-  CURR_ROWS.sort((a,b)=>{
-    let va=a[key],vb=b[key];
-    if(va==null)return 1;if(vb==null)return-1;
-    if(typeof va==='number'&&typeof vb==='number')return(va-vb)*SORT_DIR;
-    return String(va).localeCompare(String(vb))*SORT_DIR;
-  });
+function sortT(col){
+  const keys=Object.keys(ROWS[0]||{});const key=keys[col];
+  if(SCOL===col)SDIR*=-1;else{SCOL=col;SDIR=1}
+  ROWS.sort((a,b)=>{let va=a[key],vb=b[key];if(va==null)return 1;if(vb==null)return-1;if(typeof va==='number'&&typeof vb==='number')return(va-vb)*SDIR;return String(va).localeCompare(String(vb))*SDIR});
   PAGE=0;renderTable();
 }
 
-// Search
 document.getElementById('searchInput').oninput=e=>{
   const q=e.target.value.toLowerCase();
-  CURR_ROWS=q?ALL_ROWS.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(q))):[...ALL_ROWS];
+  ROWS=q?ALL.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(q))):[...ALL];
   PAGE=0;renderTable();
-  document.getElementById('statusFiltered').textContent=q?`Filtered: ${CURR_ROWS.length.toLocaleString()} matches`:'';
+  document.getElementById('sFiltered').textContent=q?`Filtered: ${ROWS.length.toLocaleString()}`:'';
 };
 
-// Export
-function exportCSV(){
-  if(!CURR_ROWS.length)return;
-  const keys=Object.keys(CURR_ROWS[0]);
-  const csv=[keys.join(',')].concat(CURR_ROWS.map(r=>keys.map(k=>{
-    let v=r[k];if(v==null)return'';v=String(v).replace(/"/g,'""');
-    return(v.includes(',')||v.includes('"')||v.includes('\n'))?'"'+v+'"':v;
-  }).join(','))).join('\n');
-  dl(csv,`${CURR_TABLE}.csv`,'text/csv');
-  toast(`Exported ${CURR_TABLE}.csv (${CURR_ROWS.length} rows)`,'success');
+function expCSV(){
+  if(!ROWS.length)return;const keys=Object.keys(ROWS[0]);
+  const csv=[keys.join(',')].concat(ROWS.map(r=>keys.map(k=>{let v=r[k];if(v==null)return'';v=String(v).replace(/"/g,'""');return(v.includes(',')||v.includes('"')||v.includes('\n'))?'"'+v+'"':v}).join(','))).join('\n');
+  dl(csv,CURR+'.csv','text/csv');toast('Exported '+CURR+'.csv','ok');
 }
-function exportJSON(){dl(JSON.stringify(CURR_ROWS,null,2),`${CURR_TABLE}.json`,'application/json');toast(`Exported ${CURR_TABLE}.json`,'success')}
+function expJSON(){dl(JSON.stringify(ROWS,null,2),CURR+'.json','application/json');toast('Exported '+CURR+'.json','ok')}
 function dl(c,n,t){const b=new Blob([c],{type:t});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u)}
 
-// Restore
-function restoreAll(){RESTORE_MODE='all';document.getElementById('restoreTitle').textContent='Restore ALL Tables';document.getElementById('restoreSubtitle').textContent=`All ${Object.keys(DATA).length} tables will be restored`;document.getElementById('restoreOverlay').style.display='flex'}
-function restoreTable(){RESTORE_MODE='single';document.getElementById('restoreTitle').textContent=`Restore "${CURR_TABLE}"`;document.getElementById('restoreSubtitle').textContent=`${ALL_ROWS.length.toLocaleString()} rows will be restored`;document.getElementById('restoreOverlay').style.display='flex'}
-function closeRestore(){document.getElementById('restoreOverlay').style.display='none'}
+function restoreAll(){RESTORE='all';document.getElementById('rTitle').textContent='Restore ALL Tables';document.getElementById('rSub').textContent=Object.keys(DATA).length+' tables will be restored';document.getElementById('rOverlay').style.display='flex'}
+function restoreTable(){RESTORE='single';document.getElementById('rTitle').textContent='Restore "'+CURR+'"';document.getElementById('rSub').textContent=ALL.length.toLocaleString()+' rows';document.getElementById('rOverlay').style.display='flex'}
+function closeRestore(){document.getElementById('rOverlay').style.display='none'}
 
 async function confirmRestore(){
-  const url=document.getElementById('supaUrl').value.trim();
-  const key=document.getElementById('supaKey').value.trim();
-  if(!url||!key){toast('Fill in all fields','error');return}
-  document.getElementById('restoreOverlay').style.display='none';
-  document.getElementById('progressOverlay').style.display='flex';
-  const tables=RESTORE_MODE==='all'?Object.keys(DATA):[CURR_TABLE];
-  let done=0,errors=0;
+  const url=document.getElementById('supaUrl').value.trim();const key=document.getElementById('supaKey').value.trim();
+  if(!url||!key){toast('Fill in all fields','err');return}
+  document.getElementById('rOverlay').style.display='none';
+  document.getElementById('pOverlay').style.display='flex';
+  const tables=RESTORE==='all'?Object.keys(DATA):[CURR];let done=0,err=0;
   for(const table of tables){
-    document.getElementById('progressTitle').textContent=`Restoring ${table}`;
-    document.getElementById('progressText').textContent=`${done+1} of ${tables.length} tables`;
-    document.getElementById('progressFill').style.width=`${(done/tables.length)*100}%`;
+    document.getElementById('pTitle').textContent='Restoring '+table;
+    document.getElementById('pText').textContent=(done+1)+' of '+tables.length;
+    document.getElementById('pFill').style.width=(done/tables.length*100)+'%';
     try{
       let rows=[];const entries=DATA[table];
       if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))rows=rows.concat(en.data.data)});
       if(!rows.length){done++;continue}
       for(let i=0;i<rows.length;i+=500){
         const batch=rows.slice(i,i+500).map(r=>{const c=Object.assign({},r);delete c.id;delete c.profit;delete c.tot_sold;delete c.tot_stock;delete c.remaining;return c});
-        const resp=await fetch(`${url}/rest/v1/${table}`,{method:'POST',headers:{'apikey':key,'Authorization':`Bearer ${key}`,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},body:JSON.stringify(batch)});
-        if(!resp.ok){errors++;console.error(`[${table}]`,await resp.text())}
+        const resp=await fetch(url+'/rest/v1/'+table,{method:'POST',headers:{'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},body:JSON.stringify(batch)});
+        if(!resp.ok){err++;console.error('['+table+']',await resp.text())}
       }
-      document.getElementById('progressStatus').textContent=`✓ ${table} done`;
-    }catch(e){errors++;console.error(`[${table}]`,e.message)}
+      document.getElementById('pStatus').textContent='✓ '+table;
+    }catch(e){err++;console.error('['+table+']',e.message)}
     done++;
   }
-  document.getElementById('progressFill').style.width='100%';
-  document.getElementById('progressStatus').textContent=errors?`⚠ ${errors} errors`:'✓ All done';
-  toast(`Restore complete! ${errors?'('+errors+' errors)':''}`,errors?'error':'success');
-  setTimeout(()=>document.getElementById('progressOverlay').style.display='none',3000);
+  document.getElementById('pFill').style.width='100%';
+  document.getElementById('pStatus').textContent=err?'⚠ '+err+' errors':'✓ All done';
+  toast('Restore complete'+(err?' ('+errors+' errors)':''),'ok');
+  setTimeout(()=>document.getElementById('pOverlay').style.display='none',3000);
 }
 
-function toast(m,t){const d=document.createElement('div');d.className=`toast toast-${t}`;d.innerHTML=`<span>${t==='success'?'✓':t==='error'?'✗':'ℹ'}</span> ${m}`;document.body.appendChild(d);setTimeout(()=>d.remove(),3500)}
+function toast(m,t){const d=document.createElement('div');d.className='toast toast-'+t;d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),3000)}
 </script>
 </body>
 </html>
