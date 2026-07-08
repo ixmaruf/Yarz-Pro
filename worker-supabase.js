@@ -224,10 +224,10 @@ function corsHeaders() {
 function jsonResponse(data, status) {
   return new Response(JSON.stringify(data), {
     status: status || 200,
-    headers: Object.assign({
+    headers: Object.assign(corsHeaders(), {
       "Content-Type": "application/json",
       "Cache-Control": "no-store"
-    }, corsHeaders())
+    })
   });
 }
 
@@ -632,6 +632,36 @@ async function currentMonthSnapshotSupabase(env) {
   }
 }
 
+/**
+ * 6-month product analytics from transactions table.
+ * Returns array of { product_name, revenue, cost, units_sold } per product per month.
+ */
+async function productAnalytics6mSupabase(env) {
+  try {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const since = sixMonthsAgo.toISOString();
+    const rows = await supabaseRequest(env,
+      "transactions?date=gte." + since + "&select=product,qty,revenue,cost&order=date.asc",
+      { method: "GET" }
+    );
+    const arr = Array.isArray(rows) ? rows : [];
+    // Group by product
+    const map = {};
+    for (const r of arr) {
+      const name = (r.product || "Unknown").trim() || "Unknown";
+      if (!map[name]) map[name] = { product_name: name, revenue: 0, cost: 0, units_sold: 0 };
+      map[name].revenue += Number(r.revenue) || 0;
+      map[name].cost += Number(r.cost) || 0;
+      map[name].units_sold += Number(r.qty) || 1;
+    }
+    return { success: true, data: Object.values(map) };
+  } catch (e) {
+    console.error("[productAnalytics6m] failed:", e.message);
+    return { success: true, data: [] };
+  }
+}
+
 function gasUpstream(env) {
   const id = env && env.GAS_DEPLOYMENT_ID;
   if (!id) throw new Error("GAS_DEPLOYMENT_ID not set; cannot route to legacy GAS fallback. Set it via `wrangler secret put GAS_DEPLOYMENT_ID` if you need GAS fallback.");
@@ -796,10 +826,16 @@ async function handle(request, env, ctx) {
     }
   }
 
-  // __currentMonthSnapshot (admin GET) -> Supabase monthly stats
+  // __currentMonthSnapshot (admin POST) -> Supabase monthly stats
   // FIX #32: home dashboard "This Month" was always empty
-  if (supabaseEnabled && (action === "__currentmonthsnapshot" || action === "__currentMonthSnapshot") && request.method === "GET") {
+  // FIX: action is set to "getcurrentmonthsnapshot" by path normalizer (line 744)
+  if (supabaseEnabled && action === "getcurrentmonthsnapshot") {
     const r = await currentMonthSnapshotSupabase(env);
+    return jsonResponse(r);
+  }
+  // __productAnalytics6m (admin GET) -> Supabase product analytics
+  if (supabaseEnabled && action === "getproductanalytics6m") {
+    const r = await productAnalytics6mSupabase(env);
     return jsonResponse(r);
   }
   // Health / pub-cacheable: try Supabase first if enabled
@@ -1125,28 +1161,41 @@ async function handleTelegramWebhook(request, env) {
 
 const BACKUP_TABLES = {
   // Rolling window: backup THEN delete old rows
-  orders:           { days: 60,  dateCol: "created_at" },
-  website_orders:   { days: 60,  dateCol: "created_at" },
-  transactions:     { days: 60,  dateCol: "created_at" },
-  customers:        { days: 180, dateCol: "created_at" },
-  expenses:         { days: 180, dateCol: "created_at" },
-  ad_tracker:       { days: 180, dateCol: "created_at" },
-  delivery_charges: { days: 365, dateCol: null }, // yearly full backup only
+  orders:               { days: 60,  dateCol: "created_at" },
+  website_orders:       { days: 60,  dateCol: "created_at" },
+  transactions:         { days: 60,  dateCol: "created_at" },
+  customers:            { days: 180, dateCol: "created_at" },
+  expenses:             { days: 180, dateCol: "created_at" },
+  ad_tracker:           { days: 180, dateCol: "created_at" },
+  delivery_charges:     { days: 365, dateCol: null }, // yearly full backup only
+  device_fingerprints:  { days: 10,  dateCol: "created_at" }, // backup + cleanup: 10k visitors/day
+  device_models:        { days: 10,  dateCol: "created_at" }, // backup + cleanup: device info
 };
 
 const CLEANUP_TABLES = {
   // Cleanup only (no backup needed)
   admin_sessions:       { days: 10,  dateCol: "created_at" },
-  admin_login_attempts: { days: 10,  dateCol: "created_at" },
-  rate_limit_log:       { days: 10,  dateCol: "created_at" },
-  audit_log:            { days: 10,  dateCol: "created_at" },
-  _activity:            { days: 10,  dateCol: "created_at" },
-  steadfast_balance_cache: { days: 7, dateCol: "updated_at" },
+  admin_login_attempts: { days: 10,  dateCol: "ts" },
+  rate_limit_log:       { days: 10,  dateCol: "ts" },
+  audit_log:            { days: 10,  dateCol: "ts" },
+  _activity:            { days: 10,  dateCol: "ts" },
+  steadfast_balance_cache: { days: 7, dateCol: "fetched_at" },
   steadfast_consignments:  { days: 90, dateCol: "created_at" },
 };
 
 // Yearly backup (January only) — never delete
-const YEARLY_TABLES = ["inventory", "delivery_charges"];
+const YEARLY_TABLES = ["delivery_charges"];
+
+// Permanent backup: backup daily, NEVER delete from R2 or Supabase
+// Only tables with actual business data (keep under 50 subrequest limit)
+const PERMANENT_BACKUP_TABLES = [
+  "inventory",           // 3500+ products — most critical
+  "settings",            // 570+ business settings
+  "blocked_devices",     // security: blocked fraudsters
+  "admin_users",         // login credentials
+  "_draft_data",         // product drafts
+  "_archive_data",       // archived products
+];
 
 async function runDailyBackup(env) {
   const now = new Date();
@@ -1198,6 +1247,19 @@ async function runDailyBackup(env) {
       } catch (e) {
         results.push({ table, action: "error", msg: e.message });
       }
+    }
+  }
+
+  // ---- Step 4: Permanent backup (daily, never delete) ----
+  for (const table of PERMANENT_BACKUP_TABLES) {
+    try {
+      const rows = await supaQueryAll(env, table);
+      if (!rows.length) { results.push({ table, action: "skip", reason: "no rows" }); continue; }
+      const key = `permanent/${table}/${dateStr}.json`;
+      await r2Put(env, key, JSON.stringify(rows));
+      results.push({ table, action: "permanent-backup", rows: rows.length, key });
+    } catch (e) {
+      results.push({ table, action: "error", msg: e.message });
     }
   }
 
@@ -1272,26 +1334,36 @@ async function handleBackupClear(request, env) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
   try {
-    const count = await r2DeleteAll(env, "rolling/");
-    const yearlyCount = await r2DeleteAll(env, "yearly/");
-    return jsonResponse({ success: true, deleted: count + yearlyCount });
+    const rollingCount = await r2DeleteAll(env, "rolling/");
+    const permanentCount = await r2DeleteAll(env, "permanent/");
+    return jsonResponse({ success: true, deleted: rollingCount + permanentCount });
   } catch (e) {
     return jsonResponse({ success: false, error: e.message }, 500);
   }
 }
 
 // ---- Supabase helpers for backup ----
-async function supaQueryAll(env, table, limit = 10000) {
-  const url = `${env.SUPABASE_URL}/rest/v1/${table}?select=*&limit=${limit}`;
-  const resp = await fetch(url, {
-    headers: {
-      "apikey": env.SUPABASE_SERVICE_ROLE_KEY,
-      "Authorization": `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-      "Prefer": "return=representation"
-    }
-  });
-  if (!resp.ok) throw new Error(`Supabase ${table} query failed: ${resp.status}`);
-  return resp.json();
+async function supaQueryAll(env, table) {
+  const allRows = [];
+  let offset = 0;
+  const batchSize = 1000;
+  while (true) {
+    const url = `${env.SUPABASE_URL}/rest/v1/${table}?select=*&order=id&offset=${offset}&limit=${batchSize}`;
+    const resp = await fetch(url, {
+      headers: {
+        "apikey": env.SUPABASE_SERVICE_ROLE_KEY,
+        "Authorization": `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        "Prefer": "return=representation"
+      }
+    });
+    if (!resp.ok) throw new Error(`Supabase ${table} query failed: ${resp.status}`);
+    const batch = await resp.json();
+    if (!batch.length) break;
+    allRows.push(...batch);
+    if (batch.length < batchSize) break;
+    offset += batchSize;
+  }
+  return allRows;
 }
 
 async function supaDelete(env, table, dateCol, op, cutoff) {
@@ -1385,6 +1457,10 @@ export default {
       return handleAgentRoute(request, env, ctx);
     }
     // ---- R2 Backup routes ----
+    // Handle OPTIONS preflight for all /backup/* routes
+    if (url.pathname.startsWith("/backup/") && request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: corsHeaders() });
+    }
     if (url.pathname === "/backup/download") {
       return handleBackupDownload(request, env);
     }

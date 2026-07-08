@@ -247,7 +247,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 <script>
 let DATA={},CURR='',ALL=[],ROWS=[],SCOL=-1,SDIR=1,PAGE=0,PP=100,RESTORE='';
-const CATS={perm:new Set(['inventory','settings','blocked_devices','admin_users','device_fingerprints','device_models','_draft_data','_archive_data']),roll:new Set(['orders','website_orders','transactions','customers','expenses','ad_tracker','delivery_charges'])};
+const CATS={perm:new Set(['inventory','settings','blocked_devices','admin_users','_draft_data','_archive_data']),roll:new Set(['orders','website_orders','transactions','customers','expenses','ad_tracker','delivery_charges','device_fingerprints','device_models'])};
 const FIN_TABLES=new Set(['orders','website_orders','transactions','expenses','ad_tracker']);
 function gc(n){return CATS.perm.has(n)?'perm':CATS.roll.has(n)?'roll':'clean'}
 
