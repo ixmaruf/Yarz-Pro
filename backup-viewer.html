@@ -3,441 +3,487 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YARZ Backup Viewer & Restore</title>
+<title>YARZ Backup Studio</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f1117;color:#e1e4e8;min-height:100vh}
-.header{background:#161b22;border-bottom:1px solid #30363d;padding:16px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
-.header h1{font-size:20px;color:#58a6ff}
-.header .subtitle{color:#8b949e;font-size:13px}
-.upload-zone{border:2px dashed #30363d;border-radius:12px;padding:60px;text-align:center;margin:40px;cursor:pointer;transition:all .2s}
-.upload-zone:hover{border-color:#58a6ff;background:rgba(88,166,255,.05)}
-.upload-zone h2{color:#e1e4e8;margin-bottom:8px}
-.upload-zone p{color:#8b949e;font-size:14px}
-.upload-zone input{display:none}
+:root{
+  --bg:#09090b;--bg2:#111113;--bg3:#18181b;--bg4:#1f1f23;
+  --border:#27272a;--border2:#3f3f46;
+  --text:#fafafa;--text2:#a1a1aa;--text3:#71717a;--text4:#52525b;
+  --brand:#C8102E;--brand-light:#E63946;
+  --green:#22c55e;--green-bg:rgba(34,197,94,.08);
+  --red:#ef4444;--red-bg:rgba(239,68,68,.08);
+  --blue:#3b82f6;--blue-bg:rgba(59,130,246,.08);
+  --amber:#f59e0b;--amber-bg:rgba(245,158,11,.08);
+  --purple:#a855f7;--purple-bg:rgba(168,85,247,.08);
+  --cyan:#06b6d4;--cyan-bg:rgba(6,182,212,.08);
+  --radius:12px;--radius-sm:8px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+
+/* Header */
+.header{height:60px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;position:relative;z-index:100}
+.logo{display:flex;align-items:center;gap:12px}
+.logo svg{width:32px;height:32px;flex-shrink:0}
+.logo-text{display:flex;flex-direction:column}
+.logo-text h1{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.3px;line-height:1.2}
+.logo-text span{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:2px;font-weight:500}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:24px}
+.stat-group{display:flex;gap:20px}
+.stat-item{text-align:right}
+.stat-item .val{font-size:18px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.stat-item .lbl{font-size:9px;color:var(--text4);text-transform:uppercase;letter-spacing:1.5px;font-weight:500}
+
+/* Upload */
+.upload-wrap{display:flex;align-items:center;justify-content:center;height:calc(100vh - 60px);padding:40px}
+.upload-box{border:1.5px dashed var(--border2);border-radius:20px;padding:60px 48px;text-align:center;cursor:pointer;transition:all .3s;max-width:520px;width:100%;position:relative;background:var(--bg2)}
+.upload-box:hover{border-color:var(--brand);background:var(--bg3)}
+.upload-box svg{width:48px;height:48px;margin-bottom:20px;opacity:.4}
+.upload-box h2{font-size:22px;font-weight:600;margin-bottom:8px}
+.upload-box p{color:var(--text3);font-size:13px;line-height:1.6}
+.upload-box input{display:none}
+.tags{display:flex;gap:6px;justify-content:center;margin-top:16px}
+.tags span{background:var(--bg3);padding:4px 10px;border-radius:6px;font-size:10px;color:var(--text4);font-weight:500;border:1px solid var(--border)}
+
+/* Layout */
 .layout{display:none;height:calc(100vh - 60px)}
-.sidebar{width:260px;background:#161b22;border-right:1px solid #30363d;overflow-y:auto;flex-shrink:0}
-.sidebar h3{padding:12px 16px;color:#8b949e;font-size:12px;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid #30363d}
-.table-list{list-style:none}
-.table-list li{padding:10px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #21262d;transition:background .15s}
-.table-list li:hover{background:#1c2128}
-.table-list li.active{background:#1f6feb22;border-left:3px solid #58a6ff}
-.table-list .tname{font-size:14px;color:#e1e4e8}
-.table-list .tcount{background:#30363d;color:#8b949e;padding:2px 8px;border-radius:10px;font-size:11px}
-.table-list .taction{font-size:10px;color:#8b949e;margin-top:2px}
-.main{flex:1;overflow:auto;padding:0}
-.main-header{padding:16px 24px;border-bottom:1px solid #30363d;background:#161b22;position:sticky;top:0;z-index:10}
-.main-header h2{font-size:18px;color:#e1e4e8;margin-bottom:8px}
-.search-box{width:100%;padding:8px 12px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e1e4e8;font-size:14px;outline:none}
-.search-box:focus{border-color:#58a6ff}
-.table-wrapper{overflow-x:auto;padding:0}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{background:#161b22;color:#8b949e;padding:10px 12px;text-align:left;border-bottom:2px solid #30363d;position:sticky;top:0;cursor:pointer;white-space:nowrap;user-select:none}
-th:hover{color:#e1e4e8}
-th.sorted-asc::after{content:' ▲';color:#58a6ff}
-th.sorted-desc::after{content:' ▼';color:#58a6ff}
-td{padding:8px 12px;border-bottom:1px solid #21262d;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-tr:hover{background:#1c2128}
-.btn{padding:8px 16px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s}
-.btn-primary{background:#238636;color:#fff}
-.btn-primary:hover{background:#2ea043}
-.btn-danger{background:#da3633;color:#fff}
-.btn-danger:hover{background:#f85149}
-.btn-outline{background:transparent;border:1px solid #30363d;color:#e1e4e8}
-.btn-outline:hover{background:#1c2128;border-color:#58a6ff}
-.actions{display:flex;gap:8px;padding:12px 24px;background:#161b22;border-bottom:1px solid #30363d;flex-wrap:wrap;align-items:center}
-.stats{color:#8b949e;font-size:13px;margin-left:auto}
-.restore-panel{display:none;padding:16px 24px;background:#1c2128;border-bottom:1px solid #30363d}
-.restore-panel label{display:flex;align-items:center;gap:8px;padding:6px 0;color:#e1e4e8;font-size:14px;cursor:pointer}
-.restore-panel input[type=checkbox]{width:16px;height:16px}
-.progress{display:none;padding:16px 24px;background:#161b22;border-bottom:1px solid #30363d}
-.progress-bar{height:6px;background:#30363d;border-radius:3px;overflow:hidden;margin-top:8px}
-.progress-fill{height:100%;background:#238636;transition:width .3s;width:0}
-.progress-text{color:#8b949e;font-size:13px}
-.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:8px;color:#fff;font-size:14px;z-index:1000;animation:slideIn .3s ease;max-width:400px}
-.toast-success{background:#238636}
-.toast-error{background:#da3633}
-.toast-info{background:#1f6feb}
-@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-.empty{padding:60px;text-align:center;color:#8b949e}
-.badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-left:6px}
-.badge-rolling{background:#1f6feb33;color:#58a6ff}
-.badge-permanent{background:#23863633;color:#3fb950}
-.badge-cleanup{background:#da363333;color:#f85149}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;justify-content:center;align-items:center}
-.modal{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto}
-.modal h3{margin-bottom:16px;color:#e1e4e8}
-.modal p{color:#8b949e;margin-bottom:16px;font-size:14px}
-.modal .field{margin-bottom:12px}
-.modal .field label{display:block;color:#8b949e;font-size:12px;margin-bottom:4px}
-.modal .field input{width:100%;padding:8px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e1e4e8;font-size:14px}
-.modal .btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-.cell-json{font-family:'SF Mono',Consolas,monospace;font-size:11px;color:#79c0ff;max-width:400px}
-.cell-id{color:#d2a8ff;font-family:monospace}
-.cell-date{color:#7ee787;font-family:monospace}
-.cell-num{color:#f0883e;text-align:right;font-family:monospace}
-.cell-bool-true{color:#3fb950}
-.cell-bool-false{color:#f85149}
-.cell-null{color:#484f58;font-style:italic}
-.cell-text{color:#e1e4e8}
+
+/* Sidebar */
+.sidebar{width:260px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-head{padding:16px 16px 12px;border-bottom:1px solid var(--border)}
+.sidebar-head h3{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text4);font-weight:600;margin-bottom:10px}
+.sidebar-search{width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;font-family:inherit;transition:border .15s}
+.sidebar-search:focus{border-color:var(--brand)}
+.table-list{list-style:none;overflow-y:auto;flex:1;padding:6px}
+.ti{padding:10px 12px;cursor:pointer;border-radius:var(--radius-sm);margin-bottom:1px;transition:all .12s;display:flex;justify-content:space-between;align-items:center;border:1px solid transparent}
+.ti:hover{background:var(--bg3)}
+.ti.active{background:var(--bg3);border-color:var(--brand)}
+.ti-left{display:flex;flex-direction:column;gap:1px;min-width:0}
+.ti-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ti-meta{display:flex;gap:6px;align-items:center}
+.ti-badge{font-size:8px;padding:1px 5px;border-radius:3px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.ti-badge.perm{background:var(--green-bg);color:var(--green)}
+.ti-badge.roll{background:var(--cyan-bg);color:var(--cyan)}
+.ti-badge.clean{background:var(--red-bg);color:var(--red)}
+.ti-date{font-size:9px;color:var(--text4)}
+.ti-count{font-size:11px;font-weight:600;color:var(--text3);background:var(--bg);padding:2px 7px;border-radius:6px;flex-shrink:0}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.main-head{padding:12px 20px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.main-head h2{font-size:16px;font-weight:600;min-width:140px}
+.search-wrap{flex:1;max-width:360px;position:relative}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text4);width:14px;height:14px}
+.search-input{width:100%;padding:7px 10px 7px 32px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;font-family:inherit}
+.search-input:focus{border-color:var(--brand)}
+.main-btns{display:flex;gap:6px;margin-left:auto}
+
+/* Buttons */
+.btn{padding:6px 14px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:11px;font-weight:500;font-family:inherit;transition:all .12s;display:inline-flex;align-items:center;gap:5px}
+.btn-brand{background:var(--brand);color:#fff}.btn-brand:hover{background:var(--brand-light)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#16a34a}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text3)}.btn-outline:hover{border-color:var(--brand);color:var(--text)}
+
+/* Table Info Bar */
+.table-info{padding:12px 20px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;flex-shrink:0}
+.info-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px}
+.info-chip .ic-label{color:var(--text4);font-weight:500}
+.info-chip .ic-value{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+.info-chip.green .ic-value{color:var(--green)}
+.info-chip.blue .ic-value{color:var(--blue)}
+.info-chip.amber .ic-value{color:var(--amber)}
+.info-chip.purple .ic-value{color:var(--purple)}
+
+/* Table */
+.table-wrap{flex:1;overflow:auto;position:relative}
+.dtable{width:100%;border-collapse:collapse;font-size:11px}
+.dtable thead{position:sticky;top:0;z-index:10}
+.dtable th{background:var(--bg2);color:var(--text4);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;white-space:nowrap;user-select:none}
+.dtable th:hover{color:var(--brand)}
+.dtable th.sa::after{content:' ▲';font-size:8px}
+.dtable th.sd::after{content:' ▼';font-size:8px}
+.dtable td{padding:6px 12px;border-bottom:1px solid var(--border);white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;color:var(--text2);transition:background .08s}
+.dtable tr:hover td{background:var(--bg3);color:var(--text)}
+.v-num{color:var(--amber);font-variant-numeric:tabular-nums;font-weight:500;text-align:right}
+.v-date{color:var(--green);font-size:10px}
+.v-id{color:var(--purple);font-size:10px}
+.v-bool-t{color:var(--green)}.v-bool-f{color:var(--red)}
+.v-null{color:var(--text4);font-style:italic;opacity:.4}
+.v-json{color:var(--cyan);font-size:10px}
+.v-text{color:var(--text2)}
+
+/* Pagination */
+.pagination{display:flex;align-items:center;gap:6px;padding:8px 20px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0}
+.pagination button{padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;color:var(--text3);font-size:11px;cursor:pointer;font-family:inherit;transition:all .12s}
+.pagination button:hover:not(:disabled){border-color:var(--brand);color:var(--text)}
+.pagination button:disabled{opacity:.25;cursor:not-allowed}
+.pagination button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.pagination .pinfo{color:var(--text4);font-size:11px;margin:0 6px}
+
+/* Status */
+.status{padding:6px 20px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;gap:12px;font-size:11px;color:var(--text4);flex-shrink:0}
+.status .sep{width:1px;height:12px;background:var(--border)}
+
+/* Restore */
+.roverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;justify-content:center;align-items:center;backdrop-filter:blur(4px)}
+.rmodal{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:440px;width:90%}
+.rmodal h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.rmodal .sub{color:var(--text4);font-size:12px;margin-bottom:16px}
+.rmodal .field{margin-bottom:12px}
+.rmodal .field label{display:block;font-size:11px;font-weight:500;color:var(--text3);margin-bottom:4px}
+.rmodal .field input{width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;font-family:inherit}
+.rmodal .field input:focus{border-color:var(--brand)}
+.rmodal .btnrow{display:flex;gap:6px;justify-content:flex-end;margin-top:16px}
+
+/* Progress */
+.poverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;justify-content:center;align-items:center;backdrop-filter:blur(4px)}
+.pmodal{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:440px;width:90%;text-align:center}
+.pmodal h3{font-size:16px;font-weight:600;margin-bottom:12px}
+.pbar{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin:12px 0}
+.pfill{height:100%;background:linear-gradient(90deg,var(--brand),var(--purple));border-radius:3px;transition:width .3s;width:0}
+.ptext{color:var(--text4);font-size:12px}
+.pstatus{margin-top:10px;font-size:13px;font-weight:500}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:var(--radius-sm);color:#fff;font-size:12px;font-weight:500;z-index:1000;animation:tin .25s;display:flex;align-items:center;gap:6px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.toast-ok{background:var(--green)}.toast-err{background:var(--red)}.toast-info{background:var(--blue)}
+@keyframes tin{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text4)}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <div>
-    <h1>YARZ Backup Viewer & Restore</h1>
-    <div class="subtitle">Open your backup JSON file to view, search, and restore data</div>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" width="32" height="32"><circle cx="12" cy="12" r="10" fill="#C8102E" stroke="#E8D9B8" stroke-width=".6"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#FBF8F1" stroke-width=".7" opacity=".85"/><circle cx="9.8" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="9.8" r="1.2" fill="#FBF8F1"/><circle cx="9.8" cy="14.2" r="1.2" fill="#FBF8F1"/><circle cx="14.2" cy="14.2" r="1.2" fill="#FBF8F1"/></svg>
+    <div class="logo-text">
+      <h1>Backup Studio</h1>
+      <span>YARZ Business Data</span>
+    </div>
+  </div>
+  <div class="header-right" id="hRight" style="display:none">
+    <div class="stat-group">
+      <div class="stat-item"><div class="val" id="hTables">0</div><div class="lbl">Tables</div></div>
+      <div class="stat-item"><div class="val" id="hRows">0</div><div class="lbl">Total Rows</div></div>
+      <div class="stat-item"><div class="val" id="hSize">0</div><div class="lbl">Size</div></div>
+      <div class="stat-item"><div class="val" id="hDate">—</div><div class="lbl">Backup Date</div></div>
+    </div>
   </div>
 </div>
 
-<div class="upload-zone" id="uploadZone">
-  <h2>Drop your backup JSON file here</h2>
-  <p>or click to browse — supports yarz-backup-*.json files</p>
-  <input type="file" id="fileInput" accept=".json">
+<div class="upload-wrap" id="uploadWrap">
+  <div class="upload-box" id="uploadBox">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+    <h2>Drop your backup file</h2>
+    <p>Open <strong>yarz-backup-*.json</strong> to view, search & restore all business data</p>
+    <input type="file" id="fileInput" accept=".json">
+    <div class="tags"><span>JSON</span><span>15 Tables</span><span>Full Restore</span></div>
+  </div>
 </div>
 
 <div class="layout" id="layout">
   <div class="sidebar">
-    <h3>Tables (<span id="tableCount">0</span>)</h3>
+    <div class="sidebar-head">
+      <h3>Tables</h3>
+      <input type="text" class="sidebar-search" id="sideSearch" placeholder="Filter...">
+    </div>
     <ul class="table-list" id="tableList"></ul>
   </div>
   <div class="main">
-    <div class="main-header">
-      <h2 id="tableName">Select a table</h2>
-      <input type="text" class="search-box" id="searchBox" placeholder="Search rows...">
-    </div>
-    <div class="actions" id="actionsBar">
-      <button class="btn btn-primary" id="btnRestoreAll" onclick="restoreAll()">Restore All to Supabase</button>
-      <button class="btn btn-outline" id="btnRestoreTable" onclick="restoreTable()">Restore This Table</button>
-      <button class="btn btn-outline" onclick="exportCSV()">Export CSV</button>
-      <button class="btn btn-outline" onclick="exportTableJSON()">Export Table JSON</button>
-      <div class="stats" id="statsInfo"></div>
-    </div>
-    <div class="restore-panel" id="restorePanel">
-      <h3 style="margin-bottom:12px;color:#e1e4e8">Restore Configuration</h3>
-      <div class="field">
-        <label>Supabase Project URL</label>
-        <input type="text" id="supaUrl" placeholder="https://xxxxx.supabase.co" value="https://xdzduowhwubogaavraap.supabase.co">
+    <div class="main-head">
+      <h2 id="tName">—</h2>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search...">
       </div>
-      <div class="field">
-        <label>Supabase Service Role Key</label>
-        <input type="password" id="supaKey" placeholder="eyJ... (service_role key)">
-      </div>
-      <div style="margin-top:12px;display:flex;gap:8px">
-        <button class="btn btn-primary" onclick="confirmRestore()">Confirm Restore</button>
-        <button class="btn btn-outline" onclick="cancelRestore()">Cancel</button>
+      <div class="main-btns">
+        <button class="btn btn-green" onclick="restoreAll()">Restore All</button>
+        <button class="btn btn-outline" onclick="restoreTable()">Restore Table</button>
+        <button class="btn btn-outline" onclick="expCSV()">↓ CSV</button>
+        <button class="btn btn-outline" onclick="expJSON()">↓ JSON</button>
       </div>
     </div>
-    <div class="progress" id="progressPanel">
-      <div class="progress-text" id="progressText">Preparing...</div>
-      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="table-info" id="tableInfo"></div>
+    <div class="table-wrap" id="tableWrap">
+      <table class="dtable"><thead id="tHead"></thead><tbody id="tBody"></tbody></table>
     </div>
-    <div class="table-wrapper" id="tableWrapper">
-      <table id="dataTable"><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table>
-    </div>
-    <div class="empty" id="emptyState">
-      <h3>No data loaded</h3>
-      <p>Drop a backup JSON file to get started</p>
+    <div class="pagination" id="pagination"></div>
+    <div class="status">
+      <span id="sText">Ready</span><div class="sep"></div>
+      <span id="sRows">0 rows</span><div class="sep"></div>
+      <span id="sFiltered"></span>
     </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal" id="modal"></div>
+<div class="roverlay" id="rOverlay">
+  <div class="rmodal">
+    <h3 id="rTitle">Restore to Supabase</h3>
+    <div class="sub" id="rSub">Enter your Supabase credentials</div>
+    <div class="field"><label>Project URL</label><input type="text" id="supaUrl" placeholder="https://xxxxx.supabase.co" value="https://xdzduowhwubogaavraap.supabase.co"></div>
+    <div class="field"><label>Service Role Key</label><input type="password" id="supaKey" placeholder="eyJ... (service_role key)"></div>
+    <div class="btnrow">
+      <button class="btn btn-outline" onclick="closeRestore()">Cancel</button>
+      <button class="btn btn-green" onclick="confirmRestore()">Start Restore</button>
+    </div>
+  </div>
+</div>
+
+<div class="poverlay" id="pOverlay">
+  <div class="pmodal">
+    <h3 id="pTitle">Restoring Data</h3>
+    <div class="pbar"><div class="pfill" id="pFill"></div></div>
+    <div class="ptext" id="pText">Preparing...</div>
+    <div class="pstatus" id="pStatus"></div>
+  </div>
 </div>
 
 <script>
-let backupData = {};
-let currentTable = '';
-let currentRows = [];
-let sortCol = -1;
-let sortDir = 1;
-let restoreMode = '';
+let DATA={},CURR='',ALL=[],ROWS=[],SCOL=-1,SDIR=1,PAGE=0,PP=100,RESTORE='';
+const CATS={perm:new Set(['inventory','settings','blocked_devices','admin_users','_draft_data','_archive_data']),roll:new Set(['orders','website_orders','transactions','customers','expenses','ad_tracker','delivery_charges','device_fingerprints','device_models'])};
+const FIN_TABLES=new Set(['orders','website_orders','transactions','expenses','ad_tracker']);
+function gc(n){return CATS.perm.has(n)?'perm':CATS.roll.has(n)?'roll':'clean'}
 
-// File upload
-const uploadZone = document.getElementById('uploadZone');
-const fileInput = document.getElementById('fileInput');
-uploadZone.addEventListener('click', () => fileInput.click());
-uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.style.borderColor = '#58a6ff'; });
-uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = '#30363d'; });
-uploadZone.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadZone.style.borderColor = '#30363d';
-  const file = e.dataTransfer.files[0];
-  if (file) loadFile(file);
-});
-fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+// Date range & financial analysis for a table
+function analyzeTable(name,rows){
+  const r={min:null,max:null,months:new Set(),totalAmt:0,totalCost:0,totalProfit:0,cnt:0};
+  const dateKeys=['created_at','date','updated_at','ts','first_order_at','last_order_at'];
+  const amtKeys=['amount','revenue','total_spent','regular','sale','price'];
+  const costKeys=['cost','total_cost'];
+  const profitKeys=['profit'];
 
-function loadFile(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      backupData = JSON.parse(e.target.result);
-      renderSidebar();
-      uploadZone.style.display = 'none';
-      document.getElementById('layout').style.display = 'flex';
-      toast(`Loaded: ${file.name} (${(file.size/1024/1024).toFixed(2)} MB)`, 'success');
-    } catch (err) {
-      toast('Invalid JSON file: ' + err.message, 'error');
+  rows.forEach(row=>{
+    // Find date
+    for(const dk of dateKeys){
+      if(row[dk]&&typeof row[dk]==='string'&&/^\d{4}-\d{2}/.test(row[dk])){
+        const d=row[dk].split('T')[0];
+        if(!r.min||d<r.min)r.min=d;
+        if(!r.max||d>r.max)r.max=d;
+        r.months.add(d.substring(0,7));
+        break;
+      }
     }
-  };
-  reader.readAsText(file);
+    // Financial
+    for(const ak of amtKeys){if(typeof row[ak]==='number')r.totalAmt+=row[ak]}
+    for(const ck of costKeys){if(typeof row[ck]==='number')r.totalCost+=row[ck]}
+    for(const pk of profitKeys){if(typeof row[pk]==='number')r.totalProfit+=row[pk]}
+    r.cnt++;
+  });
+
+  r.months=Array.from(r.months).sort();
+  return r;
 }
 
-function renderSidebar() {
-  const list = document.getElementById('tableList');
-  list.innerHTML = '';
-  const tables = Object.keys(backupData);
-  document.getElementById('tableCount').textContent = tables.length;
-  tables.forEach(name => {
-    const entries = backupData[name];
-    let totalRows = 0;
-    if (Array.isArray(entries)) {
-      entries.forEach(entry => {
-        if (entry && entry.data && Array.isArray(entry.data.data)) {
-          totalRows += entry.data.data.length;
-        }
+// Date formatting helpers
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function fmtDate(d){
+  if(!d||typeof d!=='string')return d;
+  const m=d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(!m)return d;
+  return parseInt(m[3])+' '+MONTHS[parseInt(m[2])-1]+' '+m[1];
+}
+function fmtMonth(m){
+  if(!m||typeof m!=='string')return m;
+  const p=m.match(/^(\d{4})-(\d{2})$/);
+  if(!p)return m;
+  return MONTHS[parseInt(p[2])-1]+' '+p[1];
+}
+function fmtDateRange(a,b){
+  if(a&&b){
+    const pa=a.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const pb=b.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if(pa&&pb&&pa[1]===pb[1]&&pa[2]===pb[2])return parseInt(pa[3])+'–'+parseInt(pb[3])+' '+MONTHS[parseInt(pa[2])-1]+' '+pa[1];
+    if(pa&&pb&&pa[1]===pb[1])return MONTHS[parseInt(pa[2])-1]+' '+parseInt(pa[3])+' – '+MONTHS[parseInt(pb[2])-1]+' '+parseInt(pb[3])+', '+pa[1];
+    return fmtDate(a)+' – '+fmtDate(b);
+  }
+  return fmtDate(a||b);
+}
+
+// Upload
+const ub=document.getElementById('uploadBox'),fi=document.getElementById('fileInput');
+ub.onclick=()=>fi.click();
+ub.ondragover=e=>{e.preventDefault();ub.style.borderColor='var(--brand)'};
+ub.ondragleave=()=>ub.style.borderColor='';
+ub.ondrop=e=>{e.preventDefault();ub.style.borderColor='';if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0])};
+fi.onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0])};
+
+function loadFile(f){
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      DATA=JSON.parse(e.target.result);
+      document.getElementById('uploadWrap').style.display='none';
+      document.getElementById('layout').style.display='flex';
+      document.getElementById('hRight').style.display='flex';
+
+      let total=0,bdate='';
+      Object.keys(DATA).forEach(t=>{
+        const entries=DATA[t];
+        if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))total+=en.data.data.length;if(en&&en.date)bdate=en.date});
       });
-    }
-    const li = document.createElement('li');
-    li.innerHTML = `<div><div class="tname">${name}</div><div class="taction">${getCategory(name)}</div></div><span class="tcount">${totalRows}</span>`;
-    li.onclick = () => selectTable(name, li);
+      document.getElementById('hTables').textContent=Object.keys(DATA).length;
+      document.getElementById('hRows').textContent=total.toLocaleString();
+      document.getElementById('hSize').textContent=(f.size/1024/1024).toFixed(1)+' MB';
+      document.getElementById('hDate').textContent=bdate?fmtDate(bdate):'—';
+      renderSide();
+      toast('Loaded '+f.name,'ok');
+    }catch(err){toast('Invalid JSON: '+err.message,'err')}
+  };
+  r.readAsText(f);
+}
+
+// Sidebar
+function renderSide(q=''){
+  const list=document.getElementById('tableList');list.innerHTML='';
+  const tables=Object.keys(DATA).filter(t=>!q||t.toLowerCase().includes(q.toLowerCase()));
+  tables.forEach(name=>{
+    const entries=DATA[name];let total=0,bdate='';
+    if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))total+=en.data.data.length;if(en&&en.date)bdate=en.date});
+    const c=gc(name);
+    const li=document.createElement('li');
+    li.className='ti';
+    li.innerHTML=`<div class="ti-left"><div class="ti-name">${name}</div><div class="ti-meta"><span class="ti-badge ${c}">${c==='perm'?'permanent':c}</span>${bdate?`<span class="ti-date">${fmtDate(bdate)}</span>`:''}</div></div><span class="ti-count">${total.toLocaleString()}</span>`;
+    li.onclick=()=>selectTable(name,li);
     list.appendChild(li);
   });
-  // Auto-select first table
-  if (tables.length > 0) {
-    selectTable(tables[0], list.children[0]);
+  if(tables.length&&!CURR)selectTable(tables[0],list.children[0]);
+}
+document.getElementById('sideSearch').oninput=e=>renderSide(e.target.value);
+
+// Select
+function selectTable(name,li){
+  CURR=name;PAGE=0;SCOL=-1;SDIR=1;
+  document.querySelectorAll('.ti').forEach(l=>l.classList.remove('active'));
+  if(li)li.classList.add('active');
+  document.getElementById('tName').textContent=name;
+  ALL=[];const entries=DATA[name];
+  if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))ALL=ALL.concat(en.data.data)});
+  ROWS=[...ALL];
+  document.getElementById('searchInput').value='';
+  document.getElementById('sText').textContent=name;
+  document.getElementById('sRows').textContent=ALL.length.toLocaleString()+' rows';
+  document.getElementById('sFiltered').textContent='';
+
+  // Analyze table
+  const info=analyzeTable(name,ALL);
+  renderInfo(name,info,ALL.length);
+  renderTable();
+}
+
+function renderInfo(name,info,cnt){
+  const el=document.getElementById('tableInfo');
+  const fmt=n=>{if(Math.abs(n)>=100000)return'BDT '+n.toLocaleString();return n.toLocaleString()};
+  let h=`<div class="info-chip"><span class="ic-label">Rows</span><span class="ic-value">${cnt.toLocaleString()}</span></div>`;
+  if(info.min)h+=`<div class="info-chip green"><span class="ic-label">From</span><span class="ic-value">${fmtDate(info.min)}</span></div>`;
+  if(info.max)h+=`<div class="info-chip green"><span class="ic-label">To</span><span class="ic-value">${fmtDate(info.max)}</span></div>`;
+  if(info.months.length)h+=`<div class="info-chip blue"><span class="ic-label">Months</span><span class="ic-value">${info.months.length} (${fmtMonth(info.months[0])}${info.months.length>1?' → '+fmtMonth(info.months[info.months.length-1]):''})</span></div>`;
+  if(FIN_TABLES.has(name)&&info.totalAmt)h+=`<div class="info-chip amber"><span class="ic-label">Total Amount</span><span class="ic-value">${fmt(info.totalAmt)}</span></div>`;
+  if(FIN_TABLES.has(name)&&info.totalCost)h+=`<div class="info-chip purple"><span class="ic-label">Total Cost</span><span class="ic-value">${fmt(info.totalCost)}</span></div>`;
+  if(FIN_TABLES.has(name)&&info.totalProfit)h+=`<div class="info-chip green"><span class="ic-label">Total Profit</span><span class="ic-value">${fmt(info.totalProfit)}</span></div>`;
+  el.innerHTML=h;
+}
+
+// Render
+function renderTable(){
+  const rows=ROWS;const s=PAGE*PP;const e=Math.min(s+PP,rows.length);const page=rows.slice(s,e);
+  if(!page.length){document.getElementById('tHead').innerHTML='';document.getElementById('tBody').innerHTML='<tr><td colspan="100" style="text-align:center;padding:40px;color:var(--text4)">No data</td></tr>';renderPag(rows.length);return}
+  const keys=new Set();page.forEach(r=>Object.keys(r).forEach(k=>keys.add(k)));const cols=Array.from(keys);
+  document.getElementById('tHead').innerHTML='<tr>'+cols.map((c,i)=>`<th onclick="sortT(${i})" class="${SCOL===i?(SDIR===1?'sa':'sd'):''}">${esc(c)}</th>`).join('')+'</tr>';
+  document.getElementById('tBody').innerHTML=page.map(r=>'<tr>'+cols.map(c=>`<td>${fc(r[c])}</td>`).join('')+'</tr>').join('');
+  renderPag(rows.length);
+}
+
+function renderPag(total){
+  const pg=Math.ceil(total/PP);const el=document.getElementById('pagination');
+  if(pg<=1){el.innerHTML='';return}
+  let h=`<button onclick="goP(0)" ${PAGE===0?'disabled':''}>«</button>`;
+  h+=`<button onclick="goP(${PAGE-1})" ${PAGE===0?'disabled':''}>‹</button>`;
+  let pgs=[];if(pg<=7){for(let i=0;i<pg;i++)pgs.push(i)}else{pgs.push(0);if(PAGE>2)pgs.push('…');for(let i=Math.max(1,PAGE-1);i<=Math.min(pg-2,PAGE+1);i++)pgs.push(i);if(PAGE<pg-3)pgs.push('…');pgs.push(pg-1)}
+  pgs.forEach(p=>{if(p==='…')h+=`<span class="pinfo">…</span>`;else h+=`<button class="${PAGE===p?'on':''}" onclick="goP(${p})">${p+1}</button>`});
+  h+=`<button onclick="goP(${PAGE+1})" ${PAGE>=pg-1?'disabled':''}>›</button>`;
+  h+=`<button onclick="goP(${pg-1})" ${PAGE>=pg-1?'disabled':''}>»</button>`;
+  const ss=PAGE*PP;const ee=Math.min(ss+PP,total);
+  h+=`<span class="pinfo">${(ss+1).toLocaleString()}-${ee.toLocaleString()} of ${total.toLocaleString()}</span>`;
+  el.innerHTML=h;
+}
+function goP(p){const pg=Math.ceil(ROWS.length/PP);PAGE=Math.max(0,Math.min(p,pg-1));renderTable();document.getElementById('tableWrap').scrollTop=0}
+
+function fc(v){
+  if(v===null||v===undefined)return'<span class="v-null">—</span>';
+  if(typeof v==='boolean')return`<span class="v-bool-${v}">${v}</span>`;
+  if(typeof v==='number')return`<span class="v-num">${v.toLocaleString()}</span>`;
+  if(typeof v==='string'){
+    if(/^\d{4}-\d{2}-\d{2}/.test(v))return`<span class="v-date">${esc(fmtDate(v.split('T')[0]))}</span>`;
+    if(/^\d+$/.test(v)&&v.length<10)return`<span class="v-num">${parseInt(v).toLocaleString()}</span>`;
+    const s=String(v);return`<span class="v-text" title="${esc(s)}">${esc(s.length>60?s.substring(0,60)+'…':s)}</span>`;
   }
+  const s=JSON.stringify(v);return`<span class="v-json" title="${esc(s)}">${esc(s.length>100?s.substring(0,100)+'…':s)}</span>`;
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+function sortT(col){
+  const keys=Object.keys(ROWS[0]||{});const key=keys[col];
+  if(SCOL===col)SDIR*=-1;else{SCOL=col;SDIR=1}
+  ROWS.sort((a,b)=>{let va=a[key],vb=b[key];if(va==null)return 1;if(vb==null)return-1;if(typeof va==='number'&&typeof vb==='number')return(va-vb)*SDIR;return String(va).localeCompare(String(vb))*SDIR});
+  PAGE=0;renderTable();
 }
 
-function getCategory(name) {
-  const rolling = ['orders','website_orders','transactions','customers','expenses','ad_tracker','delivery_charges'];
-  const permanent = ['inventory','settings','blocked_devices','admin_users','device_fingerprints','device_models','_draft_data','_archive_data'];
-  if (rolling.includes(name)) return '<span class="badge badge-rolling">ROLLING</span>';
-  if (permanent.includes(name)) return '<span class="badge badge-permanent">PERMANENT</span>';
-  return '<span class="badge badge-cleanup">CLEANUP</span>';
-}
+document.getElementById('searchInput').oninput=e=>{
+  const q=e.target.value.toLowerCase();
+  ROWS=q?ALL.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(q))):[...ALL];
+  PAGE=0;renderTable();
+  document.getElementById('sFiltered').textContent=q?`Filtered: ${ROWS.length.toLocaleString()}`:'';
+};
 
-function selectTable(name, li) {
-  currentTable = name;
-  document.querySelectorAll('.table-list li').forEach(l => l.classList.remove('active'));
-  if (li) li.classList.add('active');
-  document.getElementById('tableName').textContent = name;
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('tableWrapper').style.display = 'block';
-  
-  // Extract rows
-  currentRows = [];
-  const entries = backupData[name];
-  if (Array.isArray(entries)) {
-    entries.forEach(entry => {
-      if (entry && entry.data && Array.isArray(entry.data.data)) {
-        currentRows = currentRows.concat(entry.data.data);
+function expCSV(){
+  if(!ROWS.length)return;const keys=Object.keys(ROWS[0]);
+  const csv=[keys.join(',')].concat(ROWS.map(r=>keys.map(k=>{let v=r[k];if(v==null)return'';v=String(v).replace(/"/g,'""');return(v.includes(',')||v.includes('"')||v.includes('\n'))?'"'+v+'"':v}).join(','))).join('\n');
+  dl(csv,CURR+'.csv','text/csv');toast('Exported '+CURR+'.csv','ok');
+}
+function expJSON(){dl(JSON.stringify(ROWS,null,2),CURR+'.json','application/json');toast('Exported '+CURR+'.json','ok')}
+function dl(c,n,t){const b=new Blob([c],{type:t});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u)}
+
+function restoreAll(){RESTORE='all';document.getElementById('rTitle').textContent='Restore ALL Tables';document.getElementById('rSub').textContent=Object.keys(DATA).length+' tables will be restored';document.getElementById('rOverlay').style.display='flex'}
+function restoreTable(){RESTORE='single';document.getElementById('rTitle').textContent='Restore "'+CURR+'"';document.getElementById('rSub').textContent=ALL.length.toLocaleString()+' rows';document.getElementById('rOverlay').style.display='flex'}
+function closeRestore(){document.getElementById('rOverlay').style.display='none'}
+
+async function confirmRestore(){
+  const url=document.getElementById('supaUrl').value.trim();const key=document.getElementById('supaKey').value.trim();
+  if(!url||!key){toast('Fill in all fields','err');return}
+  document.getElementById('rOverlay').style.display='none';
+  document.getElementById('pOverlay').style.display='flex';
+  const tables=RESTORE==='all'?Object.keys(DATA):[CURR];let done=0,err=0;
+  for(const table of tables){
+    document.getElementById('pTitle').textContent='Restoring '+table;
+    document.getElementById('pText').textContent=(done+1)+' of '+tables.length;
+    document.getElementById('pFill').style.width=(done/tables.length*100)+'%';
+    try{
+      let rows=[];const entries=DATA[table];
+      if(Array.isArray(entries))entries.forEach(en=>{if(en&&en.data&&Array.isArray(en.data.data))rows=rows.concat(en.data.data)});
+      if(!rows.length){done++;continue}
+      for(let i=0;i<rows.length;i+=500){
+        const batch=rows.slice(i,i+500).map(r=>{const c=Object.assign({},r);delete c.id;delete c.profit;delete c.tot_sold;delete c.tot_stock;delete c.remaining;return c});
+        const resp=await fetch(url+'/rest/v1/'+table,{method:'POST',headers:{'apikey':key,'Authorization':'Bearer '+key,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},body:JSON.stringify(batch)});
+        if(!resp.ok){err++;console.error('['+table+']',await resp.text())}
       }
-    });
-  }
-  document.getElementById('statsInfo').textContent = `${currentRows.length} rows`;
-  sortCol = -1;
-  sortDir = 1;
-  renderTable(currentRows);
-}
-
-function renderTable(rows) {
-  if (!rows.length) {
-    document.getElementById('tableHead').innerHTML = '';
-    document.getElementById('tableBody').innerHTML = '<tr><td class="empty" style="padding:40px;text-align:center;color:#8b949e">No data in this table</td></tr>';
-    return;
-  }
-  // Get all unique keys
-  const keys = new Set();
-  rows.forEach(r => Object.keys(r).forEach(k => keys.add(k)));
-  const cols = Array.from(keys);
-  
-  // Header
-  document.getElementById('tableHead').innerHTML = '<tr>' + cols.map((c,i) => 
-    `<th onclick="sortTable(${i})" class="${sortCol===i?(sortDir===1?'sorted-asc':'sorted-desc'):''}">${esc(c)}</th>`
-  ).join('') + '</tr>';
-  
-  // Body (limit to 500 rows for performance)
-  const displayRows = rows.slice(0, 500);
-  document.getElementById('tableBody').innerHTML = displayRows.map(r => 
-    '<tr>' + cols.map(c => `<td>${formatCell(r[c])}</td>`).join('') + '</tr>'
-  ).join('');
-  
-  if (rows.length > 500) {
-    document.getElementById('tableBody').innerHTML += `<tr><td colspan="${cols.length}" style="text-align:center;color:#8b949e;padding:16px">Showing 500 of ${rows.length} rows. Use search to filter.</td></tr>`;
-  }
-}
-
-function formatCell(val) {
-  if (val === null || val === undefined) return '<span class="cell-null">null</span>';
-  if (typeof val === 'boolean') return `<span class="cell-bool-${val}">${val}</span>`;
-  if (typeof val === 'number') return `<span class="cell-num">${val}</span>`;
-  if (typeof val === 'string') {
-    if (/^\d{4}-\d{2}-\d{2}/.test(val)) return `<span class="cell-date">${esc(val)}</span>`;
-    if (/^\d+$/.test(val) && val.length < 10) return `<span class="cell-num">${val}</span>`;
-    const str = String(val);
-    if (str.length > 100) return `<span class="cell-text" title="${esc(str)}">${esc(str.substring(0,100))}...</span>`;
-    return `<span class="cell-text">${esc(str)}</span>`;
-  }
-  // Objects/arrays
-  const s = JSON.stringify(val);
-  if (s.length > 200) return `<span class="cell-json" title="${esc(s)}">${esc(s.substring(0,200))}...</span>`;
-  return `<span class="cell-json">${esc(s)}</span>`;
-}
-
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function sortTable(col) {
-  const keys = Object.keys(currentRows[0] || {});
-  const key = keys[col];
-  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
-  currentRows.sort((a, b) => {
-    let va = a[key], vb = b[key];
-    if (va == null) return 1;
-    if (vb == null) return -1;
-    if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * sortDir;
-    return String(va).localeCompare(String(vb)) * sortDir;
-  });
-  renderTable(currentRows);
-}
-
-// Search
-document.getElementById('searchBox').addEventListener('input', e => {
-  const q = e.target.value.toLowerCase();
-  if (!q) { renderTable(currentRows); return; }
-  const filtered = currentRows.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(q)));
-  renderTable(filtered);
-  document.getElementById('statsInfo').textContent = `${filtered.length} / ${currentRows.length} rows`;
-});
-
-// Export CSV
-function exportCSV() {
-  if (!currentRows.length) return;
-  const keys = Object.keys(currentRows[0]);
-  const csv = [keys.join(',')].concat(currentRows.map(r => keys.map(k => {
-    let v = r[k];
-    if (v == null) return '';
-    v = String(v).replace(/"/g, '""');
-    if (v.includes(',') || v.includes('"') || v.includes('\n')) v = '"' + v + '"';
-    return v;
-  }).join(','))).join('\n');
-  download(csv, `${currentTable}.csv`, 'text/csv');
-  toast(`Exported ${currentTable}.csv`, 'success');
-}
-
-function exportTableJSON() {
-  download(JSON.stringify(currentRows, null, 2), `${currentTable}.json`, 'application/json');
-  toast(`Exported ${currentTable}.json`, 'success');
-}
-
-function download(content, filename, type) {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// Restore
-function restoreAll() {
-  restoreMode = 'all';
-  document.getElementById('restorePanel').style.display = 'block';
-  document.getElementById('restorePanel').querySelector('h3').textContent = 'Restore ALL tables to Supabase';
-}
-
-function restoreTable() {
-  restoreMode = 'single';
-  document.getElementById('restorePanel').style.display = 'block';
-  document.getElementById('restorePanel').querySelector('h3').textContent = `Restore "${currentTable}" to Supabase`;
-}
-
-function cancelRestore() {
-  document.getElementById('restorePanel').style.display = 'none';
-}
-
-async function confirmRestore() {
-  const url = document.getElementById('supaUrl').value.trim();
-  const key = document.getElementById('supaKey').value.trim();
-  if (!url || !key) { toast('Fill in Supabase URL and Service Role Key', 'error'); return; }
-  
-  document.getElementById('restorePanel').style.display = 'none';
-  document.getElementById('progressPanel').style.display = 'block';
-  
-  const tables = restoreMode === 'all' ? Object.keys(backupData) : [currentTable];
-  let done = 0;
-  let errors = 0;
-  
-  for (const table of tables) {
-    document.getElementById('progressText').textContent = `Restoring ${table}... (${done+1}/${tables.length})`;
-    document.getElementById('progressFill').style.width = `${(done/tables.length)*100}%`;
-    
-    try {
-      const entries = backupData[table];
-      let allRows = [];
-      if (Array.isArray(entries)) {
-        entries.forEach(entry => {
-          if (entry && entry.data && Array.isArray(entry.data.data)) {
-            allRows = allRows.concat(entry.data.data);
-          }
-        });
-      }
-      if (allRows.length === 0) { done++; continue; }
-      
-      // Batch insert (500 rows at a time)
-      for (let i = 0; i < allRows.length; i += 500) {
-        const batch = allRows.slice(i, i + 500);
-        // Remove generated columns that Supabase auto-calculates
-        const cleaned = batch.map(r => {
-          const c = Object.assign({}, r);
-          delete c.id; // let Supabase auto-generate
-          delete c.profit; // generated column
-          delete c.tot_sold; delete c.tot_stock; delete c.remaining; // inventory generated
-          return c;
-        });
-        
-        const resp = await fetch(`${url}/rest/v1/${table}`, {
-          method: 'POST',
-          headers: {
-            'apikey': key,
-            'Authorization': `Bearer ${key}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'resolution=merge-duplicates'
-          },
-          body: JSON.stringify(cleaned)
-        });
-        
-        if (!resp.ok) {
-          const err = await resp.text();
-          console.error(`[${table}] batch ${i}:`, err);
-          errors++;
-        }
-      }
-    } catch (e) {
-      console.error(`[${table}] error:`, e.message);
-      errors++;
-    }
+      document.getElementById('pStatus').textContent='✓ '+table;
+    }catch(e){err++;console.error('['+table+']',e.message)}
     done++;
   }
-  
-  document.getElementById('progressFill').style.width = '100%';
-  document.getElementById('progressText').textContent = `Done! ${done} tables processed, ${errors} errors.`;
-  toast(`Restore complete! ${done} tables, ${errors} errors.`, errors > 0 ? 'error' : 'success');
-  
-  setTimeout(() => { document.getElementById('progressPanel').style.display = 'none'; }, 5000);
+  document.getElementById('pFill').style.width='100%';
+  document.getElementById('pStatus').textContent=err?'⚠ '+err+' errors':'✓ All done';
+  toast('Restore complete'+(err?' ('+errors+' errors)':''),'ok');
+  setTimeout(()=>document.getElementById('pOverlay').style.display='none',3000);
 }
 
-function toast(msg, type) {
-  const t = document.createElement('div');
-  t.className = `toast toast-${type}`;
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 4000);
-}
+function toast(m,t){const d=document.createElement('div');d.className='toast toast-'+t;d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),3000)}
 </script>
 </body>
 </html>
