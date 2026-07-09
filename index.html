@@ -15452,7 +15452,7 @@ window.publishToWebsiteAction = async function() {
           if (f.is_vpn || f.isVpn) html += '<span class="prot-badge vpn"><i class="ri-shield-line"></i> VPN</span>';
           if (isBlocked) html += '<span class="prot-badge blocked"><i class="ri-forbid-line"></i> BLOCKED</span>';
           if (orderCount > 0) html += '<span class="prot-badge orders"><i class="ri-shopping-bag-line"></i> ' + orderCount + '</span>';
-          if (visits > 1) html += '<span class="prot-badge" style="background:var(--chip-bg);color:var(--ink-2)"><i class="ri-eye-fill"></i> ' + visits + ' visits</span>';
+          html += '<span class="prot-badge" style="background:var(--chip-bg);color:var(--ink-2);font-size:10px"><i class="ri-eye-fill"></i> ' + visits + '</span>';
           html += '</div>';
           html += '</div>';
 

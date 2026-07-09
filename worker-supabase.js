@@ -419,7 +419,7 @@ async function handleSupabase(env, action, payload, request) {
 // ----------------------- CUSTOM HANDLERS -----------------------
 // place_order: maps customer-site payload to create_manual_order RPC
 // Handles single OR multiple cart items (creates one order per item)
-async function placeOrderSupabase(env, body) {
+async function placeOrderSupabase(env, body, request) {
   const orderData = body.order || body;
   // âœ… FIX #26: Normalize flat customer-site params (cust_phone) AND nested order{}
   if (!orderData || typeof orderData !== 'object') return null;
@@ -445,6 +445,8 @@ async function placeOrderSupabase(env, body) {
     const orderId = items.length === 1
       ? (orderData.orderId || ("WEB-" + ts + "-" + Math.floor(Math.random()*10000)))
       : (orderData.orderId + "-" + (i+1));
+    const clientIp = (request && request.headers) ?
+                     (request.headers.get("CF-Connecting-IP") || request.headers.get("x-forwarded-for") || "") : (orderData.ip || "");
     const args = {
       p_order_id: orderId,
       p_cust_name: orderData.customerName || orderData.name || "",
@@ -460,7 +462,16 @@ async function placeOrderSupabase(env, body) {
       p_payment: orderData.payment || "Cash on Delivery",
       p_status: "Pending",
       p_notes: orderData.notes || "",
-      p_user: "website"
+      p_user: "website",
+      p_device_id: orderData.deviceId || "",
+      p_ip: clientIp,
+      p_country: orderData.country || "",
+      p_asn: orderData.asn || "",
+      p_risk_score: orderData.riskScore || 0,
+      p_risk_signals: orderData.riskSignals || "[]",
+      p_flagged: orderData.isFlagged || false,
+      p_flag_reason: orderData.flagReason || "",
+      p_device_info: orderData.deviceInfo ? JSON.stringify(orderData.deviceInfo) : null
     };
     try {
       const r = await supabaseRequest(env, "rpc/create_website_order", {
@@ -816,17 +827,21 @@ async function handle(request, env, ctx) {
   // fortress.js sends camelCase payloads; Supabase table uses snake_case.
   // These handlers map fields and call Supabase directly.
 
-  // __fortress_save_fingerprint: POST — upsert device fingerprint
+  // __fortress_save_fingerprint: POST — upsert device fingerprint (visit_count auto-increments)
   if (supabaseEnabled && action === "__fortress_save_fingerprint" && request.method === "POST") {
     try {
       const fp = body;
       const visitorId = fp.visitorId || fp.visitor_id || "";
       if (!visitorId) return jsonResponse({ ok: true, msg: "no visitorId" });
-      const row = {
-        visitor_id: visitorId,
+      // Step 1: Call PostgreSQL function to increment visit_count + update last_seen_at
+      await supabaseRequest(env, "rpc/visit_fingerprint", {
+        method: "POST",
+        body: JSON.stringify({ p_visitor_id: visitorId, p_ip: fp.ip || "" })
+      });
+      // Step 2: Update fingerprint details (device info, hashes, etc.)
+      const details = {
         composite_hash: fp.compositeHash || fp.composite_hash || "",
         raw_components: fp,
-        ip_address: fp.ip || "",
         ip_country: fp.ipCountry || "",
         ip_city: fp.ipCity || "",
         ip_region: fp.ipRegion || "",
@@ -855,15 +870,11 @@ async function handle(request, env, ctx) {
         touch_support: fp.touchSupport || 0,
         network_type: fp.networkType || "",
         fingerprintjs_id: fp.fpjsId || "",
-        fingerprintjs_confidence: fp.fpjsConfidence || 0,
-        last_seen_at: new Date().toISOString(),
-        visit_count: 1
+        fingerprintjs_confidence: fp.fpjsConfidence || 0
       };
-      // Upsert with conflict on visitor_id; if exists, increment visit_count
-      await supabaseRequest(env, "device_fingerprints?on_conflict=visitor_id", {
-        method: "POST",
-        headers: { "Prefer": "resolution=merge-duplicates" },
-        body: JSON.stringify([row])
+      await supabaseRequest(env, "device_fingerprints?visitor_id=eq." + encodeURIComponent(visitorId), {
+        method: "PATCH",
+        body: JSON.stringify(details)
       });
       return jsonResponse({ ok: true });
     } catch (e) {
@@ -872,14 +883,18 @@ async function handle(request, env, ctx) {
     }
   }
 
-  // __fortress_public_blocklist: GET — return blocked device IDs
+  // __fortress_public_blocklist: GET — return blocked device IDs + blocked IPs
   if (supabaseEnabled && action === "__fortress_public_blocklist" && request.method === "GET") {
     try {
-      const data = await supabaseRequest(env, "blocked_devices?select=device_id&status=eq.active", { method: "GET" });
-      const devices = Array.isArray(data) ? data.map(d => d.device_id) : [];
-      return jsonResponse({ ok: true, devices: devices });
+      const [deviceData, ipData] = await Promise.all([
+        supabaseRequest(env, "blocked_devices?select=device_id&status=eq.active", { method: "GET" }).catch(() => []),
+        supabaseRequest(env, "blocked_ips?select=ip_address", { method: "GET" }).catch(() => [])
+      ]);
+      const devices = Array.isArray(deviceData) ? deviceData.map(d => d.device_id) : [];
+      const ips = Array.isArray(ipData) ? ipData.map(i => i.ip_address) : [];
+      return jsonResponse({ ok: true, devices: devices, ips: ips });
     } catch (e) {
-      return jsonResponse({ ok: true, devices: [] });
+      return jsonResponse({ ok: true, devices: [], ips: [] });
     }
   }
 
@@ -913,6 +928,15 @@ async function handle(request, env, ctx) {
         headers: { "Prefer": "resolution=merge-duplicates" },
         body: JSON.stringify([row])
       });
+      // Also block the IP if provided
+      const ip = body.ip || body.ip_address || "";
+      if (ip) {
+        await supabaseRequest(env, "blocked_ips?on_conflict=ip_address", {
+          method: "POST",
+          headers: { "Prefer": "resolution=merge-duplicates" },
+          body: JSON.stringify([{ ip_address: ip, reason: body.reason || "manual", blocked_by: "admin" }])
+        });
+      }
       return jsonResponse({ ok: true, success: true });
     } catch (e) {
       return jsonResponse({ ok: false, msg: e.message });
@@ -947,6 +971,64 @@ async function handle(request, env, ctx) {
     }
   }
 
+  // ===== IP BLOCKING ENDPOINTS =====
+
+  // __fortress_block_ip: POST — block an IP address
+  if (supabaseEnabled && action === "__fortress_block_ip" && request.method === "POST") {
+    try {
+      const ip = body.ip || body.ip_address || "";
+      if (!ip) return jsonResponse({ ok: false, msg: "ip required" });
+      await supabaseRequest(env, "blocked_ips?on_conflict=ip_address", {
+        method: "POST",
+        headers: { "Prefer": "resolution=merge-duplicates" },
+        body: JSON.stringify([{ ip_address: ip, reason: body.reason || "manual", blocked_by: "admin", notes: body.notes || "" }])
+      });
+      return jsonResponse({ ok: true, success: true });
+    } catch (e) {
+      return jsonResponse({ ok: false, msg: e.message });
+    }
+  }
+
+  // __fortress_unblock_ip: POST — unblock an IP address
+  if (supabaseEnabled && action === "__fortress_unblock_ip" && request.method === "POST") {
+    try {
+      const ip = body.ip || body.ip_address || "";
+      if (!ip) return jsonResponse({ ok: false, msg: "ip required" });
+      await supabaseRequest(env, "blocked_ips?ip_address=eq." + encodeURIComponent(ip), {
+        method: "DELETE"
+      });
+      return jsonResponse({ ok: true, success: true });
+    } catch (e) {
+      return jsonResponse({ ok: false, msg: e.message });
+    }
+  }
+
+  // __fortress_list_blocked_ips: GET — list all blocked IPs
+  if (supabaseEnabled && action === "__fortress_list_blocked_ips" && request.method === "GET") {
+    try {
+      const data = await supabaseRequest(env, "blocked_ips?select=*&order=created_at.desc", { method: "GET" });
+      return jsonResponse({ ok: true, ips: data || [] });
+    } catch (e) {
+      return jsonResponse({ ok: true, ips: [] });
+    }
+  }
+
+  // __fortress_check_ip: POST — check if an IP is blocked (used by website)
+  if (supabaseEnabled && action === "__fortress_check_ip" && request.method === "POST") {
+    try {
+      const ip = body.ip || "";
+      if (!ip) return jsonResponse({ ok: true, blocked: false });
+      const data = await supabaseRequest(env, "blocked_ips?ip_address=eq." + encodeURIComponent(ip) + "&select=ip_address,reason", { method: "GET" });
+      const blocked = Array.isArray(data) && data.length > 0;
+      return jsonResponse({ ok: true, blocked: blocked, reason: blocked ? data[0].reason : "" });
+    } catch (e) {
+      return jsonResponse({ ok: true, blocked: false });
+    }
+  }
+
+  // __fortress_public_blocklist: update to include blocked IPs
+  // (already handled above, but let's also return IPs in the existing endpoint)
+
   // __fortress_log_event: POST — log a fortress event
   if (supabaseEnabled && action === "__fortress_log_event" && request.method === "POST") {
     try {
@@ -968,7 +1050,18 @@ async function handle(request, env, ctx) {
 
   // place_order (public POST) -> Supabase create_manual_order RPC
   if (supabaseEnabled && action === "place_order" && request.method === "POST") {
-    const r = await placeOrderSupabase(env, body);
+    // SERVER-SIDE IP CHECK — block fraudulent IPs before order creation
+    const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-forwarded-for") || "";
+    if (clientIp) {
+      try {
+        const ipCheck = await supabaseRequest(env, "blocked_ips?ip_address=eq." + encodeURIComponent(clientIp) + "&select=ip_address,reason", { method: "GET" });
+        if (Array.isArray(ipCheck) && ipCheck.length > 0) {
+          console.log("[place_order] BLOCKED IP:", clientIp, "reason:", ipCheck[0].reason);
+          return jsonResponse({ success: false, blocked: true, error: "This IP address has been blocked. Reason: " + (ipCheck[0].reason || "manual") });
+        }
+      } catch (e) { /* fail open — don't block orders if check fails */ }
+    }
+    const r = await placeOrderSupabase(env, body, request);
     if (r) {
       ctx.waitUntil(purgeCacheForAction("products", caches.default));
       return jsonResponse(r);
