@@ -16477,21 +16477,83 @@ YARZ.marketing = {
     this.renderList();
   },
   async addCampaign() {
-    const prod = prompt("Campaign/Product Name:");
-    if(!prod) return;
-    const spend = prompt("Total Spend (e.g. 500):", "0");
-    const reach = prompt("Reach/Impressions (e.g. 1000):", "0");
-    const clicks = prompt("Clicks (e.g. 50):", "0");
-    
+    // Load inventory for dropdown
+    let products = [];
+    try {
+      const r = await db.from('inventory').select('product').eq('status','Active').order('product');
+      products = (r.data || []).map(p => p.product);
+    } catch(e) {}
+
+    // Create modal
+    const existing = document.getElementById('ad-tracker-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'ad-tracker-modal';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5)';
+    modal.innerHTML = `
+      <div style="background:var(--surface-1);border-radius:16px;padding:24px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <h3 style="margin:0 0 16px;font-size:16px;font-weight:700;color:var(--ink-1)"><i class="ri-megaphone-line" style="color:var(--amber)"></i> Log Ad Campaign</h3>
+
+        <label style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;display:block;margin-bottom:4px">Product *</label>
+        <select id="at-product" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px;background:var(--surface-0)">
+          <option value="">-- Select Product --</option>
+          <option value="__custom__">✏️ Custom Name (not in inventory)</option>
+          ${products.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('')}
+        </select>
+        <input id="at-custom" type="text" placeholder="Custom product/campaign name" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px;display:none">
+
+        <label style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;display:block;margin-bottom:4px">Spend (৳) *</label>
+        <input id="at-spend" type="number" placeholder="e.g. 500" min="0" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:12px">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;display:block;margin-bottom:4px">Reach</label>
+          <input id="at-reach" type="number" placeholder="0" min="0" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px"></div>
+          <div><label style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;display:block;margin-bottom:4px">Clicks</label>
+          <input id="at-clicks" type="number" placeholder="0" min="0" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px"></div>
+        </div>
+
+        <label style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;display:block;margin-bottom:4px">Notes (optional)</label>
+        <input id="at-notes" type="text" placeholder="Campaign notes" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:16px">
+
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button onclick="document.getElementById('ad-tracker-modal').remove()" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--surface-0);cursor:pointer;font-size:13px">Cancel</button>
+          <button onclick="YARZ.marketing.saveCampaign()" style="padding:8px 16px;border:none;border-radius:8px;background:var(--amber);color:#fff;cursor:pointer;font-size:13px;font-weight:600">Save Campaign</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Toggle custom input
+    document.getElementById('at-product').addEventListener('change', function() {
+      document.getElementById('at-custom').style.display = this.value === '__custom__' ? 'block' : 'none';
+    });
+  },
+  async saveCampaign() {
+    const sel = document.getElementById('at-product');
+    const custom = document.getElementById('at-custom');
+    let product = sel.value;
+    if (product === '__custom__') product = custom.value.trim();
+    if (!product) { toast('Select a product', 'error'); return; }
+
+    const spend = Number(document.getElementById('at-spend').value) || 0;
+    if (spend <= 0) { toast('Enter spend amount', 'error'); return; }
+
+    const reach = Number(document.getElementById('at-reach').value) || 0;
+    const clicks = Number(document.getElementById('at-clicks').value) || 0;
+    const notes = document.getElementById('at-notes').value.trim();
+
     toast('Saving campaign...', 'info');
     await __supaInsert('ad_tracker', {
-      product: prod,
-      spend: Number(spend) || 0,
-      reach: Number(reach) || 0,
-      clicks: Number(clicks) || 0,
+      product: product,
+      spend: spend,
+      reach: reach,
+      clicks: clicks,
+      notes: notes,
       date: new Date().toISOString()
     });
-    toast('Campaign logged', 'success');
+    document.getElementById('ad-tracker-modal').remove();
+    toast('Campaign logged: ' + product, 'success');
     this.load();
   },
   renderList() {
