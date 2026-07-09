@@ -8498,48 +8498,47 @@ YARZ.home = {
   renderStockValuation(){},
 
  // ─── Website Visitor Analytics (direct Supabase query) ─────────────
- // Uses visitor_stats for cumulative counts, website_visitors for today/yesterday
+ // website_visitors is permanent (never deleted). Calculates directly from it.
  // Auto-refresh: every 30s while admin is on Home page (visibility-aware).
  _vis: { timer: null, lastFetch: 0 },
  async loadVisitorStats(){
-  const upd = $('visitor-updated');
-  try {
-  const db = (typeof getDb === 'function') ? getDb() : window.supabaseClient;
-  if (!db) throw new Error('Supabase not initialized');
+   const upd = $('visitor-updated');
+   try {
+   const db = (typeof getDb === 'function') ? getDb() : window.supabaseClient;
+   if (!db) throw new Error('Supabase not initialized');
 
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+   const today = new Date().toISOString().split('T')[0];
+   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
 
-  // Fetch today/yesterday from website_visitors (raw data)
-  const { data: rows, error } = await db.from('website_visitors').select('visit_date, visit_count, visitor_ip');
-  if (error) throw error;
+   // Fetch ALL from website_visitors (permanent table, never deleted)
+   const { data: rows, error } = await db.from('website_visitors').select('visit_date, visit_count, visitor_ip');
+   if (error) throw error;
 
-  const data = Array.isArray(rows) ? rows : [];
+   const data = Array.isArray(rows) ? rows : [];
 
-  // Today
-  const todayRows = data.filter(r => r.visit_date === today);
-  const todayVisits = todayRows.reduce((s, r) => s + (r.visit_count || 0), 0);
-  const todayUnique = todayRows.length;
+   // Today
+   const todayRows = data.filter(r => r.visit_date === today);
+   const todayVisits = todayRows.reduce((s, r) => s + (r.visit_count || 0), 0);
+   const todayUnique = todayRows.length;
 
-  // Yesterday
-  const yestRows = data.filter(r => r.visit_date === yesterday);
-  const yestVisits = yestRows.reduce((s, r) => s + (r.visit_count || 0), 0);
-  const yestUnique = yestRows.length;
+   // Yesterday
+   const yestRows = data.filter(r => r.visit_date === yesterday);
+   const yestVisits = yestRows.reduce((s, r) => s + (r.visit_count || 0), 0);
+   const yestUnique = yestRows.length;
 
-  // Cumulative totals from visitor_stats (never decreases)
-  const { data: statsRows } = await db.from('visitor_stats').select('cumulative_unique, cumulative_total').order('visit_date', { ascending: false }).limit(1);
-  const latestStats = (statsRows && statsRows.length > 0) ? statsRows[0] : null;
-  const cumulativeUnique = latestStats ? (latestStats.cumulative_unique || 0) : new Set(data.map(r => r.visitor_ip).filter(Boolean)).size;
-  const cumulativeTotal = latestStats ? (latestStats.cumulative_total || 0) : data.reduce((s, r) => s + (r.visit_count || 0), 0);
+   // Cumulative totals (direct from permanent website_visitors)
+   const allIPs = data.map(r => r.visitor_ip).filter(Boolean);
+   const cumulativeUnique = new Set(allIPs).size;
+   const cumulativeTotal = data.reduce((s, r) => s + (r.visit_count || 0), 0);
 
-  // Unique visitors (deduplicated by IP)
-  $('vis-today').textContent  = toBn(todayUnique);
-  $('vis-yesterday').textContent = toBn(yestUnique);
-  $('vis-total').textContent  = toBn(cumulativeUnique);
-  // Total visits (every hit counts)
-  $('vis-today-v').textContent  = toBn(todayVisits);
-  $('vis-yesterday-v').textContent = toBn(yestVisits);
-  $('vis-total-v').textContent  = toBn(cumulativeTotal);
+   // Unique visitors (deduplicated by IP)
+   $('vis-today').textContent  = toBn(todayUnique);
+   $('vis-yesterday').textContent = toBn(yestUnique);
+   $('vis-total').textContent  = toBn(cumulativeUnique);
+   // Total visits (every hit counts)
+   $('vis-today-v').textContent  = toBn(todayVisits);
+   $('vis-yesterday-v').textContent = toBn(yestVisits);
+   $('vis-total-v').textContent  = toBn(cumulativeTotal);
 
   const now = new Date();
   const hh = String(now.getHours()).padStart(2,'0');
