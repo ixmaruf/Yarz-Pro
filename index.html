@@ -3397,7 +3397,7 @@ body.dark *{ scrollbar-color:rgba(255,255,255,0.2) rgba(255,255,255,0.06); }
 
   <div class="section">
   <div class="section-title"><h2><i class="ri-calendar-todo-line" style="color:var(--accent-2)"></i> Today's Summary</h2><span class="hint" id="today-date"></span></div>
-   <div class="grid grid-3" id="today-summary"></div>
+    <div class="grid grid-4" id="today-summary"></div>
    </div>
 
    <!-- Product Performance — Collapsible -->
@@ -8122,35 +8122,42 @@ YARZ.home = {
  </div>
  `).join('');
 
- // Today's summary — ✅ PERFORMANCE: Use cached data
+ // Today's summary — ✅ 4 separate cards: Sales, Cost, Gross Profit, Ad Spend
  const todayTx = c.todayTx || [];
  const todayAd = c.todayAd || [];
  const todayExp = c.todayExp || [];
  // ✅ Include Return transactions — their negative revenue/cost properly reduces totals
  const todayRev = todayTx.reduce((s,t)=>s+(t.revenue||0),0);
  const todayCost= todayTx.reduce((s,t)=>s+(t.cost||0),0);
- const todaySpend = todayAd.reduce((s,t)=>s+t.amount,0) + todayExp.reduce((s,t)=>s+t.amount,0);
- const todayProfit = todayRev-todayCost-todaySpend;
+ const todayGross = todayRev - todayCost;
+ const todayAdSpend = todayAd.reduce((s,t)=>s+t.amount,0);
+ const todayOtherExp = todayExp.reduce((s,t)=>s+t.amount,0);
 
  const todaySummaryEl = $('today-summary');
  if(todaySummaryEl) todaySummaryEl.innerHTML = `
  <div class="stat-card">
   <div class="stat-icon blue"><i class="ri-shopping-cart-2-line"></i></div>
-  <div class="stat-label">Today's sales</div>
+  <div class="stat-label">Today's Sales</div>
   <div class="stat-value">${fmtBDT(todayRev)}</div>
-  <div class="stat-sub">${toBn(todayTx.length)} items give</div>
+  <div class="stat-sub">${toBn(todayTx.length)} items sold</div>
  </div>
  <div class="stat-card">
-  <div class="stat-icon red"><i class="ri-money-dollar-box-line"></i></div>
-  <div class="stat-label">Today's expenses</div>
-  <div class="stat-value">${fmtBDT(todaySpend)}</div>
-  <div class="stat-sub">Ad + Expense</div>
+  <div class="stat-icon amber"><i class="ri-archive-line"></i></div>
+  <div class="stat-label">Today's Cost</div>
+  <div class="stat-value">${fmtBDT(todayCost)}</div>
+  <div class="stat-sub">Cost of goods</div>
  </div>
  <div class="stat-card">
-  <div class="stat-icon ${todayProfit>=0?'green':'red'}"><i class="ri-coin-line"></i></div>
-  <div class="stat-label">Today's profit</div>
-  <div class="stat-value">${fmtBDT(todayProfit)}</div>
-  <div class="stat-sub">Net</div>
+  <div class="stat-icon ${todayGross>=0?'green':'red'}"><i class="ri-coin-line"></i></div>
+  <div class="stat-label">Today's Gross Profit</div>
+  <div class="stat-value">${fmtBDT(todayGross)}</div>
+  <div class="stat-sub">${todayRev>0?((todayGross/todayRev)*100).toFixed(0)+'% margin':'No sales yet'}</div>
+ </div>
+ <div class="stat-card">
+  <div class="stat-icon purple"><i class="ri-megaphone-line"></i></div>
+  <div class="stat-label">Today's Ad Spend</div>
+  <div class="stat-value">${fmtBDT(todayAdSpend+todayOtherExp)}</div>
+  <div class="stat-sub">${todayAd.length>0?toBn(todayAd.length)+' ads':''}${todayAd.length>0&&todayOtherExp>0?' + ':''}${todayOtherExp>0?'Expense':''}</div>
  </div>
  `;
 
