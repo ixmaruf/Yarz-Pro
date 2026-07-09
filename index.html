@@ -8498,7 +8498,7 @@ YARZ.home = {
   renderStockValuation(){},
 
  // ─── Website Visitor Analytics (direct Supabase query) ─────────────
- // website_visitors is permanent (never deleted). Calculates directly from it.
+ // Reads from visitor_stats (6 rows, updated by track_visit_full function).
  // Auto-refresh: every 30s while admin is on Home page (visibility-aware).
  _vis: { timer: null, lastFetch: 0 },
  async loadVisitorStats(){
@@ -8507,38 +8507,20 @@ YARZ.home = {
    const db = (typeof getDb === 'function') ? getDb() : window.supabaseClient;
    if (!db) throw new Error('Supabase not initialized');
 
-   const today = new Date().toISOString().split('T')[0];
-   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-
-   // Fetch ALL from website_visitors (permanent table, never deleted)
-   const { data: rows, error } = await db.from('website_visitors').select('visit_date, visit_count, visitor_ip');
+   // Fetch 6 rows from visitor_stats (one per card, updated in place)
+   const { data: rows, error } = await db.from('visitor_stats').select('stat_name, stat_value');
    if (error) throw error;
 
-   const data = Array.isArray(rows) ? rows : [];
+   const stats = {};
+   (Array.isArray(rows) ? rows : []).forEach(r => { stats[r.stat_name] = r.stat_value || 0; });
 
-   // Today
-   const todayRows = data.filter(r => r.visit_date === today);
-   const todayVisits = todayRows.reduce((s, r) => s + (r.visit_count || 0), 0);
-   const todayUnique = todayRows.length;
-
-   // Yesterday
-   const yestRows = data.filter(r => r.visit_date === yesterday);
-   const yestVisits = yestRows.reduce((s, r) => s + (r.visit_count || 0), 0);
-   const yestUnique = yestRows.length;
-
-   // Cumulative totals (direct from permanent website_visitors)
-   const allIPs = data.map(r => r.visitor_ip).filter(Boolean);
-   const cumulativeUnique = new Set(allIPs).size;
-   const cumulativeTotal = data.reduce((s, r) => s + (r.visit_count || 0), 0);
-
-   // Unique visitors (deduplicated by IP)
-   $('vis-today').textContent  = toBn(todayUnique);
-   $('vis-yesterday').textContent = toBn(yestUnique);
-   $('vis-total').textContent  = toBn(cumulativeUnique);
-   // Total visits (every hit counts)
-   $('vis-today-v').textContent  = toBn(todayVisits);
-   $('vis-yesterday-v').textContent = toBn(yestVisits);
-   $('vis-total-v').textContent  = toBn(cumulativeTotal);
+   // Map to dashboard cards
+   $('vis-today').textContent  = toBn(stats.today_unique || 0);
+   $('vis-yesterday').textContent = toBn(stats.yesterday_unique || 0);
+   $('vis-total').textContent  = toBn(stats.total_unique || 0);
+   $('vis-today-v').textContent  = toBn(stats.today_visits || 0);
+   $('vis-yesterday-v').textContent = toBn(stats.yesterday_visits || 0);
+   $('vis-total-v').textContent  = toBn(stats.total_visits || 0);
 
   const now = new Date();
   const hh = String(now.getHours()).padStart(2,'0');

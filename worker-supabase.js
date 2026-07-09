@@ -827,18 +827,29 @@ async function handle(request, env, ctx) {
   // fortress.js sends camelCase payloads; Supabase table uses snake_case.
   // These handlers map fields and call Supabase directly.
 
-  // __fortress_save_fingerprint: POST — upsert device fingerprint (visit_count auto-increments)
+  // __fortress_save_fingerprint: POST — upsert device fingerprint + track visit stats
   if (supabaseEnabled && action === "__fortress_save_fingerprint" && request.method === "POST") {
     try {
       const fp = body;
       const visitorId = fp.visitorId || fp.visitor_id || "";
+      const ip = fp.ip || request.headers.get("CF-Connecting-IP") || "";
       if (!visitorId) return jsonResponse({ ok: true, msg: "no visitorId" });
-      // Step 1: Call PostgreSQL function to increment visit_count + update last_seen_at
+
+      // Step 1: Track visit — updates website_visitors + all 6 dashboard stats
+      if (ip) {
+        await supabaseRequest(env, "rpc/track_visit_full", {
+          method: "POST",
+          body: JSON.stringify({ p_ip: ip })
+        });
+      }
+
+      // Step 2: Call visit_fingerprint for device_fingerprints visit_count
       await supabaseRequest(env, "rpc/visit_fingerprint", {
         method: "POST",
-        body: JSON.stringify({ p_visitor_id: visitorId, p_ip: fp.ip || "" })
+        body: JSON.stringify({ p_visitor_id: visitorId, p_ip: ip })
       });
-      // Step 2: Update fingerprint details (device info, hashes, etc.)
+
+      // Step 3: Update fingerprint details (device info, hashes, etc.)
       const details = {
         composite_hash: fp.compositeHash || fp.composite_hash || "",
         raw_components: fp,
