@@ -6095,6 +6095,35 @@ body.light .ai-stat .ic{background:rgba(0,0,0,0.05)}
     </div>
   </div>
 
+  <!-- Business AI Chat -->
+  <div class="ai-section" style="margin-bottom:14px">
+    <div class="ai-section-title">
+      <i class="ri-sparkling-2-line"></i> Business AI Assistant
+      <span class="live-pill"><span class="live-dot"></span>AI POWERED</span>
+    </div>
+    <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;line-height:1.5">
+      Ask anything about your business — sales, profit, loss, inventory, ad spend. AI analyzes your real-time data and answers in Bengali.
+    </div>
+    <div id="biz-ai-chat" style="background:var(--bg-1);border:1px solid var(--border);border-radius:12px;padding:14px;max-height:420px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:10px">
+      <div style="text-align:center;color:var(--ink-3);font-size:12px;padding:20px 0">
+        <i class="ri-sparkling-2-line" style="font-size:28px;color:var(--accent);display:block;margin-bottom:6px"></i>
+        আপনার ব্যবসায়িক প্রশ্ন করুন...<br>
+        <span style="font-size:11px;opacity:0.7">যেমন: "আজ কয়টা পণ্য বিক্রি হয়েছে?" "আজ কত টাকা লাভ হয়েছে?"</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input id="biz-ai-input" class="input" placeholder="আপনার প্রশ্ন লিখুন..." style="flex:1" onkeydown="if(event.key==='Enter')YARZ.bizAI.ask()" />
+      <button class="btn btn-primary" onclick="YARZ.bizAI.ask()" id="biz-ai-send"><i class="ri-send-plane-2-fill"></i></button>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn" style="font-size:11px;padding:4px 10px" onclick="YARZ.bizAI.quickQ('আজ কয়টা পণ্য বিক্রি হয়েছে?')">আজ সেলস</button>
+      <button class="btn" style="font-size:11px;padding:4px 10px" onclick="YARZ.bizAI.quickQ('আজ কত টাকা লাভ হয়েছে?')">আজ লাভ</button>
+      <button class="btn" style="font-size:11px;padding:4px 10px" onclick="YARZ.bizAI.quickQ('আজ কত টাকা খরচ হয়েছে?')">আজ খরচ</button>
+      <button class="btn" style="font-size:11px;padding:4px 10px" onclick="YARZ.bizAI.quickQ('এই মাসে মোট কত টাকা আয় হয়েছে?')">মাসিক আয়</button>
+      <button class="btn" style="font-size:11px;padding:4px 10px" onclick="YARZ.bizAI.quickQ('সবচেয়ে বেশি কোন প্রোডাক্ট বিক্রি হয়েছে?')">সেরা প্রোডাক্ট</button>
+    </div>
+  </div>
+
   <!-- Live stats -->
   <div class="ai-section" style="margin-bottom:14px">
     <div class="ai-section-title">
@@ -17075,6 +17104,72 @@ YARZ.exportPnl = {
   };
 })();
 /* ============== /AI AGENT CONTROL TAB ============== */
+
+/* ============== BUSINESS AI CHAT ============== */
+YARZ.bizAI = {
+  asking: false,
+  ask: async function() {
+    var input = document.getElementById('biz-ai-input');
+    var chat = document.getElementById('biz-ai-chat');
+    var sendBtn = document.getElementById('biz-ai-send');
+    var q = (input.value || '').trim();
+    if (!q || this.asking) return;
+    this.asking = true;
+    sendBtn.disabled = true;
+    input.value = '';
+    input.placeholder = 'AI বিশ্লেষণ করছে...';
+
+    // Clear welcome message on first ask
+    if (chat.children.length === 1 && chat.children[0].querySelector('.ri-sparkling-2-line')) {
+      chat.innerHTML = '';
+    }
+
+    // Add user message
+    chat.innerHTML += '<div style="align-self:flex-end;background:var(--accent);color:#fff;padding:8px 14px;border-radius:12px 12px 2px 12px;max-width:80%;font-size:13px;word-break:break-word">' + this._esc(q) + '</div>';
+    chat.scrollTop = chat.scrollHeight;
+
+    // Add typing indicator
+    var typing = document.createElement('div');
+    typing.id = 'biz-ai-typing';
+    typing.style.cssText = 'align-self:flex-start;background:var(--bg-2);padding:8px 14px;border-radius:12px 12px 12px 2px;max-width:80%;font-size:13px;color:var(--ink-3)';
+    typing.innerHTML = '<i class="ri-loader-4-line" style="animation:spin 1s linear infinite"></i> AI চিন্তা করছে...';
+    chat.appendChild(typing);
+    chat.scrollTop = chat.scrollHeight;
+
+    try {
+      var workerUrl = WORKER_URL;
+      var resp = await fetch(workerUrl + '/agent/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q })
+      });
+      var data = await resp.json();
+      var typingEl = document.getElementById('biz-ai-typing');
+      if (typingEl) typingEl.remove();
+
+      var answer = data.answer || data.error || 'উত্তর পাওয়া যায়নি।';
+      chat.innerHTML += '<div style="align-self:flex-start;background:var(--bg-2);border:1px solid var(--border);padding:10px 14px;border-radius:12px 12px 12px 2px;max-width:85%;font-size:13px;line-height:1.6;word-break:break-word"><strong style="color:var(--accent)"><i class="ri-sparkling-2-line"></i> YARZ AI</strong><div style="margin-top:6px;white-space:pre-wrap">' + this._esc(answer) + '</div></div>';
+      chat.scrollTop = chat.scrollHeight;
+    } catch(e) {
+      var typingEl2 = document.getElementById('biz-ai-typing');
+      if (typingEl2) typingEl2.remove();
+      chat.innerHTML += '<div style="align-self:flex-start;background:#fef2f2;border:1px solid #fecaca;padding:8px 14px;border-radius:12px;font-size:12px;color:#991b1b"><i class="ri-error-warning-line"></i> সমস্যা হয়েছে: ' + this._esc(e.message) + '</div>';
+      chat.scrollTop = chat.scrollHeight;
+    }
+    this.asking = false;
+    sendBtn.disabled = false;
+    input.placeholder = 'আপনার প্রশ্ন লিখুন...';
+    input.focus();
+  },
+  quickQ: function(q) {
+    document.getElementById('biz-ai-input').value = q;
+    this.ask();
+  },
+  _esc: function(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+};
+/* ============== /BUSINESS AI CHAT ============== */
 </script>
 
 
