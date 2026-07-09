@@ -10066,10 +10066,10 @@ Team YARZ`;
      if(di.inAppBrowser)c.push('<span class="oc-chip b" style="font-size:10px">📲'+esc(di.inAppBrowser)+'</span>');
      return c.join('');}catch(e){return'';}
     })()}</div>`:''}
-    ${o.riskScore>0?`<div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:5px">
-     <span style="font-size:10.5px;color:${o.riskScore>=50?'var(--danger)':'var(--ink-3)'}"><i class="ri-shield-keyhole-line"></i> Risk ${o.riskScore}/100</span>
-     <button class="btn btn-red btn-xs" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();YARZ.ord.blockFromOrder('${esc(o.orderId)}','${esc(o.deviceId||'')}','${esc(o.ip||'')}','${esc(o.customer||'')}',${o.riskScore||0})"><i class="ri-forbid-line"></i> Block</button>
-    </div>${o.riskSignals?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">${(()=>{try{const s=typeof o.riskSignals==='string'?JSON.parse(o.riskSignals):o.riskSignals;if(!Array.isArray(s))return'';return s.filter(x=>Array.isArray(x)&&x[1]>0).map(x=>{const n=x[0].replace(/_/g,' ');const v=x[1];const cl=v>=50?'var(--danger)':v>=20?'#f97316':'#eab308';return'<span class="oc-sig" style="color:'+cl+'"><b>'+v+'</b> '+esc(n)+'</span>';}).join('')}catch(e){return'';}})()}</div>`:''}`:''}
+     ${(o.ip||o.deviceId)?`<div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:5px">
+      <span style="font-size:10.5px;color:${o.riskScore>=50?'var(--danger)':o.riskScore>=20?'#f97316':'var(--ink-3)'}"><i class="ri-shield-keyhole-line"></i>${o.riskScore>0?' Risk '+o.riskScore+'/100':''}</span>
+      <button class="btn btn-red btn-xs" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();YARZ.ord.blockFromOrder('${esc(o.orderId)}','${esc(o.deviceId||'')}','${esc(o.ip||'')}','${esc(o.customer||'')}',${o.riskScore||0})"><i class="ri-forbid-line"></i> Block</button>
+     </div>${o.riskSignals?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">${(()=>{try{const s=typeof o.riskSignals==='string'?JSON.parse(o.riskSignals):o.riskSignals;if(!Array.isArray(s))return'';return s.filter(x=>Array.isArray(x)&&x[1]>0).map(x=>{const n=x[0].replace(/_/g,' ');const v=x[1];const cl=v>=50?'var(--danger)':v>=20?'#f97316':'#eab308';return'<span class="oc-sig" style="color:'+cl+'"><b>'+v+'</b> '+esc(n)+'</span>';}).join('')}catch(e){return'';}})()}</div>`:''}`:''}
    </div>
   </details>
  </div>`:''}
