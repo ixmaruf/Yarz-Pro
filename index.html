@@ -10670,7 +10670,7 @@ Team YARZ`;
       }
       // Block 2: Also block by IP address in blocked_ips table (PERSISTENT — survives browser change/clear)
       if (ip && ip !== deviceId) {
-        const res2 = await fetch(WORKER_URL, {
+        const res2 = await fetch('https://yarz-api.marufhasan80009.workers.dev/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: '__fortress_block_ip', ip_address: ip, reason: (reason || 'fake_order_from_orders_tab') + '_ip_block', blocked_by: 'admin' })
@@ -14016,9 +14016,9 @@ YARZ.settings = {
    const el = $('backup-status');
    if(el) el.innerHTML = '<i class="ri-loader-4-line"></i> Checking backups...';
    try {
-    const res = await fetch(WORKER_URL + '/backup/list', {
-     headers: { 'Authorization': 'Bearer yarz-admin-2026' }
-    });
+     const res = await fetch('https://yarz-api.marufhasan80009.workers.dev' + '/backup/list', {
+      headers: { 'Authorization': 'Bearer yarz-admin-2026' }
+     });
     const data = await res.json();
     if(!data.success) throw new Error(data.error || 'Failed');
     const files = data.files || [];
@@ -14045,7 +14045,7 @@ YARZ.settings = {
     if(!confirm('Download all backups as HTML file and clear R2?\n\nThis will:\n1. Download an HTML file you can open by double-click\n2. Clear R2 storage\n3. New backups start tonight')) return;
     showLoader('Preparing backup download...');
     try {
-     const listRes = await fetch(WORKER_URL + '/backup/list', {
+     const listRes = await fetch('https://yarz-api.marufhasan80009.workers.dev' + '/backup/list', {
       headers: { 'Authorization': 'Bearer yarz-admin-2026' }
      });
      const listData = await listRes.json();
@@ -14058,7 +14058,7 @@ YARZ.settings = {
       const parts = file.key.split('/');
       const table = parts[1] || parts[0];
       const date = parts[2] || 'unknown';
-      const downloadRes = await fetch(WORKER_URL + '/backup/download?key=' + encodeURIComponent(file.key), {
+      const downloadRes = await fetch('https://yarz-api.marufhasan80009.workers.dev' + '/backup/download?key=' + encodeURIComponent(file.key), {
        headers: { 'Authorization': 'Bearer yarz-admin-2026' }
       });
       if(downloadRes.ok){
@@ -14088,7 +14088,7 @@ YARZ.settings = {
      a.click();
      URL.revokeObjectURL(url);
 
-     await fetch(WORKER_URL + '/backup/clear', {
+     await fetch('https://yarz-api.marufhasan80009.workers.dev' + '/backup/clear', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer yarz-admin-2026' }
      });
@@ -14105,7 +14105,7 @@ YARZ.settings = {
    showLoader('Running backup now...');
    try {
     // Trigger a manual backup via the Worker's backup endpoint
-    const res = await fetch(WORKER_URL + '/backup/run', {
+    const res = await fetch('https://yarz-api.marufhasan80009.workers.dev' + '/backup/run', {
      method: 'POST',
      headers: { 'Authorization': 'Bearer yarz-admin-2026' }
     });
@@ -15827,7 +15827,7 @@ window.publishToWebsiteAction = async function() {
         }
         if (!confirm('Block IP ' + ip + ' permanently?\n\nThis works even if the user clears cookies, changes browser, or uses VPN.')) return;
         try {
-          const r = await fetch(WORKER_URL, {
+          const r = await fetch('https://yarz-api.marufhasan80009.workers.dev/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: '__fortress_block_ip', ip_address: ip, reason: reason || 'manual', blocked_by: 'admin' })
@@ -15848,7 +15848,7 @@ window.publishToWebsiteAction = async function() {
       async unblockIP(ip) {
         if (!confirm('Unblock IP ' + ip + '?')) return;
         try {
-          const r = await fetch(WORKER_URL, {
+          const r = await fetch('https://yarz-api.marufhasan80009.workers.dev/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: '__fortress_unblock_ip', ip_address: ip })
@@ -15866,7 +15866,7 @@ window.publishToWebsiteAction = async function() {
       },
       async loadBlockedIPs() {
         try {
-          const r = await fetch(WORKER_URL + '?action=__fortress_list_blocked_ips', {
+          const r = await fetch('https://yarz-api.marufhasan80009.workers.dev/?action=__fortress_list_blocked_ips', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer yarz-admin-2026' }
           });
