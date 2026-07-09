@@ -10668,16 +10668,15 @@ Team YARZ`;
           expiresAt: ''
         });
       }
-      // Block 2: Also block by IP address as separate entry (PERSISTENT — survives browser change/clear)
+      // Block 2: Also block by IP address in blocked_ips table (PERSISTENT — survives browser change/clear)
       if (ip && ip !== deviceId) {
-        const res2 = await appsPost('__fortress_block', {
-          deviceId: ip,
-          ip: ip,
-          blockedBy: 'admin',
-          reason: (reason || 'fake_order_from_orders_tab') + '_ip_block',
-          blockType: 'hard',
-          expiresAt: ''
+        const res2 = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: '__fortress_block_ip', ip_address: ip, reason: (reason || 'fake_order_from_orders_tab') + '_ip_block', blocked_by: 'admin' })
         });
+        const r2 = await res2.json();
+        if (!r2.ok) console.warn('IP block failed:', r2.error);
       }
       toast('🚫 Customer blocked permanently: ' + (customerName || (deviceId || ip).slice(0, 16) + '…') + (ip ? ' (IP: ' + ip + ')' : ''), 'success');
       if (YARZ.firewall && YARZ.firewall.refresh) YARZ.firewall.refresh();
