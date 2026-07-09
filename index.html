@@ -17137,7 +17137,7 @@ YARZ.bizAI = {
     chat.scrollTop = chat.scrollHeight;
 
     try {
-      var workerUrl = WORKER_URL;
+      var workerUrl = (typeof WORKER_URL !== 'undefined' ? WORKER_URL : 'https://yarz-api.marufhasan80009.workers.dev');
       var resp = await fetch(workerUrl + '/agent/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
