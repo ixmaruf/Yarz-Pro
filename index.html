@@ -6104,7 +6104,7 @@ body.light .ai-stat .ic{background:rgba(0,0,0,0.05)}
     <div style="font-size:12px;color:var(--ink-3);margin-bottom:10px;line-height:1.5">
       Ask anything about your business — sales, profit, loss, inventory, ad spend. AI analyzes your real-time data and answers in Bengali.
     </div>
-    <div id="biz-ai-chat" style="background:var(--bg-1);border:1px solid var(--border);border-radius:12px;padding:14px;max-height:420px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:10px">
+    <div id="biz-ai-chat" style="background:var(--bg-1);border:1px solid var(--border);border-radius:12px;padding:14px;max-height:600px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:10px">
       <div style="text-align:center;color:var(--ink-3);font-size:12px;padding:20px 0">
         <i class="ri-sparkling-2-line" style="font-size:28px;color:var(--accent);display:block;margin-bottom:6px"></i>
         আপনার ব্যবসায়িক প্রশ্ন করুন...<br>
@@ -6121,6 +6121,32 @@ body.light .ai-stat .ic{background:rgba(0,0,0,0.05)}
       <button class="btn" style="font-size:11px;padding:4px 10px" onclick="YARZ.bizAI.quickQ('আজ কত টাকা খরচ হয়েছে?')">আজ খরচ</button>
       <button class="btn" style="font-size:11px;padding:4px 10px" onclick="YARZ.bizAI.quickQ('এই মাসে মোট কত টাকা আয় হয়েছে?')">মাসিক আয়</button>
       <button class="btn" style="font-size:11px;padding:4px 10px" onclick="YARZ.bizAI.quickQ('সবচেয়ে বেশি কোন প্রোডাক্ট বিক্রি হয়েছে?')">সেরা প্রোডাক্ট</button>
+    </div>
+  </div>
+
+  <!-- Business AI Model & API Key Settings -->
+  <div class="ai-section" style="margin-bottom:14px">
+    <div class="ai-section-title">
+      <i class="ri-cpu-line"></i> Business AI Settings
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label style="font-size:11px;color:var(--ink-3);display:block;margin-bottom:4px;font-weight:600">AI Model</label>
+        <select id="biz-ai-model" class="input" style="width:100%" onchange="YARZ.bizAI.saveSettings()">
+          <option value="mimo-v2.5">MiMo v2.5 (Xiaomi) — Recommended</option>
+          <option value="gemini-2.0-flash">Gemini 2.0 Flash (Google)</option>
+          <option value="gpt-4o-mini">GPT-4o-mini (OpenAI)</option>
+          <option value="claude-3-5-haiku">Claude 3.5 Haiku (Anthropic)</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--ink-3);display:block;margin-bottom:4px;font-weight:600">API Key</label>
+        <input id="biz-ai-apikey" type="password" class="input" placeholder="sk-..." style="width:100%" onchange="YARZ.bizAI.saveSettings()" />
+      </div>
+    </div>
+    <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+      <button class="btn btn-primary" onclick="YARZ.bizAI.saveSettings()" style="font-size:11px;padding:4px 12px"><i class="ri-save-3-line"></i> Save Settings</button>
+      <span id="biz-ai-settings-status" style="font-size:11px;color:var(--ink-3)"></span>
     </div>
   </div>
 
@@ -17108,6 +17134,44 @@ YARZ.exportPnl = {
 /* ============== BUSINESS AI CHAT ============== */
 YARZ.bizAI = {
   asking: false,
+  _settings: { model: 'mimo-v2.5', apiKey: '' },
+  loadSettings: async function() {
+    try {
+      if (window.db) {
+        var r = await db.from('settings').select('key,value').in('key', ['biz_ai_model', 'biz_ai_apikey']);
+        if (r.data) {
+          r.data.forEach(function(row) {
+            if (row.key === 'biz_ai_model') YARZ.bizAI._settings.model = row.value || 'mimo-v2.5';
+            if (row.key === 'biz_ai_apikey') YARZ.bizAI._settings.apiKey = row.value || '';
+          });
+        }
+      }
+    } catch(e) {}
+    var sel = document.getElementById('biz-ai-model');
+    var inp = document.getElementById('biz-ai-apikey');
+    if (sel) sel.value = this._settings.model;
+    if (inp) inp.value = this._settings.apiKey;
+  },
+  saveSettings: async function() {
+    var sel = document.getElementById('biz-ai-model');
+    var inp = document.getElementById('biz-ai-apikey');
+    var status = document.getElementById('biz-ai-settings-status');
+    var model = sel ? sel.value : 'mimo-v2.5';
+    var apiKey = inp ? inp.value.trim() : '';
+    this._settings = { model: model, apiKey: apiKey };
+    try {
+      if (window.db) {
+        await db.from('settings').upsert([
+          { key: 'biz_ai_model', value: model },
+          { key: 'biz_ai_apikey', value: apiKey }
+        ], { onConflict: 'key' });
+      }
+      if (status) status.textContent = 'Saved!';
+      if (status) setTimeout(function(){ status.textContent = ''; }, 2000);
+    } catch(e) {
+      if (status) status.textContent = 'Error: ' + e.message;
+    }
+  },
   ask: async function() {
     var input = document.getElementById('biz-ai-input');
     var chat = document.getElementById('biz-ai-chat');

@@ -164,12 +164,14 @@ const ACTIONS_SUPABASE = {
   steadfastbalance: { kind: "passthrough" },
   steadfastsavekeys:{ kind: "passthrough" },
 
-  // ---- Fortress (anti-fraud) ----
-  __fortress_lookup:    { kind: "passthrough" },
-  __fortress_block:     { kind: "passthrough" },
-  __fortress_unblock:   { kind: "passthrough" },
-  __fortress_clear_all: { kind: "passthrough" },
-  __fortress_log_event: { kind: "passthrough" },
+  // ---- Fortress (anti-fraud) — custom handlers in fetch() ----
+  __fortress_save_fingerprint: { kind: "custom" },
+  __fortress_public_blocklist: { kind: "custom" },
+  __fortress_lookup:           { kind: "custom" },
+  __fortress_block:            { kind: "custom" },
+  __fortress_unblock:          { kind: "custom" },
+  __fortress_clear_all:        { kind: "custom" },
+  __fortress_log_event:        { kind: "custom" },
 
   // ---- Admin self-service (credential change) ----
   // ✅ v11.4: routed via Supabase RPCs. Worker is a passthrough shim that
@@ -236,13 +238,15 @@ async function supabaseRequest(env, path, init) {
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("Supabase not configured (URL or service_role key missing)");
   const fullUrl = url.replace(/\/+$/, "") + "/rest/v1/" + path;
-  const res = await fetch(fullUrl, Object.assign({
-    headers: {
-      "apikey": key,
-      "Authorization": "Bearer " + key,
-      "Content-Type": "application/json"
-    }
-  }, init || {}));
+  // Deep-merge headers so caller's headers (e.g. Prefer) don't clobber apikey/Auth
+  const defaultHeaders = {
+    "apikey": key,
+    "Authorization": "Bearer " + key,
+    "Content-Type": "application/json"
+  };
+  const mergedHeaders = Object.assign({}, defaultHeaders, (init && init.headers) || {});
+  const mergedInit = Object.assign({}, init || {}, { headers: mergedHeaders });
+  const res = await fetch(fullUrl, mergedInit);
   if (!res.ok) {
     const txt = await res.text();
     throw new Error("Supabase " + res.status + ": " + txt.substring(0, 300));
@@ -371,9 +375,10 @@ async function handleSupabase(env, action, payload, request) {
         }
         if (def.op === "upsert") {
           const rows = Array.isArray(payload) ? payload : [payload];
+          const conflictCol = def.key || "id";
           const r = await supabaseRequest(
             env,
-            def.table + "?on_conflict=key",
+            def.table + "?on_conflict=" + conflictCol,
             { method: "POST",
               headers: { "Prefer": "resolution=merge-duplicates" },
               body: JSON.stringify(rows) }
@@ -787,6 +792,179 @@ async function handle(request, env, ctx) {
 
   // Supabase enabled? Default true so production always uses Supabase unless explicitly disabled.
   const supabaseEnabled = env.SUPABASE_ENABLED !== "false";
+
+  // Visitor analytics beacon: record one visit per page load in Supabase
+  // Called by armor.js on customer website page load
+  if (supabaseEnabled && path === "/__analytics" && request.method === "GET") {
+    try {
+      const clientIp = request.headers.get("CF-Connecting-IP") || request.headers.get("x-real-ip") || "unknown";
+      // Bangladesh time (UTC+6)
+      const bdNow = new Date(Date.now() + 6 * 3600 * 1000);
+      const today = bdNow.toISOString().slice(0, 10);
+      await supabaseRequest(env, "rpc/track_visit", {
+        method: "POST",
+        body: JSON.stringify({ p_ip: clientIp, p_date: today })
+      });
+      return jsonResponse({ success: true, tracked: true });
+    } catch (e) {
+      // Silent fail — analytics should never break the page
+      return jsonResponse({ success: true, tracked: false });
+    }
+  }
+
+  // ===== FORTRESS (anti-fraud) — custom handlers =====
+  // fortress.js sends camelCase payloads; Supabase table uses snake_case.
+  // These handlers map fields and call Supabase directly.
+
+  // __fortress_save_fingerprint: POST — upsert device fingerprint
+  if (supabaseEnabled && action === "__fortress_save_fingerprint" && request.method === "POST") {
+    try {
+      const fp = body;
+      const visitorId = fp.visitorId || fp.visitor_id || "";
+      if (!visitorId) return jsonResponse({ ok: true, msg: "no visitorId" });
+      const row = {
+        visitor_id: visitorId,
+        composite_hash: fp.compositeHash || fp.composite_hash || "",
+        raw_components: fp,
+        ip_address: fp.ip || "",
+        ip_country: fp.ipCountry || "",
+        ip_city: fp.ipCity || "",
+        ip_region: fp.ipRegion || "",
+        ip_isp: fp.ipIsp || "",
+        is_vpn: fp.isVpn || false,
+        is_proxy: fp.isProxy || false,
+        is_datacenter: fp.isDatacenter || false,
+        user_agent: fp.userAgent || "",
+        device_name: fp.deviceName || "",
+        device_os: fp.deviceOS || "",
+        device_browser: fp.deviceBrowser || "",
+        device_screen: fp.deviceScreen || "",
+        canvas_hash: fp.canvasHash || "",
+        audio_hash: fp.audioHash || "",
+        webgl_vendor: fp.webglVendor || "",
+        webgl_renderer: fp.webglRenderer || "",
+        screen_resolution: fp.screenResolution || "",
+        color_depth: fp.colorDepth || 0,
+        hardware_concurrency: fp.hwCores || 0,
+        device_memory: fp.deviceMemory || 0,
+        pixel_ratio: fp.pixelRatio || 1,
+        timezone: fp.timezone || "",
+        timezone_offset: fp.timezoneOffset || 0,
+        languages: fp.language || "",
+        fonts_count: fp.fontsCount || 0,
+        touch_support: fp.touchSupport || 0,
+        network_type: fp.networkType || "",
+        fingerprintjs_id: fp.fpjsId || "",
+        fingerprintjs_confidence: fp.fpjsConfidence || 0,
+        last_seen_at: new Date().toISOString(),
+        visit_count: 1
+      };
+      // Upsert with conflict on visitor_id; if exists, increment visit_count
+      await supabaseRequest(env, "device_fingerprints?on_conflict=visitor_id", {
+        method: "POST",
+        headers: { "Prefer": "resolution=merge-duplicates" },
+        body: JSON.stringify([row])
+      });
+      return jsonResponse({ ok: true });
+    } catch (e) {
+      console.error("[fortress] save_fingerprint error:", e.message);
+      return jsonResponse({ ok: true }); // silent fail — fortress should never break the page
+    }
+  }
+
+  // __fortress_public_blocklist: GET — return blocked device IDs
+  if (supabaseEnabled && action === "__fortress_public_blocklist" && request.method === "GET") {
+    try {
+      const data = await supabaseRequest(env, "blocked_devices?select=device_id&status=eq.active", { method: "GET" });
+      const devices = Array.isArray(data) ? data.map(d => d.device_id) : [];
+      return jsonResponse({ ok: true, devices: devices });
+    } catch (e) {
+      return jsonResponse({ ok: true, devices: [] });
+    }
+  }
+
+  // __fortress_lookup: POST — return blocked devices + fingerprints for admin
+  if (supabaseEnabled && action === "__fortress_lookup" && request.method === "POST") {
+    try {
+      const blocked = await supabaseRequest(env, "blocked_devices?select=*&status=eq.active&order=created_at.desc", { method: "GET" });
+      const fingerprints = await supabaseRequest(env, "device_fingerprints?select=*&order=last_seen_at.desc&limit=100", { method: "GET" });
+      return jsonResponse({ ok: true, devices: blocked || [], fingerprints: fingerprints || [], threats: [] });
+    } catch (e) {
+      return jsonResponse({ ok: true, devices: [], fingerprints: [], threats: [] });
+    }
+  }
+
+  // __fortress_block: POST — block a device
+  if (supabaseEnabled && action === "__fortress_block" && request.method === "POST") {
+    try {
+      const deviceId = body.device_id || body.deviceId || "";
+      if (!deviceId) return jsonResponse({ ok: false, msg: "device_id required" });
+      const row = {
+        device_id: deviceId,
+        block_reason: body.reason || body.block_reason || "manual",
+        blocked_by: body.blocked_by || body.blockedBy || "admin",
+        block_type: "hard",
+        status: "active",
+        phones_seen: body.phones_seen || body.phonesSeen || "",
+        ips_seen: body.ips_seen || body.ipsSeen || ""
+      };
+      await supabaseRequest(env, "blocked_devices?on_conflict=device_id", {
+        method: "POST",
+        headers: { "Prefer": "resolution=merge-duplicates" },
+        body: JSON.stringify([row])
+      });
+      return jsonResponse({ ok: true, success: true });
+    } catch (e) {
+      return jsonResponse({ ok: false, msg: e.message });
+    }
+  }
+
+  // __fortress_unblock: POST — unblock a device
+  if (supabaseEnabled && action === "__fortress_unblock" && request.method === "POST") {
+    try {
+      const deviceId = body.device_id || body.deviceId || "";
+      if (!deviceId) return jsonResponse({ ok: false, msg: "device_id required" });
+      await supabaseRequest(env, "blocked_devices?device_id=eq." + encodeURIComponent(deviceId), {
+        method: "PATCH",
+        body: JSON.stringify({ status: "inactive", updated_at: new Date().toISOString() })
+      });
+      return jsonResponse({ ok: true, success: true });
+    } catch (e) {
+      return jsonResponse({ ok: false, msg: e.message });
+    }
+  }
+
+  // __fortress_clear_all: POST — deactivate all blocked devices
+  if (supabaseEnabled && action === "__fortress_clear_all" && request.method === "POST") {
+    try {
+      await supabaseRequest(env, "blocked_devices?status=eq.active", {
+        method: "PATCH",
+        body: JSON.stringify({ status: "inactive", updated_at: new Date().toISOString() })
+      });
+      return jsonResponse({ ok: true, success: true });
+    } catch (e) {
+      return jsonResponse({ ok: false, msg: e.message });
+    }
+  }
+
+  // __fortress_log_event: POST — log a fortress event
+  if (supabaseEnabled && action === "__fortress_log_event" && request.method === "POST") {
+    try {
+      const row = {
+        visitor_id: body.visitor_id || body.visitorId || "",
+        event_type: body.event_type || body.eventType || "unknown",
+        detail: body.detail || body,
+        ip: body.ip || ""
+      };
+      await supabaseRequest(env, "fortress_events", {
+        method: "POST",
+        body: JSON.stringify(row)
+      });
+      return jsonResponse({ ok: true });
+    } catch (e) {
+      return jsonResponse({ ok: true }); // silent fail
+    }
+  }
 
   // place_order (public POST) -> Supabase create_manual_order RPC
   if (supabaseEnabled && action === "place_order" && request.method === "POST") {
@@ -2654,6 +2832,247 @@ async function handleAgentForward(request, env) {
 }
 
 /**
+ * Business AI Agent — answers questions about sales, profit, loss, inventory, etc.
+ * Body: { question: string }
+ */
+async function handleAgentAsk(request, env) {
+  let body;
+  try { body = await request.json(); } catch (e) {
+    return jsonResponse({ success: false, error: "Invalid JSON" }, 400);
+  }
+  const question = body.question || "";
+  if (!question) return jsonResponse({ success: false, error: "Missing question" }, 400);
+
+  try {
+    // Fetch today's data from Supabase
+    const bdNow = new Date(Date.now() + 6 * 3600000);
+    const todayStr = bdNow.toISOString().slice(0, 10);
+    const monthStart = bdNow.toISOString().slice(0, 7) + "-01";
+
+    // Fetch all relevant data in parallel
+    const [todayTx, todayAd, todayExp, monthTx, inventory] = await Promise.all([
+      supabaseRequest(env, "transactions?select=product,qty,revenue,cost,profit,type,date&date=gte." + todayStr + "T00:00:00&date=lt." + todayStr + "T23:59:59&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "ad_tracker?select=product,spend,date&date=gte." + todayStr + "T00:00:00&date=lt." + todayStr + "T23:59:59&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "expenses?select=category,description,amount,date&date=gte." + todayStr + "T00:00:00&date=lt." + todayStr + "T23:59:59&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "transactions?select=product,qty,revenue,cost,profit,type,date&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "inventory?select=product,status,stk_s,stk_m,stk_l,stk_xl,stk_xxl,stk_3xl,sold_s,sold_m,sold_l,sold_xl,sold_xxl,sold_3xl,cost,regular,sale&status=eq.Active&order=product.asc", { method: "GET" }).catch(function() { return []; }),
+    ]);
+
+    // Calculate today's stats
+    const todayRev = (Array.isArray(todayTx) ? todayTx : []).reduce(function(s, t) { return s + (Number(t.revenue) || 0); }, 0);
+    const todayCost = (Array.isArray(todayTx) ? todayTx : []).reduce(function(s, t) { return s + (Number(t.cost) || 0); }, 0);
+    const todayGross = todayRev - todayCost;
+    const todayAdSpend = (Array.isArray(todayAd) ? todayAd : []).reduce(function(s, t) { return s + (Number(t.spend) || 0); }, 0);
+    const todayOtherExp = (Array.isArray(todayExp) ? todayExp : []).reduce(function(s, t) { return s + (Number(t.amount) || 0); }, 0);
+    const todaySalesCount = (Array.isArray(todayTx) ? todayTx : []).filter(function(t) { return t.type === "Sale"; }).length;
+    const todayReturnCount = (Array.isArray(todayTx) ? todayTx : []).filter(function(t) { return t.type === "Return"; }).length;
+
+    // Calculate this month's stats
+    const monthRev = (Array.isArray(monthTx) ? monthTx : []).reduce(function(s, t) { return s + (Number(t.revenue) || 0); }, 0);
+    const monthCost = (Array.isArray(monthTx) ? monthTx : []).reduce(function(s, t) { return s + (Number(t.cost) || 0); }, 0);
+    const monthGross = monthRev - monthCost;
+
+    // Build context for AI
+    var context = "=== YARZ CLOTHING BUSINESS DATA ===\n\n";
+    context += "TODAY (" + todayStr + "):\n";
+    context += "- Total Sales: " + todaySalesCount + " orders, " + todayReturnCount + " returns\n";
+    context += "- Revenue: ৳" + todayRev.toLocaleString() + "\n";
+    context += "- Cost of Goods: ৳" + todayCost.toLocaleString() + "\n";
+    context += "- Gross Profit: ৳" + todayGross.toLocaleString() + "\n";
+    context += "- Ad Spend: ৳" + todayAdSpend.toLocaleString() + "\n";
+    context += "- Other Expenses: ৳" + todayOtherExp.toLocaleString() + "\n";
+    context += "- Today's Products Sold:\n";
+    (Array.isArray(todayTx) ? todayTx : []).forEach(function(t) {
+      context += "  • " + t.product + " (x" + t.qty + ") — ৳" + t.revenue + " revenue, ৳" + t.cost + " cost, " + t.type + "\n";
+    });
+    context += "- Today's Ad Spend:\n";
+    (Array.isArray(todayAd) ? todayAd : []).forEach(function(a) {
+      context += "  • " + a.product + " — ৳" + a.spend + "\n";
+    });
+    // Product-wise sales breakdown (this month)
+    var productSales = {};
+    (Array.isArray(monthTx) ? monthTx : []).forEach(function(t) {
+      var name = t.product || "Unknown";
+      if (!productSales[name]) productSales[name] = { qty: 0, revenue: 0, cost: 0, count: 0 };
+      productSales[name].qty += Number(t.qty) || 0;
+      productSales[name].revenue += Number(t.revenue) || 0;
+      productSales[name].cost += Number(t.cost) || 0;
+      productSales[name].count += 1;
+    });
+
+    // Ad spend by product (this month)
+    var monthAd = await supabaseRequest(env, "ad_tracker?select=product,spend,date&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return [] });
+    var adByProduct = {};
+    (Array.isArray(monthAd) ? monthAd : []).forEach(function(a) {
+      var name = a.product || "General";
+      adByProduct[name] = (adByProduct[name] || 0) + (Number(a.spend) || 0);
+    });
+
+    context += "\nTHIS MONTH (since " + monthStart + "):\n";
+    context += "- Revenue: ৳" + monthRev.toLocaleString() + "\n";
+    context += "- Cost: ৳" + monthCost.toLocaleString() + "\n";
+    context += "- Gross Profit: ৳" + monthGross.toLocaleString() + "\n";
+    context += "- Total Transactions: " + (Array.isArray(monthTx) ? monthTx.length : 0) + "\n";
+    context += "\nPRODUCT-WISE SALES (this month):\n";
+    Object.keys(productSales).sort(function(a, b) { return productSales[b].revenue - productSales[a].revenue; }).forEach(function(name) {
+      var p = productSales[name];
+      var profit = p.revenue - p.cost;
+      context += "  • " + name + ": " + p.count + " orders, " + p.qty + " units, ৳" + p.revenue.toLocaleString() + " revenue, ৳" + profit.toLocaleString() + " profit\n";
+    });
+    context += "\nAD SPEND BY PRODUCT (this month):\n";
+    Object.keys(adByProduct).sort(function(a, b) { return adByProduct[b] - adByProduct[a]; }).forEach(function(name) {
+      context += "  • " + name + ": ৳" + adByProduct[name].toLocaleString() + "\n";
+    });
+    context += "\nINVENTORY (current stock):\n";
+    (Array.isArray(inventory) ? inventory : []).forEach(function(p) {
+      var stock = (Number(p.stk_s)||0) + (Number(p.stk_m)||0) + (Number(p.stk_l)||0) + (Number(p.stk_xl)||0) + (Number(p.stk_xxl)||0) + (Number(p.stk_3xl)||0);
+      var sold = (Number(p.sold_s)||0) + (Number(p.sold_m)||0) + (Number(p.sold_l)||0) + (Number(p.sold_xl)||0) + (Number(p.sold_xxl)||0) + (Number(p.sold_3xl)||0);
+      context += "  • " + p.product + ": stock=" + stock + ", sold=" + sold + ", cost=৳" + p.cost + ", regular=৳" + p.regular + ", sale=৳" + (p.sale || "N/A") + "\n";
+    });
+
+    // Build system prompt for conversational business partner
+    var sys = [
+      "তুমি 'YARZ Business AI' — YARZ Clothing ব্র্যান্ডের একজন অভিজ্ঞ বিজনেস পার্টনার।",
+      "তুমি মালিক (মারুফ) এর সাথে কথা বলছো — তার ব্যবসার সবকিছু তোমার হাতে।",
+      "",
+      "=== কঠোর নিয়ম (এগুলো ভাঙো না): ===",
+      "",
+      "1. কোনো মার্কডাউন ফরম্যাটিং ব্যবহার করো না।",
+      "   - যেমন: **বোল্ড**, ## হেডিং, --- সেপারেটর, - বুলেট, > ব্লককোয়োট, `কোড`",
+      "   - এগুলো দেখলে মনে হয় রোবট কথা বলছে। একদম ব্যবহার করো না।",
+      "",
+      "2. ইমোজি খুব কম ব্যবহার করো।",
+      "   - সম্পূর্ণ ইমোজি-মুক্ত রাখো।",
+      "   - একটা প্রশ্নে সর্বোচ্চ ১টা ইমোজি হতে পারে, তাও খুব প্রয়োজন হলে।",
+      "   - ইমোজি ছাড়াই উষ্ণ ও বন্ধুসুলভ থাকতে পারো।",
+      "",
+      "3. সম্পূর্ণ সাধারণ বাংলা ভাষায় লেখো।",
+      "   - যেমন একজন বন্ধু ফোনে কথা বলছে।",
+      "   - শব্দ বাছাই করে করে লেখো না — স্বাভাবিক কথার ধারায় বলো।",
+      "   - ফর্মাল বা প্রিফেশনাল টোন না — বন্ধুর সাথে কথা বলার টোন।",
+      "",
+      "4. ডাটাকে কথার মধ্যে জুড়ে দাও।",
+      "   - আলাদাভাবে তালিকা বানিয়ে দেওয়া যাবে না।",
+      "   - যেমন: 'এই মাসে Urban Core Grey থেকে মোট ১ লাখ ২৪ হাজার টাকা সেলস হয়েছে, যেটা মোট সেলসের ৯৯%।'",
+      "   - তুলনা করতে চাইলে সাধারণ ভাষায় বলো, টেবিল না।",
+      "",
+      "5. কোনো কিছু নেগেটিভ হলে সরাসরি বলো, ঘুরিয়ে-পেঁচিয়ে না।",
+      "   - যেমন: 'Trendy Cobra Mist-254 থেকে এই মাসে ক্ষতি হয়েছে, এটা বাদ দিলে লাভ আরো বাড়ত।'",
+      "",
+      "6. প্রশ্ন ছোট হলে ছোট উত্তর দাও।",
+      "   - 'আজ কত সেলস?' — 'আজ এখনো ২টি অর্ডার এসেছে, ৩৫০০ টাকা।'",
+      "   - বিস্তারিত চাইলে তাহলে বিস্তারিত দাও।",
+      "",
+      "7. প্রশ্ন অস্পষ্ট হলে সরাসরি জিজ্ঞাসা করো।",
+      "   - 'কোন দিনের কথা বলছেন?' বা 'কোন প্রোডাক্টটার কথা বলছেন?'",
+      "",
+      "=== YARZ CLOTHING REAL-TIME DATA ===",
+      context
+    ].join("\n");
+
+    // Read model + API key from settings table
+    var bizModel = "mimo-v2.5";
+    var bizApiKey = env.MIMO_API_KEY || "";
+    try {
+      var modelRow = await supabaseRequest(env, "settings?select=value&key=eq.biz_ai_model", { method: "GET" });
+      if (Array.isArray(modelRow) && modelRow.length > 0 && modelRow[0].value) bizModel = modelRow[0].value;
+      var keyRow = await supabaseRequest(env, "settings?select=value&key=eq.biz_ai_apikey", { method: "GET" });
+      if (Array.isArray(keyRow) && keyRow.length > 0 && keyRow[0].value && keyRow[0].value.trim()) bizApiKey = keyRow[0].value.trim();
+    } catch(e) { console.log("[agent/ask] settings read fallback:", e.message); }
+
+    // Route to correct provider
+    var apiUrl, payload;
+    var isOpenAICompatible = ["mimo-v2.5", "gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo", "deepseek-chat"].indexOf(bizModel) !== -1;
+    if (isOpenAICompatible) {
+      // MiMo / OpenAI / DeepSeek — OpenAI-compatible API
+      if (!bizApiKey) return jsonResponse({ success: false, error: "API key not configured for " + bizModel }, 500);
+      apiUrl = "https://api.xiaomimimo.com/v1/chat/completions";
+      if (bizModel.indexOf("gpt") === 0) apiUrl = "https://api.openai.com/v1/chat/completions";
+      if (bizModel === "deepseek-chat") apiUrl = "https://api.deepseek.com/v1/chat/completions";
+      payload = {
+        model: bizModel,
+        messages: [
+          { role: "system", content: sys },
+          { role: "user", content: question }
+        ],
+        temperature: 0.8,
+        max_tokens: 2048
+      };
+    } else if (bizModel.indexOf("gemini") === 0) {
+      // Google Gemini — native API
+      if (!bizApiKey) bizApiKey = env.GEMINI_API_KEY || "";
+      if (!bizApiKey) return jsonResponse({ success: false, error: "Gemini API key not configured" }, 500);
+      apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + bizModel + ":generateContent?key=" + bizApiKey;
+      payload = {
+        contents: [{ parts: [{ text: sys + "\n\n" + question }] }],
+        generationConfig: { temperature: 0.8, maxOutputTokens: 2048 }
+      };
+    } else if (bizModel.indexOf("claude") === 0) {
+      // Anthropic Claude
+      if (!bizApiKey) return jsonResponse({ success: false, error: "Claude API key not configured" }, 500);
+      apiUrl = "https://api.anthropic.com/v1/messages";
+      payload = {
+        model: bizModel,
+        system: sys,
+        messages: [{ role: "user", content: question }],
+        temperature: 0.8,
+        max_tokens: 2048
+      };
+    } else {
+      return jsonResponse({ success: false, error: "Unsupported model: " + bizModel }, 400);
+    }
+
+    // Build headers
+    var headers = { "Content-Type": "application/json" };
+    if (isOpenAICompatible) {
+      headers["Authorization"] = "Bearer " + bizApiKey;
+    } else if (bizModel.indexOf("claude") === 0) {
+      headers["x-api-key"] = bizApiKey;
+      headers["anthropic-version"] = "2023-06-01";
+    }
+
+    var resp = await fetch(apiUrl, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(payload)
+    });
+
+    var data = await resp.json();
+
+    if (!resp.ok) {
+      var errMsg = (data.error && data.error.message) ? data.error.message : ("HTTP " + resp.status);
+      console.log("[agent/ask] AI API error:", resp.status, errMsg);
+      if (resp.status === 429) {
+        return jsonResponse({ success: true, answer: "AI সার্ভার ব্যস্ত আছে (rate limit)। কিছুক্ষণ পর আবার চেষ্টা করুন।", model: bizModel });
+      }
+      return jsonResponse({ success: true, answer: "AI সার্ভারে সমস্যা হয়েছে। কিছুক্ষণ পর আবার চেষ্টা করুন।", model: bizModel });
+    }
+
+    // Parse response based on provider
+    var answer = "";
+    if (isOpenAICompatible) {
+      if (data.choices && data.choices[0] && data.choices[0].message) {
+        answer = data.choices[0].message.content || "";
+      }
+    } else if (bizModel.indexOf("gemini") === 0) {
+      if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
+        answer = data.candidates[0].content.parts.map(function(p) { return p.text || ""; }).join("");
+      }
+    } else if (bizModel.indexOf("claude") === 0) {
+      if (data.content && data.content[0]) {
+        answer = data.content[0].text || "";
+      }
+    }
+    if (!answer) answer = "দুঃখিত, উত্তর তৈরি করা যায়নি। আবার চেষ্টা করুন।";
+
+    return jsonResponse({ success: true, answer: answer, model: bizModel });
+  } catch (e) {
+    console.error("[agent/ask]", e.message);
+    return jsonResponse({ success: false, error: e.message }, 500);
+  }
+}
+
+/**
  * Single dispatcher for all /agent/* paths. Splits the path, picks the right
  * handler, and returns its Response. Registered in the fetch entry handler.
  * @param {Request} request
@@ -2686,6 +3105,8 @@ async function handleAgentRoute(request, env, ctx) {
     handler = handleAgentSettings;
   } else if (sub === "test") {
     handler = handleAgentTest;
+  } else if (sub === "ask") {
+    handler = handleAgentAsk;
   } else if (sub === "orders/new") {
     handler = handleAgentOrderNew;
   } else if (sub === "forward") {
