@@ -3151,7 +3151,7 @@ body.dark *{ scrollbar-color:rgba(255,255,255,0.2) rgba(255,255,255,0.06); }
 </script>
 
 <!-- Admin Panel script (now uses supabase-adapter-v2.js with full RPC support) -->
-<script src="supabase-adapter-v2.js?v=2026-07-09-v9"></script>
+<script src="supabase-adapter-v2.js?v=2026-07-10-v10"></script>
 
   <!-- Flatpickr (Premium Custom Calendar Picker) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -6492,7 +6492,7 @@ const SETTINGS_VERSION = 'v12.0-2026-05-22';
 // Default Apps Script URL — no longer used (V2 adapter handles Supabase directly)
 const DEFAULT_APPS_URL = '';
 const TZ = 'Asia/Dhaka';
-const WORKER = 'https://yarz-api.marufhasan80009.workers.dev';
+const WORKER = 'https://yarz-admin.marufhasan80009.workers.dev';
 
 // ============ STORAGE HELPERS (safe try/catch wrappers) ============
 function _ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){}}
@@ -10651,7 +10651,7 @@ Team YARZ`;
       }
       // Block 2: Also block by IP address in blocked_ips table (PERSISTENT — survives browser change/clear)
       if (ip && ip !== deviceId) {
-        const res2 = await fetch('https://yarz-api.marufhasan80009.workers.dev/', {
+        const res2 = await fetch('https://yarz-admin.marufhasan80009.workers.dev/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: '__fortress_block_ip', ip_address: ip, reason: (reason || 'fake_order_from_orders_tab') + '_ip_block', blocked_by: 'admin' })
@@ -13245,7 +13245,7 @@ YARZ.webControl = {
   setTimeout(function(){ try { _purgeCtrl.abort(); } catch(e){} }, 3000);
   const _pBody = JSON.stringify({ actions: ['store_info', 'products', 'categories', 'delivery_charges'] });
   const _pHeaders = { 'X-Purge-Key': 'yarz_xK9mP2nL8vR4qH7', 'Content-Type': 'application/json' };
-  ['https://yarzclothing.xyz/__purge', 'https://yarz-api.marufhasan80009.workers.dev/__purge'].forEach(function (_u) {
+  ['https://yarzclothing.xyz/__purge', 'https://yarz-admin.marufhasan80009.workers.dev/__purge'].forEach(function (_u) {
   fetch(_u, {
   method: 'POST', headers: _pHeaders, body: _pBody,
   signal: _purgeCtrl.signal, keepalive: true
@@ -13429,7 +13429,7 @@ YARZ.pixelToggles = {
 ============================================================ */
 const DEFAULT_SUPABASE_URL = 'https://xdzduowhwubogaavraap.supabase.co';
 const DEFAULT_SUPABASE_ANON = 'sb_publishable_YTtKhrKYLm3UPgyZ_W6-rg_BuryhBsA';
-const WORKER_URL = 'https://yarz-api.marufhasan80009.workers.dev';
+const WORKER_URL = 'https://yarz-admin.marufhasan80009.workers.dev';
 YARZ.settings = {
   // Read current Supabase creds (saved > defaults)
   _readCreds(){
@@ -13997,7 +13997,7 @@ YARZ.settings = {
    const el = $('backup-status');
    if(el) el.innerHTML = '<i class="ri-loader-4-line"></i> Checking backups...';
    try {
-     const res = await fetch('https://yarz-api.marufhasan80009.workers.dev' + '/backup/list', {
+     const res = await fetch('https://yarz-admin.marufhasan80009.workers.dev' + '/backup/list', {
       headers: { 'Authorization': 'Bearer yarz-admin-2026' }
      });
     const data = await res.json();
@@ -14026,7 +14026,7 @@ YARZ.settings = {
     if(!confirm('Download all backups as HTML file and clear R2?\n\nThis will:\n1. Download an HTML file you can open by double-click\n2. Clear R2 storage\n3. New backups start tonight')) return;
     showLoader('Preparing backup download...');
     try {
-     const listRes = await fetch('https://yarz-api.marufhasan80009.workers.dev' + '/backup/list', {
+     const listRes = await fetch('https://yarz-admin.marufhasan80009.workers.dev' + '/backup/list', {
       headers: { 'Authorization': 'Bearer yarz-admin-2026' }
      });
      const listData = await listRes.json();
@@ -14039,7 +14039,7 @@ YARZ.settings = {
       const parts = file.key.split('/');
       const table = parts[1] || parts[0];
       const date = parts[2] || 'unknown';
-      const downloadRes = await fetch('https://yarz-api.marufhasan80009.workers.dev' + '/backup/download?key=' + encodeURIComponent(file.key), {
+      const downloadRes = await fetch('https://yarz-admin.marufhasan80009.workers.dev' + '/backup/download?key=' + encodeURIComponent(file.key), {
        headers: { 'Authorization': 'Bearer yarz-admin-2026' }
       });
       if(downloadRes.ok){
@@ -14069,7 +14069,7 @@ YARZ.settings = {
      a.click();
      URL.revokeObjectURL(url);
 
-     await fetch('https://yarz-api.marufhasan80009.workers.dev' + '/backup/clear', {
+     await fetch('https://yarz-admin.marufhasan80009.workers.dev' + '/backup/clear', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer yarz-admin-2026' }
      });
@@ -14086,7 +14086,7 @@ YARZ.settings = {
    showLoader('Running backup now...');
    try {
     // Trigger a manual backup via the Worker's backup endpoint
-    const res = await fetch('https://yarz-api.marufhasan80009.workers.dev' + '/backup/run', {
+    const res = await fetch('https://yarz-admin.marufhasan80009.workers.dev' + '/backup/run', {
      method: 'POST',
      headers: { 'Authorization': 'Bearer yarz-admin-2026' }
     });
@@ -15225,7 +15225,7 @@ window.publishToWebsiteAction = async function() {
  // browse, so its cache slot is the critical one to invalidate.
  const purgeUrls = [
   'https://yarzclothing.xyz/__purge',
-  'https://yarz-api.marufhasan80009.workers.dev/__purge'
+  'https://yarz-admin.marufhasan80009.workers.dev/__purge'
  ];
  const purgeResults = await Promise.all(purgeUrls.map(function (u) {
   return fetch(u, {
@@ -15808,7 +15808,7 @@ window.publishToWebsiteAction = async function() {
         }
         if (!confirm('Block IP ' + ip + ' permanently?\n\nThis works even if the user clears cookies, changes browser, or uses VPN.')) return;
         try {
-          const r = await fetch('https://yarz-api.marufhasan80009.workers.dev/', {
+          const r = await fetch('https://yarz-admin.marufhasan80009.workers.dev/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: '__fortress_block_ip', ip_address: ip, reason: reason || 'manual', blocked_by: 'admin' })
@@ -15829,7 +15829,7 @@ window.publishToWebsiteAction = async function() {
       async unblockIP(ip) {
         if (!confirm('Unblock IP ' + ip + '?')) return;
         try {
-          const r = await fetch('https://yarz-api.marufhasan80009.workers.dev/', {
+          const r = await fetch('https://yarz-admin.marufhasan80009.workers.dev/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: '__fortress_unblock_ip', ip_address: ip })
@@ -15847,7 +15847,7 @@ window.publishToWebsiteAction = async function() {
       },
       async loadBlockedIPs() {
         try {
-          const r = await fetch('https://yarz-api.marufhasan80009.workers.dev/?action=__fortress_list_blocked_ips', {
+          const r = await fetch('https://yarz-admin.marufhasan80009.workers.dev/?action=__fortress_list_blocked_ips', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer yarz-admin-2026' }
           });
@@ -17337,7 +17337,7 @@ YARZ.bizAI = {
     chat.scrollTop = chat.scrollHeight;
 
     try {
-      var workerUrl = (typeof WORKER_URL !== 'undefined' ? WORKER_URL : 'https://yarz-api.marufhasan80009.workers.dev');
+      var workerUrl = (typeof WORKER_URL !== 'undefined' ? WORKER_URL : 'https://yarz-admin.marufhasan80009.workers.dev');
       var resp = await fetch(workerUrl + '/agent/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

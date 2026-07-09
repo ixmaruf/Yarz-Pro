@@ -572,15 +572,6 @@ async function storeInfoSupabase(env) {
       }
     };
 
-    // Apply sensible defaults for missing critical fields so the site never shows
-    // a broken-looking empty hero when admin has not yet populated the Banners tab.
-    if (!result.data.hero_banner_1) {
-      result.data.hero_banner_1 = 'https://yarzclothing.xyz/images/og-banner.png';
-    }
-    if (!result.data.banner_title_1) {
-      result.data.banner_title_1 = (result.data.name ? String(result.data.name) : 'YARZ') + ' \u2014 Premium Men\u2019s Fashion';
-    }
-
     return result;
 
   } catch (e) {
@@ -1087,7 +1078,7 @@ async function handle(request, env, ctx) {
       const resp = new Response(JSON.stringify(r), {
         headers: Object.assign({
           "Content-Type": "application/json",
-          "Cache-Control": "public, max-age=" + FRESH_TTL + ", stale-while-revalidate=" + SWR_TTL
+          "Cache-Control": "no-store"
         }, corsHeaders())
       });
       return resp;

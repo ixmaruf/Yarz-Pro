@@ -6403,7 +6403,7 @@ const SETTINGS_VERSION = 'v12.0-2026-05-22';
 // Default Apps Script URL — no longer used (V2 adapter handles Supabase directly)
 const DEFAULT_APPS_URL = '';
 const TZ = 'Asia/Dhaka';
-const WORKER = 'https://yarz-api.marufhasan80009.workers.dev';
+const WORKER = 'https://yarz-admin.marufhasan80009.workers.dev';
 
 // ============ STORAGE HELPERS (safe try/catch wrappers) ============
 function _ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){}}
@@ -13101,7 +13101,7 @@ YARZ.webControl = {
   setTimeout(function(){ try { _purgeCtrl.abort(); } catch(e){} }, 3000);
   const _pBody = JSON.stringify({ actions: ['store_info', 'products', 'categories', 'delivery_charges'] });
   const _pHeaders = { 'X-Purge-Key': 'yarz_xK9mP2nL8vR4qH7', 'Content-Type': 'application/json' };
-  ['https://yarzclothing.xyz/__purge', 'https://yarz-api.marufhasan80009.workers.dev/__purge'].forEach(function (_u) {
+  ['https://yarzclothing.xyz/__purge', 'https://yarz-admin.marufhasan80009.workers.dev/__purge'].forEach(function (_u) {
   fetch(_u, {
   method: 'POST', headers: _pHeaders, body: _pBody,
   signal: _purgeCtrl.signal, keepalive: true
@@ -14973,7 +14973,7 @@ window.publishToWebsiteAction = async function() {
  // browse, so its cache slot is the critical one to invalidate.
  const purgeUrls = [
   'https://yarzclothing.xyz/__purge',
-  'https://yarz-api.marufhasan80009.workers.dev/__purge'
+  'https://yarz-admin.marufhasan80009.workers.dev/__purge'
  ];
  const purgeResults = await Promise.all(purgeUrls.map(function (u) {
   return fetch(u, {
