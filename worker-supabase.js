@@ -2849,16 +2849,22 @@ async function handleAgentAsk(request, env) {
     const todayStr = bdNow.toISOString().slice(0, 10);
     const monthStart = bdNow.toISOString().slice(0, 7) + "-01";
 
-    // Fetch all relevant data in parallel
-    const [todayTx, todayAd, todayExp, monthTx, inventory, monthOrders, monthAd, monthExp] = await Promise.all([
+    // Fetch ALL relevant data in parallel
+    const [todayTx, todayAd, todayExp, monthTx, inventory, monthOrders, monthAd, monthExp, manualOrders, customers, blockedDevices, visitors, newsletters, consignments] = await Promise.all([
       supabaseRequest(env, "transactions?select=product,qty,revenue,cost,profit,type,date&date=gte." + todayStr + "T00:00:00&date=lt." + todayStr + "T23:59:59&order=date.desc", { method: "GET" }).catch(function() { return []; }),
-      supabaseRequest(env, "ad_tracker?select=product,spend,date&date=gte." + todayStr + "T00:00:00&date=lt." + todayStr + "T23:59:59&order=date.desc", { method: "GET" }).catch(function() { return []; }),
-      supabaseRequest(env, "expenses?select=category,description,amount,date&date=gte." + todayStr + "T00:00:00&date=lt." + todayStr + "T23:59:59&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "ad_tracker?select=product,spend,reach,impressions,clicks,date&date=gte." + todayStr + "T00:00:00&date=lt." + todayStr + "T23:59:59&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "expenses?select=category,description,amount,notes,date&date=gte." + todayStr + "T00:00:00&date=lt." + todayStr + "T23:59:59&order=date.desc", { method: "GET" }).catch(function() { return []; }),
       supabaseRequest(env, "transactions?select=product,qty,revenue,cost,profit,type,date&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
-      supabaseRequest(env, "inventory?select=product,status,stk_s,stk_m,stk_l,stk_xl,stk_xxl,stk_3xl,sold_s,sold_m,sold_l,sold_xl,sold_xxl,sold_3xl,cost,regular,sale&status=eq.Active&order=product.asc", { method: "GET" }).catch(function() { return []; }),
-      supabaseRequest(env, "website_orders?select=order_id,product,qty,total,status,date,cust_name,delivery_charge&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
-      supabaseRequest(env, "ad_tracker?select=product,spend,date&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
-      supabaseRequest(env, "expenses?select=category,description,amount,date&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "inventory?select=product,status,category,fabric,badge,cost,regular,sale,stk_s,stk_m,stk_l,stk_xl,stk_xxl,stk_3xl,sold_s,sold_m,sold_l,sold_xl,sold_xxl,sold_3xl,invest,revenue,fb_ad,net&status=eq.Active&order=product.asc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "website_orders?select=order_id,product,qty,total,status,date,cust_name,cust_phone,deliv_zone,delivery_charge,payment&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "ad_tracker?select=product,spend,reach,impressions,clicks,date&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "expenses?select=category,description,amount,notes,date&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "orders?select=order_id,product,qty,total,status,date,cust_name,cust_phone,deliv_zone,delivery_charge,payment,size,notes&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "customers?select=phone,name,total_orders,total_spent,risk_score,is_blocked,last_order_at,created_at&order=total_spent.desc&limit=50", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "blocked_devices?select=device_id,block_reason,block_type,status,phones_seen,ips_seen,risk_score,order_attempts,created_at&order=created_at.desc&limit=20", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "website_visitors?select=visit_date,visit_count&order=visit_date.desc&limit=7", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "newsletter_subscribers?select=email,phone,source,subscribed_at&order=subscribed_at.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "steadfast_consignments?select=consignment_id,tracking_code,recipient_name,recipient_phone,cod_amount,status,item_description,created_at&order=created_at.desc&limit=20", { method: "GET" }).catch(function() { return []; }),
     ]);
 
     // Calculate today's stats
@@ -2966,17 +2972,97 @@ async function handleAgentAsk(request, env) {
     (Array.isArray(inventory) ? inventory : []).forEach(function(p) {
       var stock = (Number(p.stk_s)||0) + (Number(p.stk_m)||0) + (Number(p.stk_l)||0) + (Number(p.stk_xl)||0) + (Number(p.stk_xxl)||0) + (Number(p.stk_3xl)||0);
       var sold = (Number(p.sold_s)||0) + (Number(p.sold_m)||0) + (Number(p.sold_l)||0) + (Number(p.sold_xl)||0) + (Number(p.sold_xxl)||0) + (Number(p.sold_3xl)||0);
-      context += "  • " + p.product + ": stock=" + stock + ", sold=" + sold + ", cost=৳" + p.cost + ", regular=৳" + p.regular + ", sale=৳" + (p.sale || "N/A") + "\n";
+      context += "  • " + p.product + ": stock=" + stock + ", sold=" + sold + ", cost=৳" + p.cost + ", regular=৳" + p.regular + ", sale=৳" + (p.sale || "N/A") + ", net=৳" + (p.net || 0) + ", fb_ad=৳" + (p.fb_ad || 0) + "\n";
     });
+
+    // Manual orders (admin panel orders)
+    var mOrders = Array.isArray(manualOrders) ? manualOrders : [];
+    var mPending = mOrders.filter(function(o) { return o.status === "Pending"; });
+    var mConfirmed = mOrders.filter(function(o) { return o.status === "Confirmed"; });
+    var mProcessing = mOrders.filter(function(o) { return o.status === "Processing"; });
+    var mShipped = mOrders.filter(function(o) { return o.status === "Shipped"; });
+    var mDelivered = mOrders.filter(function(o) { return o.status === "Delivered"; });
+    var mCancelled = mOrders.filter(function(o) { return o.status === "Cancelled"; });
+    var mReturned = mOrders.filter(function(o) { return o.status === "Returned"; });
+    var mRevenue = mOrders.reduce(function(s, o) { return s + (Number(o.total) || 0); }, 0);
+
+    context += "\nMANUAL ORDERS (admin panel, this month): " + mOrders.length + " total\n";
+    context += "- Pending: " + mPending.length + ", Confirmed: " + mConfirmed.length + ", Processing: " + mProcessing.length + ", Shipped: " + mShipped.length + ", Delivered: " + mDelivered.length + ", Cancelled: " + mCancelled.length + ", Returned: " + mReturned.length + "\n";
+    context += "- Manual Order Revenue: ৳" + mRevenue.toLocaleString() + "\n";
+    if (mPending.length > 0) {
+      context += "- PENDING MANUAL ORDERS:\n";
+      mPending.slice(0, 15).forEach(function(o) {
+        context += "  • " + o.order_id + " | " + o.product + " " + o.size + " x" + o.qty + " | ৳" + o.total + " | " + (o.cust_name || "N/A") + " | " + (o.cust_phone || "") + "\n";
+      });
+    }
+    if (mConfirmed.length > 0) {
+      context += "- CONFIRMED MANUAL ORDERS:\n";
+      mConfirmed.slice(0, 15).forEach(function(o) {
+        context += "  • " + o.order_id + " | " + o.product + " " + o.size + " x" + o.qty + " | ৳" + o.total + " | " + (o.cust_name || "N/A") + "\n";
+      });
+    }
+    if (mCancelled.length > 0) {
+      context += "- CANCELLED MANUAL ORDERS:\n";
+      mCancelled.slice(0, 10).forEach(function(o) {
+        context += "  • " + o.order_id + " | " + o.product + " | ৳" + o.total + " | " + (o.cust_name || "N/A") + "\n";
+      });
+    }
+
+    // Customers
+    var custArr = Array.isArray(customers) ? customers : [];
+    var totalCust = custArr.length;
+    var blockedCust = custArr.filter(function(c) { return c.is_blocked; }).length;
+    var totalCustSpent = custArr.reduce(function(s, c) { return s + (Number(c.total_spent) || 0); }, 0);
+    var topCustomers = custArr.slice(0, 10);
+
+    context += "\nCUSTOMERS: " + totalCust + " total (top 50 by spend)\n";
+    context += "- Total Customer Spend: ৳" + totalCustSpent.toLocaleString() + "\n";
+    context += "- Blocked Customers: " + blockedCust + "\n";
+    if (topCustomers.length > 0) {
+      context += "- TOP CUSTOMERS:\n";
+      topCustomers.forEach(function(c) {
+        context += "  • " + (c.name || "N/A") + " (" + c.phone + "): " + c.total_orders + " orders, ৳" + (Number(c.total_spent)||0).toLocaleString() + " spent" + (c.is_blocked ? " [BLOCKED]" : "") + "\n";
+      });
+    }
+
+    // Blocked devices (security)
+    var bDevices = Array.isArray(blockedDevices) ? blockedDevices : [];
+    context += "\nBLOCKED DEVICES (security): " + bDevices.length + " total\n";
+    bDevices.slice(0, 10).forEach(function(d) {
+      context += "  • " + d.device_id.slice(0, 20) + "... | reason=" + (d.block_reason || "N/A") + " | type=" + (d.block_type || "N/A") + " | attempts=" + (d.order_attempts || 0) + " | phones=" + (d.phones_seen || "N/A") + "\n";
+    });
+
+    // Website visitors
+    var visArr = Array.isArray(visitors) ? visitors : [];
+    if (visArr.length > 0) {
+      var todayVis = visArr.find(function(v) { return v.visit_date === todayStr; });
+      context += "\nWEBSITE VISITORS: today=" + (todayVis ? todayVis.visit_count : 0) + "\n";
+    }
+
+    // Newsletter subscribers
+    var nlArr = Array.isArray(newsletters) ? newsletters : [];
+    context += "NEWSLETTER SUBSCRIBERS: " + nlArr.length + " total\n";
+
+    // Steadfast consignments
+    var consArr = Array.isArray(consignments) ? consignments : [];
+    if (consArr.length > 0) {
+      var consPending = consArr.filter(function(c) { return c.status === "pending"; });
+      var consDelivered = consArr.filter(function(c) { return c.status === "delivered"; });
+      context += "\nSTEADFAST DELIVERIES: " + consArr.length + " recent (pending=" + consPending.length + ", delivered=" + consDelivered.length + ")\n";
+    }
 
     // Build system prompt for conversational business partner
     var sys = [
       "তুমি 'YARZ Business AI' — YARZ Clothing ব্র্যান্ডের একজন অভিজ্ঞ বিজনেস পার্টনার।",
       "তুমি মালিক (মারুফ) এর সাথে কথা বলছো — তার ব্যবসার সবকিছু তোমার হাতে।",
-      "তুমি জানো: সেলস, খরচ, লাভ, অর্ডার, বিজ্ঞাপন খরচ, ইনভেন্টরি — সবকিছু।",
-      "ব্যবহারকারী অর্ডার সম্পর্কে জিজ্ঞাসা করলে অর্ডার আইডি, স্ট্যাটাস, কাস্টমারের নাম, প্রোডাক্ট, পরিমাণ, মোট টাকা — সব বলো।",
-      "বিজ্ঞাপন খরচ সম্পর্কে জিজ্ঞাসা করলে মোট খরচ, প্রোডাক্ট অনুযায়ী খরচ, ROI — সব বলো।",
-      "অর্ডার স্ট্যাটাস জানাতে চাইলে Pending, Processing, Delivered, Cancelled — সব গুনো বলো।",
+      "তোমার কাছে সব ডাটা আছে: সেলস, খরচ, লাভ, অর্ডার (ম্যানুয়াল + ওয়েবসাইট), বিজ্ঞাপন, ইনভেন্টরি, কাস্টমার, ডেলিভারি, সিকিউরিটি — সবকিছু।",
+      "ব্যবহারকারী যেকোনো টেবিল সম্পর্কে জিজ্ঞাসা করলে সেই ডাটা দাও।",
+      "অর্ডার জানাতে চাইলে অর্ডার আইডি, স্ট্যাটাস, কাস্টমার, প্রোডাক্ট, পরিমাণ, মোট টাকা — সব বলো।",
+      "কাস্টমার জানাতে চাইলে নাম, ফোন, অর্ডার সংখ্যা, মোট খরচ, ব্লকড কিনা — সব বলো।",
+      "বিজ্ঞাপন জানাতে চাইলে খরচ, রিচ, ইম্প্রেশন, ক্লিক, ROI — সব বলো।",
+      "ইনভেন্টরি জানাতে চাইলে স্টক, বিক্রি, লাভ, ক্যাটাগরি, ফ্যাব্রিক — সব বলো।",
+      "ডেলিভারি জানাতে চাইলে Steadfast tracking, COD amount — সব বলো।",
+      "সিকিউরিটি জানাতে চাইলে ব্লকড ডিভাইস, ফিঙ্গারপ্রিন্ট, রিস্ক স্কোর — সব বলো।",
       "",
       "=== কঠোর নিয়ম (এগুলো ভাঙো না): ===",
       "",
