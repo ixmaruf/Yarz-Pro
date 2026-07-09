@@ -5628,6 +5628,21 @@ body.dark *{ scrollbar-color:rgba(255,255,255,0.2) rgba(255,255,255,0.06); }
    </div>
   </details>
 
+  <!-- IP Blocking — Server-Side -->
+  <details style="background:rgba(124,58,237,0.03);border:1px solid rgba(124,58,237,0.2);border-radius:10px;margin-bottom:12px">
+   <summary style="padding:10px 14px;cursor:pointer;font-size:12px;font-weight:700;color:#7c3aed;display:flex;align-items:center;gap:6px">
+    <i class="ri-global-line"></i> IP Blocking (Server-Side) — <span id="fw-ip-count">0</span> blocked
+   </summary>
+   <div style="padding:0 14px 14px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px">
+     <input id="ip-block-input" class="input" placeholder="IP Address (e.g. 103.174.23.161)" style="flex:1;min-width:200px;font-size:12px;font-family:monospace">
+     <input id="ip-block-reason" class="input" placeholder="Reason" style="width:160px;font-size:12px" value="manual">
+     <button class="btn btn-red btn-sm" onclick="YARZ.firewall.blockIP()"><i class="ri-forbid-line"></i> Block IP</button>
+    </div>
+    <div id="fw-blocked-ips" style="font-size:12px;color:var(--ink-2)">Loading...</div>
+   </div>
+  </details>
+
   <!-- Blocklist — Collapsible -->
   <details open style="background:var(--surface-1,rgba(0,0,0,0.02));border:1px solid var(--line);border-radius:10px;margin-bottom:12px">
    <summary style="padding:10px 14px;cursor:pointer;font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;justify-content:space-between" onclick="setTimeout(function(){YARZ.firewall._renderBlocks()},100)">
@@ -15324,6 +15339,8 @@ window.publishToWebsiteAction = async function() {
           if (fpRes && fpRes.ok) {
             this._fingerprints = fpRes.fingerprints || [];
           }
+          // Load blocked IPs for server-side blocking UI
+          this.loadBlockedIPs();
           // ✅ Cross-reference blocked devices with fingerprint data
           if (this._devices && this._fingerprints) {
             const fpMap = {};
@@ -15797,6 +15814,84 @@ window.publishToWebsiteAction = async function() {
           }
         } catch (e) {
           toast('Clear error: ' + e.message, 'error');
+        }
+      },
+      // IP Blocking — server-side permanent block
+      async blockIP() {
+        const ipInput = document.getElementById('ip-block-input');
+        const reasonInput = document.getElementById('ip-block-reason');
+        const ip = (ipInput ? ipInput.value : '').trim();
+        const reason = (reasonInput ? reasonInput.value : '').trim();
+        if (!ip || !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+          toast('Please enter a valid IP address', 'warning');
+          return;
+        }
+        if (!confirm('Block IP ' + ip + ' permanently?\n\nThis works even if the user clears cookies, changes browser, or uses VPN.')) return;
+        try {
+          const r = await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: '__fortress_block_ip', ip_address: ip, reason: reason || 'manual', blocked_by: 'admin' })
+          });
+          const res = await r.json();
+          if (res.ok) {
+            toast('IP ' + ip + ' blocked permanently', 'success');
+            if (ipInput) ipInput.value = '';
+            if (reasonInput) reasonInput.value = 'manual';
+            this.loadBlockedIPs();
+          } else {
+            toast('Failed: ' + (res.error || 'unknown'), 'error');
+          }
+        } catch (e) {
+          toast('Error: ' + e.message, 'error');
+        }
+      },
+      async unblockIP(ip) {
+        if (!confirm('Unblock IP ' + ip + '?')) return;
+        try {
+          const r = await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: '__fortress_unblock_ip', ip_address: ip })
+          });
+          const res = await r.json();
+          if (res.ok) {
+            toast('IP ' + ip + ' unblocked', 'success');
+            this.loadBlockedIPs();
+          } else {
+            toast('Failed: ' + (res.error || 'unknown'), 'error');
+          }
+        } catch (e) {
+          toast('Error: ' + e.message, 'error');
+        }
+      },
+      async loadBlockedIPs() {
+        try {
+          const r = await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: '__fortress_list_blocked_ips' })
+          });
+          const res = await r.json();
+          const container = document.getElementById('fw-blocked-ips');
+          const countEl = document.getElementById('fw-ip-count');
+          const ips = res.ips || [];
+          if (countEl) countEl.textContent = ips.length;
+          if (!container) return;
+          if (ips.length === 0) {
+            container.innerHTML = '<div style="padding:8px 0;color:var(--ink-3)">No blocked IPs</div>';
+            return;
+          }
+          container.innerHTML = ips.map(ip =>
+            '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--line)">' +
+              '<span style="font-family:monospace;font-size:12px">' + ip.ip_address + '</span>' +
+              '<span style="font-size:11px;color:var(--ink-3)">' + (ip.reason || '') + '</span>' +
+              '<button class="btn btn-sm" onclick="YARZ.firewall.unblockIP(\'' + ip.ip_address + '\')" style="font-size:10px;padding:2px 8px">Unblock</button>' +
+            '</div>'
+          ).join('');
+        } catch (e) {
+          const container = document.getElementById('fw-blocked-ips');
+          if (container) container.innerHTML = '<div style="color:var(--danger)">Error loading IPs</div>';
         }
       },
       startAutoRefresh() {
