@@ -2850,12 +2850,15 @@ async function handleAgentAsk(request, env) {
     const monthStart = bdNow.toISOString().slice(0, 7) + "-01";
 
     // Fetch all relevant data in parallel
-    const [todayTx, todayAd, todayExp, monthTx, inventory] = await Promise.all([
+    const [todayTx, todayAd, todayExp, monthTx, inventory, monthOrders, monthAd, monthExp] = await Promise.all([
       supabaseRequest(env, "transactions?select=product,qty,revenue,cost,profit,type,date&date=gte." + todayStr + "T00:00:00&date=lt." + todayStr + "T23:59:59&order=date.desc", { method: "GET" }).catch(function() { return []; }),
       supabaseRequest(env, "ad_tracker?select=product,spend,date&date=gte." + todayStr + "T00:00:00&date=lt." + todayStr + "T23:59:59&order=date.desc", { method: "GET" }).catch(function() { return []; }),
       supabaseRequest(env, "expenses?select=category,description,amount,date&date=gte." + todayStr + "T00:00:00&date=lt." + todayStr + "T23:59:59&order=date.desc", { method: "GET" }).catch(function() { return []; }),
       supabaseRequest(env, "transactions?select=product,qty,revenue,cost,profit,type,date&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
       supabaseRequest(env, "inventory?select=product,status,stk_s,stk_m,stk_l,stk_xl,stk_xxl,stk_3xl,sold_s,sold_m,sold_l,sold_xl,sold_xxl,sold_3xl,cost,regular,sale&status=eq.Active&order=product.asc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "website_orders?select=order_id,product,qty,total,status,date,cust_name,delivery_charge&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "ad_tracker?select=product,spend,date&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
+      supabaseRequest(env, "expenses?select=category,description,amount,date&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return []; }),
     ]);
 
     // Calculate today's stats
@@ -2901,18 +2904,54 @@ async function handleAgentAsk(request, env) {
     });
 
     // Ad spend by product (this month)
-    var monthAd = await supabaseRequest(env, "ad_tracker?select=product,spend,date&date=gte." + monthStart + "T00:00:00&order=date.desc", { method: "GET" }).catch(function() { return [] });
     var adByProduct = {};
+    var monthAdTotal = 0;
     (Array.isArray(monthAd) ? monthAd : []).forEach(function(a) {
       var name = a.product || "General";
       adByProduct[name] = (adByProduct[name] || 0) + (Number(a.spend) || 0);
+      monthAdTotal += Number(a.spend) || 0;
     });
 
+    // Monthly expenses total
+    var monthExpTotal = 0;
+    (Array.isArray(monthExp) ? monthExp : []).forEach(function(e) {
+      monthExpTotal += Number(e.amount) || 0;
+    });
+
+    // Order stats (this month)
+    var orderArr = Array.isArray(monthOrders) ? monthOrders : [];
+    var orderPending = orderArr.filter(function(o) { return o.status === "Pending"; });
+    var orderProcessing = orderArr.filter(function(o) { return o.status === "Processing"; });
+    var orderDelivered = orderArr.filter(function(o) { return o.status === "Delivered"; });
+    var orderCancelled = orderArr.filter(function(o) { return o.status === "Cancelled"; });
+    var orderTotalRevenue = orderArr.reduce(function(s, o) { return s + (Number(o.total) || 0); }, 0);
+
     context += "\nTHIS MONTH (since " + monthStart + "):\n";
-    context += "- Revenue: ৳" + monthRev.toLocaleString() + "\n";
-    context += "- Cost: ৳" + monthCost.toLocaleString() + "\n";
+    context += "- Revenue (Sales): ৳" + monthRev.toLocaleString() + "\n";
+    context += "- Cost (Sales): ৳" + monthCost.toLocaleString() + "\n";
     context += "- Gross Profit: ৳" + monthGross.toLocaleString() + "\n";
     context += "- Total Transactions: " + (Array.isArray(monthTx) ? monthTx.length : 0) + "\n";
+    context += "- Total Ad Spend: ৳" + monthAdTotal.toLocaleString() + "\n";
+    context += "- Total Other Expenses: ৳" + monthExpTotal.toLocaleString() + "\n";
+    context += "- Net Profit (after ads+expenses): ৳" + (monthGross - monthAdTotal - monthExpTotal).toLocaleString() + "\n";
+    context += "\nORDERS (website orders this month): " + orderArr.length + " total\n";
+    context += "- Pending: " + orderPending.length + " orders\n";
+    context += "- Processing: " + orderProcessing.length + " orders\n";
+    context += "- Delivered: " + orderDelivered.length + " orders\n";
+    context += "- Cancelled: " + orderCancelled.length + " orders\n";
+    context += "- Order Revenue: ৳" + orderTotalRevenue.toLocaleString() + "\n";
+    if (orderPending.length > 0) {
+      context += "- PENDING ORDERS:\n";
+      orderPending.slice(0, 10).forEach(function(o) {
+        context += "  • " + o.order_id + " | " + o.product + " x" + o.qty + " | ৳" + o.total + " | " + (o.cust_name || "N/A") + "\n";
+      });
+    }
+    if (orderProcessing.length > 0) {
+      context += "- PROCESSING ORDERS:\n";
+      orderProcessing.slice(0, 10).forEach(function(o) {
+        context += "  • " + o.order_id + " | " + o.product + " x" + o.qty + " | ৳" + o.total + " | " + (o.cust_name || "N/A") + "\n";
+      });
+    }
     context += "\nPRODUCT-WISE SALES (this month):\n";
     Object.keys(productSales).sort(function(a, b) { return productSales[b].revenue - productSales[a].revenue; }).forEach(function(name) {
       var p = productSales[name];
@@ -2934,6 +2973,10 @@ async function handleAgentAsk(request, env) {
     var sys = [
       "তুমি 'YARZ Business AI' — YARZ Clothing ব্র্যান্ডের একজন অভিজ্ঞ বিজনেস পার্টনার।",
       "তুমি মালিক (মারুফ) এর সাথে কথা বলছো — তার ব্যবসার সবকিছু তোমার হাতে।",
+      "তুমি জানো: সেলস, খরচ, লাভ, অর্ডার, বিজ্ঞাপন খরচ, ইনভেন্টরি — সবকিছু।",
+      "ব্যবহারকারী অর্ডার সম্পর্কে জিজ্ঞাসা করলে অর্ডার আইডি, স্ট্যাটাস, কাস্টমারের নাম, প্রোডাক্ট, পরিমাণ, মোট টাকা — সব বলো।",
+      "বিজ্ঞাপন খরচ সম্পর্কে জিজ্ঞাসা করলে মোট খরচ, প্রোডাক্ট অনুযায়ী খরচ, ROI — সব বলো।",
+      "অর্ডার স্ট্যাটাস জানাতে চাইলে Pending, Processing, Delivered, Cancelled — সব গুনো বলো।",
       "",
       "=== কঠোর নিয়ম (এগুলো ভাঙো না): ===",
       "",
