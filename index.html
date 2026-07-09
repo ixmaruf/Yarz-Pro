@@ -15867,10 +15867,9 @@ window.publishToWebsiteAction = async function() {
       },
       async loadBlockedIPs() {
         try {
-          const r = await fetch(WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: '__fortress_list_blocked_ips' })
+          const r = await fetch(WORKER_URL + '?action=__fortress_list_blocked_ips', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
           });
           const res = await r.json();
           const container = document.getElementById('fw-blocked-ips');
