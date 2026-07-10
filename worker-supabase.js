@@ -214,13 +214,19 @@ function safeUrl(u) {
   return "";
 }
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": "*",
+function corsHeaders(origin) {
+  const allowed = ["https://yarzclothing.xyz", "https://www.yarzclothing.xyz", "https://yarz-admin-panel.pages.dev", "https://yarz-admin.marufhasan80009.workers.dev"];
+  const h = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Token, X-Purge-Key",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Token, X-Purge-Key, x-purge-secret",
     "Access-Control-Max-Age": "86400"
   };
+  if (origin && allowed.includes(origin)) {
+    h["Access-Control-Allow-Origin"] = origin;
+  } else {
+    h["Access-Control-Allow-Origin"] = "https://yarzclothing.xyz";
+  }
+  return h;
 }
 
 function jsonResponse(data, status) {
@@ -752,20 +758,7 @@ async function handle(request, env, ctx) {
   }
 
   // Debug endpoint: /__env shows which secrets/vars are injected (safe; does NOT print secret values)
-  const __url0 = new URL(request.url);
-  if (__url0.pathname === "/__env") {
-    return jsonResponse({
-      has_url: !!env.SUPABASE_URL,
-      url_prefix: env.SUPABASE_URL ? env.SUPABASE_URL.substring(0, 30) + "..." : null,
-      has_key: !!env.SUPABASE_SERVICE_ROLE_KEY,
-      key_len: env.SUPABASE_SERVICE_ROLE_KEY ? env.SUPABASE_SERVICE_ROLE_KEY.length : 0,
-      supabase_enabled: env.SUPABASE_ENABLED,
-      has_purge: !!env.PURGE_SECRET,
-      has_tg_token: !!env.TG_BOT_TOKEN,
-      has_tg_webhook: !!env.TG_WEBHOOK_SECRET,
-      env_keys: Object.keys(env).sort()
-    });
-  }
+  // ✅ SECURITY: /__env endpoint removed — was leaking secret metadata
 
   // Parse request
   let action = null;
