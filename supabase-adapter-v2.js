@@ -539,7 +539,8 @@
       coupon_disc_percent: Number(p.cDisc) || 0,
       hidden_sizes: p.oneSize ? "__ONESIZE__" : (p.hiddenSizes || ""),
       size_type: p.sizeType || "",
-      accessory: p.accessory || "No"
+      accessory: p.accessory || "No",
+      size_chart: p.sc || ""
     };
   }
 
