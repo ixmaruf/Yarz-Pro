@@ -1541,7 +1541,8 @@ async function runDailyBackup(env) {
 async function handleBackupDownload(request, env) {
   // Auth check
   const auth = request.headers.get("Authorization");
-  if (auth !== "Bearer yarz-admin-2026") {
+  const expectedAuth = "Bearer " + (env.BACKUP_TOKEN || env.AGENT_SECRET || "");
+  if (auth !== expectedAuth) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
@@ -1577,7 +1578,8 @@ async function handleBackupDownload(request, env) {
 
 async function handleBackupList(request, env) {
   const auth = request.headers.get("Authorization");
-  if (auth !== "Bearer yarz-admin-2026") {
+  const expectedAuth = "Bearer " + (env.BACKUP_TOKEN || env.AGENT_SECRET || "");
+  if (auth !== expectedAuth) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
@@ -1588,7 +1590,8 @@ async function handleBackupList(request, env) {
 
 async function handleBackupRun(request, env) {
   const auth = request.headers.get("Authorization");
-  if (auth !== "Bearer yarz-admin-2026") {
+  const expectedAuth = "Bearer " + (env.BACKUP_TOKEN || env.AGENT_SECRET || "");
+  if (auth !== expectedAuth) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
   try {
@@ -1601,7 +1604,8 @@ async function handleBackupRun(request, env) {
 
 async function handleBackupClear(request, env) {
   const auth = request.headers.get("Authorization");
-  if (auth !== "Bearer yarz-admin-2026") {
+  const expectedAuth = "Bearer " + (env.BACKUP_TOKEN || env.AGENT_SECRET || "");
+  if (auth !== expectedAuth) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
   try {

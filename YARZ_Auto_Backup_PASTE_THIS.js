@@ -11,8 +11,9 @@
  * ==============================================================
  */
 
-var SUPABASE_URL = "https://xdzduowhwubogaavraap.supabase.co";
-var SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkemR1b3dod3Vib2dhYXZyYWFwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTEwNzgxNiwiZXhwIjoyMDk2NjgzODE2fQ.7UlQv2dKyKq-ZllQH1LJ4SFgAYXbl0dNHkV1xpH5G00";
+// ✅ SECURITY: Use environment variables or wrangler secrets instead of hardcoding
+var SUPABASE_URL = PropertiesService.getScriptProperties().getProperty('SUPABASE_URL') || "";
+var SUPABASE_SERVICE_KEY = PropertiesService.getScriptProperties().getProperty('SUPABASE_SERVICE_ROLE_KEY') || "";
 
 // Date column mapping per table — NOT every table uses created_at!
 var DATE_COLUMNS = {
